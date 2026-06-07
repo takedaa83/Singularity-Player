@@ -1,0 +1,301 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-surface: var(--bg-surface);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  
+  --color-accent: var(--accent);
+  --color-border-primary: var(--border-primary);
+}
+
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #141414;
+  --bg-surface: #1a1a1a;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #737373;
+  
+  --accent: #ffffff;
+  --border-primary: #262626;
+}
+
+:root.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-surface: #eeeeee;
+  
+  --text-primary: #000000;
+  --text-secondary: #737373;
+  
+  --accent: #000000;
+  --border-primary: #e5e5e5;
+}
+
+/* ── Global Reset ── */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Material Surface Elevation ── */
+.surface-1 {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.surface-2 {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+}
+
+.surface-3 {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+}
+
+/* ── Glassmorphism ── */
+.glass {
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.light .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.glass-heavy {
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Sleek Scrollbar ── */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #333333 transparent;
+}
+
+:root.light {
+  scrollbar-color: #cccccc transparent;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #ccc;
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* ── Shimmer Loading ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #141414 25%, #262626 50%, #141414 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.light .shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+}
+
+/* ── Micro-animations ── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+  50% { box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.06); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-fade-in { animation: fade-in 0.3s ease-out; }
+.animate-fade-up { animation: fade-up 0.4s ease-out; }
+.animate-scale-in { animation: scale-in 0.3s ease-out; }
+.animate-slide-right { animation: slide-in-right 0.3s ease-out; }
+.animate-slide-left { animation: slide-in-left 0.3s ease-out; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+.marquee {
+  animation: marquee 8s linear infinite;
+}
+
+/* ── Range Input Styling ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  margin-top: -5px;
+  border: none;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 1px;
+}
+
+/* ── Material Hover ── */
+.material-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+.material-hover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0);
+  transition: background 0.15s ease;
+}
+
+.material-hover:hover::after {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light .material-hover:hover::after {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ── Glass panel ── */
+.glass-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+/* ── Now-playing glow ── */
+.now-playing-glow {
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ── Focus Ring ── */
+*:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.light *:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+/* ── Synced Lyrics ── */
+.lyrics-line {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.35;
+  transform: scale(0.95);
+}
+
+.lyrics-line.active {
+  opacity: 1;
+  transform: scale(1);
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.lyrics-line:hover {
+  opacity: 0.7;
+}
+
+/* ── Hero gradient animation ── */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}

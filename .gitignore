@@ -1,0 +1,27 @@
+node_modules
+*.exe
+test_dl.m4a
+*.m4a
+*.mp3
+
+# Build outputs
+client/dist
+server/dist
+
+# Uploaded user data (audio files, cover art)
+server/uploads
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# InnerTube cache
+.cache/
+server/.cache/
