@@ -967,20 +967,23 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         
         if (timeMs >= start && timeMs <= end) {
           const progress = Math.min(100, Math.max(0, ((timeMs - start) / (end - start)) * 100));
-          htmlEl.style.setProperty('--word-progress', `${progress}%`);
+          const progressStr = `${progress.toFixed(1)}%`;
+          if (htmlEl.style.getPropertyValue('--word-progress') !== progressStr) {
+            htmlEl.style.setProperty('--word-progress', progressStr);
+          }
           if (!wordEl.classList.contains('active')) {
             wordEl.classList.add('active');
             wordEl.classList.remove('completed');
           }
         } else if (timeMs > end) {
-          htmlEl.style.setProperty('--word-progress', '100%');
           if (!wordEl.classList.contains('completed')) {
+            htmlEl.style.setProperty('--word-progress', '100%');
             wordEl.classList.add('completed');
             wordEl.classList.remove('active');
           }
         } else {
-          htmlEl.style.setProperty('--word-progress', '0%');
           if (wordEl.classList.contains('active') || wordEl.classList.contains('completed')) {
+            htmlEl.style.setProperty('--word-progress', '0%');
             wordEl.classList.remove('active', 'completed');
           }
         }
@@ -1613,7 +1616,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                         syncedLines.map((line, idx) => {
                           const isActive = idx === activeLineIndex;
                           return (
-                            <motion.div
+                            <div
                               key={idx}
                               ref={isActive ? activeFullLineRef : undefined}
                               onClick={() => handleLineClick(line.time)}
@@ -1651,7 +1654,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                               ) : (
                                 line.text
                               )}
-                            </motion.div>
+                            </div>
                           );
                         })
                       ) : (

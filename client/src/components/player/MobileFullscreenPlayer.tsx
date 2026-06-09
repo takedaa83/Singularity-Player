@@ -36,6 +36,43 @@ interface MobileFullscreenPlayerProps {
   setShowEqualizer: (show: boolean) => void;
 }
 
+
+interface MobileProgressSliderProps {
+  seek: (time: number) => void;
+}
+
+const MobileProgressSlider: React.FC<MobileProgressSliderProps> = ({ seek }) => {
+  const { currentTime, duration } = usePlaybackTime();
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    seek(val);
+  };
+
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      <div className="relative group flex items-center h-4 w-full">
+        <input
+          type="range"
+          min="0"
+          max={duration || 100}
+          value={currentTime}
+          onChange={handleProgressBarChange}
+          className="w-full h-1 rounded-full cursor-pointer appearance-none focus:outline-none"
+          style={{
+            background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
+          }}
+        />
+      </div>
+      <div className="flex justify-between text-[10px] text-neutral-400 font-mono select-none px-0.5">
+        <span>{formatTimeDisplay(currentTime)}</span>
+        <span>{formatTimeDisplay(duration)}</span>
+      </div>
+    </div>
+  );
+};
+
 export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
   isOpen,
   onClose,
@@ -63,21 +100,14 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
   const setRepeat = usePlayerStore((s) => s.setRepeat);
   const setPlaybackSpeed = usePlayerStore((s) => s.setPlaybackSpeed);
 
-  const { currentTime, duration } = usePlaybackTime();
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   if (!isOpen || !currentTrack) return null;
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const speedOptions = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
   const handlePlayPause = () => {
     setPlaying(!isPlaying);
-  };
-
-  const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    seek(val);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,26 +248,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
               )}
             </div>
 
-            {/* Custom Interactive Progress Bar */}
-            <div className="flex flex-col gap-2 w-full">
-              <div className="relative group flex items-center h-4 w-full">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 100}
-                  value={currentTime}
-                  onChange={handleProgressBarChange}
-                  className="w-full h-1 rounded-full cursor-pointer appearance-none focus:outline-none"
-                  style={{
-                    background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] text-neutral-400 font-mono select-none px-0.5">
-                <span>{formatTimeDisplay(currentTime)}</span>
-                <span>{formatTimeDisplay(duration)}</span>
-              </div>
-            </div>
+            <MobileProgressSlider seek={seek} />
 
             {/* Main Playback Control Deck */}
             <div className="flex items-center justify-between px-2 w-full mt-2">

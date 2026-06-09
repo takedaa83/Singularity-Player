@@ -32,6 +32,77 @@ interface PlayerBarProps {
   setShowEqualizer: (show: boolean) => void;
 }
 
+
+// Sub-component for the top progress bar on desktop
+const DesktopTopProgressBar: React.FC = () => {
+  const { currentTime, duration } = usePlaybackTime();
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="absolute top-0 left-0 right-0 h-0.5 bg-neutral-800">
+      <div
+        className="h-full bg-white transition-all duration-150 ease-linear"
+        style={{ width: `${progressPercent}%` }}
+      />
+    </div>
+  );
+};
+
+// Sub-component for the mobile floating mini-player progress bar
+const MobileMiniProgressBar: React.FC = () => {
+  const { currentTime, duration } = usePlaybackTime();
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-white/10">
+      <div 
+        className="h-full transition-all duration-150 ease-linear"
+        style={{ 
+          width: `${progressPercent}%`,
+          backgroundColor: 'var(--primary)',
+        }}
+      />
+    </div>
+  );
+};
+
+// Sub-component for the desktop main progress slider
+interface DesktopProgressSliderProps {
+  seek: (time: number) => void;
+  disabled: boolean;
+}
+
+const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, disabled }) => {
+  const { currentTime, duration } = usePlaybackTime();
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    seek(val);
+  };
+
+  return (
+    <div className="w-full hidden sm:flex items-center gap-3 text-xs text-neutral-500 select-none">
+      <span className="w-10 text-right font-mono">{formatTimeDisplay(currentTime)}</span>
+      <div className="flex-1 relative group flex items-center h-4">
+        <input
+          type="range"
+          min="0"
+          max={duration || 100}
+          value={currentTime}
+          onChange={handleProgressBarChange}
+          disabled={disabled}
+          className="w-full h-0.5 rounded-full cursor-pointer hover:h-1 transition-all duration-75 appearance-none focus:outline-none"
+          style={{
+            background: `linear-gradient(to right, #fff 0%, #fff ${progressPercent}%, #333 ${progressPercent}%, #333 100%)`
+          }}
+        />
+      </div>
+      <span className="w-10 text-left font-mono">{formatTimeDisplay(duration)}</span>
+    </div>
+  );
+};
+
 export const PlayerBar: React.FC<PlayerBarProps> = ({
   seek,
   showQueue,
@@ -58,22 +129,12 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const setRepeat = usePlayerStore((s) => s.setRepeat);
   const setPlaybackSpeed = usePlayerStore((s) => s.setPlaybackSpeed);
 
-  // Subscribe to time updates via external store (not React state)
-  const { currentTime, duration } = usePlaybackTime();
-
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isMobilePlayerOpen, setIsMobilePlayerOpen] = useState(false);
-
-  const formatTime = formatTimeDisplay;
 
   const handlePlayPause = () => {
     if (!currentTrack) return;
     setPlaying(!isPlaying);
-  };
-
-  const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    seek(val);
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,19 +155,12 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     return getSourceShortLabel(currentTrack.source);
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <>
       {/* Desktop Player Bar */}
       <footer className="hidden sm:block glass-heavy border-t border-white/5 shrink-0 z-30 text-white relative">
-        {/* Mobile-friendly progress bar at the very top of the player bar */}
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-neutral-800">
-          <div
-            className="h-full bg-white transition-all duration-150 ease-linear"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <DesktopTopProgressBar />
 
         <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 sm:gap-6">
           {/* 1. Track Info Section */}
@@ -233,25 +287,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               </button>
             </div>
 
-            {/* Progress Slider */}
-            <div className="w-full hidden sm:flex items-center gap-3 text-xs text-neutral-500 select-none">
-              <span className="w-10 text-right font-mono">{formatTime(currentTime)}</span>
-              <div className="flex-1 relative group flex items-center h-4">
-                <input
-                  type="range"
-                  min="0"
-                  max={duration || 100}
-                  value={currentTime}
-                  onChange={handleProgressBarChange}
-                  disabled={!currentTrack}
-                  className="w-full h-0.5 rounded-full cursor-pointer hover:h-1 transition-all duration-75 appearance-none focus:outline-none"
-                  style={{
-                    background: `linear-gradient(to right, #fff 0%, #fff ${progressPercent}%, #333 ${progressPercent}%, #333 100%)`
-                  }}
-                />
-              </div>
-              <span className="w-10 text-left font-mono">{formatTime(duration)}</span>
-            </div>
+            <DesktopProgressSlider seek={seek} disabled={!currentTrack} />
           </div>
 
           {/* 3. Auxiliary Options Section */}
@@ -362,16 +398,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         onClick={() => setIsMobilePlayerOpen(true)}
         className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden"
       >
-        {/* Progress Line */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-white/10">
-          <div 
-            className="h-full transition-all duration-150 ease-linear"
-            style={{ 
-              width: `${progressPercent}%`,
-              backgroundColor: 'var(--primary)',
-            }}
-          />
-        </div>
+        <MobileMiniProgressBar />
 
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
