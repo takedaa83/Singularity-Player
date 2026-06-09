@@ -48,7 +48,7 @@ const upload = multer({
 
 // POST /api/upload
 // Can accept single or multiple files under key 'files' or 'file'
-router.post('/', upload.array('files', 15), async (req: Request, res: Response) => {
+router.post('/', upload.array('files', 5), async (req: Request, res: Response) => {
   try {
     const files = req.files as Express.Multer.File[];
     if (!files || files.length === 0) {

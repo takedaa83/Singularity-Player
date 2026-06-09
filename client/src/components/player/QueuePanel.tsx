@@ -170,11 +170,11 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
 
   return (
     <motion.div
-      initial={{ x: 320, opacity: 0 }}
+      initial={{ x: '100%', opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 320, opacity: 0 }}
+      exit={{ x: '100%', opacity: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="w-80 h-full glass-heavy flex flex-col justify-between py-6 px-4 text-white shrink-0 z-40"
+      className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 glass-heavy flex flex-col justify-between py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10"
     >
       <div className="flex flex-col gap-6 h-full overflow-hidden">
         {/* Header */}

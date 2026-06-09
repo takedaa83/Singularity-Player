@@ -34,6 +34,10 @@ router.get('/search', async (req: Request, res: Response) => {
  */
 router.get('/stream/:videoId', async (req: Request, res: Response) => {
   const { videoId } = req.params;
+  const quality = (req.query.quality as string) || 'high';
+  const validQualities = ['high', 'medium', 'low'];
+  const selectedQuality = validQualities.includes(quality) ? quality as 'high' | 'medium' | 'low' : 'high';
+  const bypassCache = !!req.query.retry;
 
   if (!videoId || !isValidVideoId(videoId)) {
     res.status(400).json({ error: 'Invalid video ID' });
@@ -42,7 +46,7 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
 
   try {
     // Strategy 1: Extract URL and proxy-fetch (supports seeking)
-    const streamInfo = await getAudioStreamUrl(videoId);
+    const streamInfo = await getAudioStreamUrl(videoId, selectedQuality, bypassCache);
     
     if (res.destroyed || res.writableEnded) {
       console.log(`[YT Route] Client aborted connection during URL extraction for ${videoId}`);
@@ -83,7 +87,7 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
 
           // URL might be expired, fall through to Strategy 2
           console.warn(`[YT Route] Proxy fetch failed (${upstreamRes.statusCode}), falling back to direct pipe`);
-          streamViaPipe(videoId, res, req);
+          streamViaPipe(videoId, res, req, selectedQuality);
           return;
         }
 
@@ -121,7 +125,7 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     } else {
       if (res.destroyed || res.writableEnded) return;
       // Strategy 2: Direct pipe from yt-dlp stdout
-      return streamViaPipe(videoId, res, req);
+      return streamViaPipe(videoId, res, req, selectedQuality);
     }
   } catch (error: any) {
     console.error('[YT Route] Stream error:', error?.message || error);
@@ -134,7 +138,7 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
 /**
  * Fallback streaming: pipe yt-dlp stdout directly to HTTP response.
  */
-async function streamViaPipe(videoId: string, res: Response, req: Request) {
+async function streamViaPipe(videoId: string, res: Response, req: Request, quality: 'high' | 'medium' | 'low' = 'high') {
   let poolHandle;
   try {
     poolHandle = await ytdlpPool.acquire();
@@ -154,7 +158,7 @@ async function streamViaPipe(videoId: string, res: Response, req: Request) {
   };
 
   try {
-    const { stream, process: child } = spawnAudioStream(videoId);
+    const { stream, process: child } = spawnAudioStream(videoId, quality);
     poolHandle.registerProcess(child);
 
     res.setHeader('Content-Type', 'audio/mp4');

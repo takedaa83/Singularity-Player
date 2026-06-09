@@ -19,6 +19,21 @@ export interface Track {
   filePath: string | null;     // Relative server uploaded filename if local
   addedAt: number;             // timestamp
   videoId?: string;            // YouTube video ID for proxy streaming
+  // Real analyzed audio features (optional, populated via analysis)
+  bpm?: number | null;
+  energy?: number | null;
+  valence?: number | null;
+  danceability?: number | null;
+  acousticness?: number | null;
+  instrumentalness?: number | null;
+  audioFeatures?: {
+    bpm: number;
+    energy: number;
+    valence: number;
+    danceability: number;
+    acousticness: number;
+    instrumentalness: number;
+  } | null;
   // Analytics fields (populated from playSessions)
   playCount?: number;
   lastPlayedAt?: number;

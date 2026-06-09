@@ -236,7 +236,7 @@ export class SearchService {
       return json.results.map((item: any) => {
         let artwork = item.artworkUrl100 || null;
         if (artwork) {
-          artwork = artwork.replace('100x100bb.jpg', '500x500bb.jpg');
+          artwork = artwork.replace('100x100bb.jpg', '1000x1000bb.jpg');
         }
 
         return {

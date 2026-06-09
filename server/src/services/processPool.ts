@@ -81,6 +81,16 @@ class ProcessPool {
     for (const proc of this.activeProcesses) {
       try {
         proc.kill('SIGTERM');
+        const killTimeout = setTimeout(() => {
+          if (proc.exitCode === null && proc.signalCode === null) {
+            try {
+              proc.kill('SIGKILL');
+            } catch {
+              // Ignore if already dead
+            }
+          }
+        }, 2000);
+        killTimeout.unref?.();
       } catch {
         // Process may already be dead
       }

@@ -15,7 +15,17 @@ import {
   Pause, 
   Check, 
   Settings,
-  Sparkles
+  Sparkles,
+  Shuffle,
+  Repeat,
+  Repeat1,
+  Volume2,
+  VolumeX,
+  Star,
+  MoreHorizontal,
+  SkipForward,
+  SkipBack,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
@@ -116,7 +126,7 @@ function extractColorsFromImage(url: string): Promise<string[]> {
           if (extracted.length >= 4) break;
         }
         
-        const defaults = ['rgb(156, 39, 176)', 'rgb(0, 188, 212)', 'rgb(233, 30, 99)'];
+        const defaults = ['rgb(30, 30, 35)', 'rgb(15, 15, 20)', 'rgb(5, 5, 5)'];
         while (extracted.length < 3) {
           extracted.push(defaults[extracted.length]);
         }
@@ -383,15 +393,51 @@ function formatLrcTime(time: number): string {
   return `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}]`;
 }
 
+async function fetchiTunesCover(title: string, artist: string): Promise<string | null> {
+  try {
+    const cleanTitle = title.replace(/\(feat\..*?\)/i, '').replace(/\(ft\..*?\)/i, '').replace(/feat\..*/i, '').replace(/ft\..*/i, '').trim();
+    const cleanArtist = artist.replace(/feat\..*/i, '').replace(/ft\..*/i, '').trim();
+    const query = `${cleanArtist} ${cleanTitle}`;
+    
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=1`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (json.results && json.results.length > 0) {
+      const artworkUrl = json.results[0].artworkUrl100;
+      if (artworkUrl) {
+        return artworkUrl.replace('100x100bb.jpg', '800x800bb.jpg');
+      }
+    }
+  } catch (e) {
+    console.error('iTunes high quality cover search failed:', e);
+  }
+  return null;
+}
+
 export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const currentTrack = usePlayerStore(state => state.currentTrack);
   const isPlaying = usePlayerStore(state => state.isPlaying);
   const playbackSpeed = usePlayerStore(state => state.playbackSpeed);
   const setPlaying = usePlayerStore(state => state.setPlaying);
-  const { saveTrack } = useLibraryDB();
-  const { seek } = useAudioEngine();
+  const volume = usePlayerStore(state => state.volume);
+  const shuffle = usePlayerStore(state => state.shuffle);
+  const repeat = usePlayerStore(state => state.repeat);
+  const isMuted = usePlayerStore(state => state.isMuted);
+  const favorites = usePlayerStore(state => state.favorites);
+  const isBuffering = usePlayerStore(state => state.isBuffering);
 
-  const duration = currentTrack?.duration || 0;
+  const nextTrack = usePlayerStore(state => state.nextTrack);
+  const prevTrack = usePlayerStore(state => state.prevTrack);
+  const toggleShuffle = usePlayerStore(state => state.toggleShuffle);
+  const setRepeat = usePlayerStore(state => state.setRepeat);
+  const setVolume = usePlayerStore(state => state.setVolume);
+  const toggleMute = usePlayerStore(state => state.toggleMute);
+
+  const { saveTrack, toggleFavorite } = useLibraryDB();
+  const { seek, getAnalyser } = useAudioEngine();
+  const { currentTime, duration: liveDuration } = usePlaybackTime();
+
+  const duration = currentTrack?.duration || liveDuration || 0;
 
   const [rawLrcText, setRawLrcText] = useState('');
   const [syncOffset, setSyncOffset] = useState(() => {
@@ -410,9 +456,17 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
     localStorage.setItem('lyrics_estimate_word_sync', estimateWordSync.toString());
   }, [estimateWordSync]);
 
+  const [wordHighlightEnabled, setWordHighlightEnabled] = useState(() => {
+    return localStorage.getItem('lyrics_word_highlight_enabled') !== 'false';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('lyrics_word_highlight_enabled', wordHighlightEnabled.toString());
+  }, [wordHighlightEnabled]);
+
   const syncedLines = useMemo(() => {
-    return parseLRC(rawLrcText, estimateWordSync);
-  }, [rawLrcText, estimateWordSync]);
+    return parseLRC(rawLrcText, wordHighlightEnabled);
+  }, [rawLrcText, wordHighlightEnabled]);
 
   const hasNativeWordTags = useMemo(() => {
     return rawLrcText.includes('<') && /<(?:(\d+):)?(\d+)(?:\s*[.:]\s*(\d+))?\s*>/.test(rawLrcText);
@@ -427,20 +481,54 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fontSize, setFontSize] = useState(26); // px
 
+  // Body class to hide player bar when fullscreen lyrics are open
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.classList.add('fullscreen-lyrics-active');
+    } else {
+      document.body.classList.remove('fullscreen-lyrics-active');
+    }
+    return () => {
+      document.body.classList.remove('fullscreen-lyrics-active');
+    };
+  }, [isFullscreen]);
+
+  // Fetch iTunes high quality cover art
+  useEffect(() => {
+    if (!currentTrack) return;
+    
+    if (currentTrack.coverArtUrl && currentTrack.coverArtUrl.includes('800x800bb.jpg')) {
+      return;
+    }
+    
+    fetchiTunesCover(currentTrack.title, currentTrack.artist).then((url) => {
+      if (url) {
+        usePlayerStore.setState((state) => {
+          if (state.currentTrack && state.currentTrack.id === currentTrack.id) {
+            return {
+              currentTrack: {
+                ...state.currentTrack,
+                coverArtUrl: url
+              }
+            };
+          }
+          return {};
+        });
+      }
+    });
+  }, [currentTrack?.id]);
+
   // Real-time album cover ambient colors state
   const [ambientColors, setAmbientColors] = useState<string[]>([
-    'rgb(156, 39, 176)', // default purple
-    'rgb(0, 188, 212)',   // default cyan
-    'rgb(233, 30, 99)'    // default pink
+    'rgb(30, 30, 35)',
+    'rgb(15, 15, 20)',
+    'rgb(5, 5, 5)'
   ]);
 
   // Dynamic ambient color extractor
   useEffect(() => {
     if (currentTrack?.coverArtUrl) {
-      const fullUrl = currentTrack.coverArtUrl.startsWith('http')
-        ? currentTrack.coverArtUrl
-        : `${api.baseUrl}${currentTrack.coverArtUrl}`;
-      
+      const fullUrl = api.coverUrl(currentTrack.coverArtUrl)!;
       const proxyUrl = `${api.baseUrl}/api/proxy-image?url=${encodeURIComponent(fullUrl)}`;
       
       extractColorsFromImage(proxyUrl).then(colors => {
@@ -450,6 +538,36 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       });
     }
   }, [currentTrack?.coverArtUrl]);
+
+  const remainingTime = duration - currentTime;
+  
+  const formatRemainingTime = (time: number) => {
+    if (isNaN(time) || time < 0) return '-0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `-${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatCurrentTime = (time: number) => {
+    if (isNaN(time) || time < 0) return '0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isFav = currentTrack ? favorites.includes(currentTrack.id) : false;
+
+  const handleFavToggle = async () => {
+    if (currentTrack) {
+      await toggleFavorite(currentTrack.id);
+    }
+  };
+
+  const handleRepeatClick = () => {
+    if (repeat === 'off') setRepeat('all');
+    else if (repeat === 'all') setRepeat('one');
+    else setRepeat('off');
+  };
 
   // LRC Sync Creator State
   const [isSyncMode, setIsSyncMode] = useState(false);
@@ -466,6 +584,14 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const syncActiveLineRef = useRef<HTMLDivElement>(null);
   
   const lastTrackIdRef = useRef<string | null>(null);
+
+  // Animated ambient pulsing background refs
+  const ambientContainerRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const blob1Ref = useRef<HTMLDivElement>(null);
+  const blob2Ref = useRef<HTMLDivElement>(null);
+  const blob3Ref = useRef<HTMLDivElement>(null);
+  const smoothedBassRef = useRef(0);
 
   // Throttled active line index state (updated from RAF loop only on change)
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
@@ -489,7 +615,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         
         gsap.to(container, {
           scrollTop: Math.max(0, scrollTarget),
-          duration: 0.65,
+          duration: 0.35,
           ease: 'power3.out',
           overwrite: 'auto'
         });
@@ -513,7 +639,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         
         gsap.to(container, {
           scrollTop: Math.max(0, scrollTarget),
-          duration: 0.9,
+          duration: 0.45,
           ease: 'power4.out', // Custom exponential easeOut curve for weighted fluid scrolls
           overwrite: 'auto'
         });
@@ -554,12 +680,12 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       const rawTime = timeStore.getCurrentTime();
       const now = performance.now();
       
-      if (rawTime !== lastTimeVal) {
+      if (rawTime !== lastTimeVal || isBuffering) {
         lastTimeVal = rawTime;
         lastPerfVal = now;
       }
       
-      const elapsed = isPlaying ? (now - lastPerfVal) / 1000 : 0;
+      const elapsed = (isPlaying && !isBuffering) ? (now - lastPerfVal) / 1000 : 0;
       const smoothTime = rawTime + elapsed * playbackSpeed;
       // Add visual anticipation offset from user settings (aligns visual wipe with physical hardware latency)
       const timeMs = smoothTime * 1000 + syncOffset;
@@ -635,12 +761,54 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         }
       });
 
+      // 3. Audio analysis & ambient pulsing animation
+      try {
+        const analyser = getAnalyser();
+        if (analyser && isPlaying && isFullscreen) {
+          const bufferLength = analyser.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+          analyser.getByteFrequencyData(dataArray);
+
+          // Sub-bass and Bass bins (Bins 0 to 4 covers ~0Hz to ~750Hz with 256 fftSize/48kHz sampleRate)
+          const averageBass = (dataArray[0] * 1.0 + dataArray[1] * 0.85 + dataArray[2] * 0.6 + dataArray[3] * 0.35) / 2.8;
+          const bassPercent = averageBass / 255.0;
+
+          // Smooth using linear interpolation (exponential decay) for clean/soothing easing
+          smoothedBassRef.current = smoothedBassRef.current * 0.72 + bassPercent * 0.28;
+
+          // Apply scale to container and opacity changes to backdrop
+          const scaleVal = 1.0 + smoothedBassRef.current * 0.12;
+          const opacityVal = 0.65 - smoothedBassRef.current * 0.15;
+
+          if (ambientContainerRef.current) {
+            ambientContainerRef.current.style.transform = `scale(${scaleVal})`;
+          }
+          if (backdropRef.current) {
+            backdropRef.current.style.background = `rgba(0, 0, 0, ${opacityVal})`;
+          }
+        } else {
+          // Reset when not playing/full screen to standard values
+          smoothedBassRef.current = smoothedBassRef.current * 0.72;
+          const scaleVal = 1.0 + smoothedBassRef.current * 0.12;
+          const opacityVal = 0.65 - smoothedBassRef.current * 0.15;
+
+          if (ambientContainerRef.current) {
+            ambientContainerRef.current.style.transform = `scale(${scaleVal})`;
+          }
+          if (backdropRef.current) {
+            backdropRef.current.style.background = `rgba(0, 0, 0, ${opacityVal})`;
+          }
+        }
+      } catch (err) {
+        console.error('Ambient pulsing animation tick failed:', err);
+      }
+
       rafId = requestAnimationFrame(tick);
     };
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isPlaying, syncedLines, playbackSpeed]);
+  }, [isPlaying, syncedLines, playbackSpeed, isFullscreen, syncOffset, isBuffering]);
 
   // Fetch lyrics when track changes
   const fetchLyrics = useCallback(async () => {
@@ -758,7 +926,10 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   };
 
   const handleLineClick = (time: number) => {
-    seek(time);
+    console.log('[LyricsPanel] Clicked line at time:', time);
+    if (typeof time === 'number' && !isNaN(time)) {
+      seek(time);
+    }
   };
 
   // --- LRC Sync Creator Logic ---
@@ -963,7 +1134,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                           }`}
                           style={{ fontSize: isActive ? `${fontSize}px` : `${fontSize - 2}px` }}
                         >
-                          {line.words && line.words.length > 0 ? (
+                          {line.words && line.words.length > 0 && wordHighlightEnabled ? (
                             <span className="inline-block transition-all duration-300">
                               {line.words.map((wordInfo, wIdx) => (
                                 <React.Fragment key={wIdx}>
@@ -1056,325 +1227,481 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       )}
 
       {/* Full-Screen Immersive Karaoke / Sync Creator Mode */}
-      <AnimatePresence>
-        {isFullscreen && (
+      <AnimatePresence>        {isFullscreen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[100] flex flex-col bg-black/95 text-white"
+            className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
           >
-            {/* Immersive blurred cover art and floating fluid blobs backdrop */}
-            {currentTrack?.coverArtUrl && (
-              <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                {/* Base cover art blur */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center animate-rotate-ambient"
-                  style={{
-                    backgroundImage: `url(${currentTrack.coverArtUrl})`,
-                    filter: 'blur(110px) saturate(2.2) brightness(0.22)',
-                  }}
-                />
-                {/* Floating liquid primary blob */}
-                <div
-                  className="absolute w-[80vw] h-[80vw] rounded-full mix-blend-screen opacity-[0.35] filter blur-[120px] animate-float-blob-1"
-                  style={{
-                    background: `radial-gradient(circle, ${ambientColors[0]} 0%, transparent 70%)`,
-                    top: '-20%',
-                    left: '-20%',
-                  }}
-                />
-                {/* Floating liquid cyan blob */}
-                <div
-                  className="absolute w-[70vw] h-[70vw] rounded-full mix-blend-screen opacity-[0.3] filter blur-[100px] animate-float-blob-2"
-                  style={{
-                    background: `radial-gradient(circle, ${ambientColors[1]} 0%, transparent 70%)`,
-                    bottom: '-10%',
-                    right: '-10%',
-                  }}
-                />
-                {/* Floating liquid pink blob */}
-                <div
-                  className="absolute w-[65vw] h-[65vw] rounded-full mix-blend-screen opacity-[0.25] filter blur-[110px] animate-float-blob-3"
-                  style={{
-                    background: `radial-gradient(circle, ${ambientColors[2]} 0%, transparent 70%)`,
-                    top: '30%',
-                    left: '40%',
-                  }}
-                />
-              </div>
-            )}
+            {/* Smooth dynamic radial gradient backdrop centered behind the album art */}
+            <div 
+              className="absolute inset-0 transition-all duration-1000 ease-in-out z-0 pointer-events-none"
+              style={{
+                background: ambientColors && ambientColors.length >= 2 
+                  ? `radial-gradient(circle at 25% 50%, ${ambientColors[0]} 0%, ${ambientColors[1]} 55%, ${ambientColors[2] || '#000'} 100%)`
+                  : 'linear-gradient(135deg, #18181b 0%, #09090b 100%)',
+                filter: 'brightness(0.35) saturate(1.8)',
+                opacity: 1.0,
+              }}
+            />
 
-            {/* Header / controls bar */}
-            <div className="relative z-10 flex justify-between items-center px-8 py-6 border-b border-white/5 backdrop-blur-md bg-black/30">
-              <div className="flex items-center gap-4">
-                {currentTrack?.coverArtUrl && (
-                  <img
-                    src={currentTrack.coverArtUrl}
-                    alt=""
-                    className="w-12 h-12 rounded-lg object-cover shadow-lg animate-[spin_20s_linear_infinite]"
-                    style={{ animationPlayState: isPlaying ? 'running' : 'paused' }}
-                  />
-                )}
-                <div>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{currentTrack?.title}</Typography>
-                  <Typography variant="caption" sx={{ color: 'neutral.400' }}>{currentTrack?.artist}</Typography>
-                </div>
-              </div>
-
-              {/* Central mode indicators */}
-              {isSyncMode && (
-                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
-                  <span>Lyrics Sync Creator Mode</span>
-                </div>
-              )}
-
-              {/* Central Settings Controls */}
-              {!isSyncMode && (
-                <div className="flex items-center gap-6">
-                  {/* Font Size Controls */}
-                  <div className="flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-                    <Tooltip title="Decrease Text Size">
-                      <IconButton onClick={() => setFontSize(prev => Math.max(16, prev - 2))} size="small" sx={{ color: 'white', p: 0.5 }}>
-                        <ZoomOut size={15} />
-                      </IconButton>
-                    </Tooltip>
-                    <Typography variant="caption" sx={{ color: 'neutral.300', fontWeight: 600, minWidth: 36, textAlign: 'center', fontSize: 11 }}>
-                      {fontSize}px
-                    </Typography>
-                    <Tooltip title="Increase Text Size">
-                      <IconButton onClick={() => setFontSize(prev => Math.min(40, prev + 2))} size="small" sx={{ color: 'white', p: 0.5 }}>
-                        <ZoomIn size={15} />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-
-                  {/* Sync Offset Controls */}
-                  <div className="flex items-center gap-3 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-                    <Tooltip title="Shift Highlights Earlier">
-                      <button 
-                        onClick={() => setSyncOffset(prev => Math.max(-400, prev - 10))} 
-                        className="text-white hover:text-neutral-300 font-bold px-1.5 py-0.5 rounded hover:bg-white/10 text-xs transition-colors"
-                      >
-                        -10ms
-                      </button>
-                    </Tooltip>
-                    <Typography variant="caption" sx={{ color: 'neutral.300', fontWeight: 600, minWidth: 84, textAlign: 'center', fontSize: 11 }}>
-                      Offset: {syncOffset >= 0 ? `+${syncOffset}` : syncOffset}ms
-                    </Typography>
-                    <Tooltip title="Shift Highlights Later">
-                      <button 
-                        onClick={() => setSyncOffset(prev => Math.min(400, prev + 10))} 
-                        className="text-white hover:text-neutral-300 font-bold px-1.5 py-0.5 rounded hover:bg-white/10 text-xs transition-colors"
-                      >
-                        +10ms
-                      </button>
-                    </Tooltip>
-                  </div>
-
-                  {/* Word Sync Toggle (only show if song has no native word tags) */}
-                  {!hasNativeWordTags && (
-                    <button
-                      onClick={() => setEstimateWordSync(prev => !prev)}
-                      className={`px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all ${
-                        estimateWordSync
-                          ? 'bg-white text-black border-white hover:bg-neutral-200'
-                          : 'bg-white/5 text-neutral-300 border-white/10 hover:bg-white/10'
-                      }`}
-                    >
-                      {estimateWordSync ? 'Word Sync: Estimated' : 'Word Sync: Line Only'}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <IconButton onClick={() => { setIsFullscreen(false); setIsSyncMode(false); }} sx={{ color: 'white', bgcolor: 'white/10', '&:hover': { bgcolor: 'white/20' } }}>
-                  <Minimize2 size={18} />
-                </IconButton>
-                <IconButton onClick={() => { setIsFullscreen(false); setIsSyncMode(false); onClose(); }} sx={{ color: 'white', bgcolor: 'white/10', '&:hover': { bgcolor: 'white/20' } }}>
-                  <X size={18} />
-                </IconButton>
-              </div>
+            {/* Dreamy Animated Floating Blobs for Soothing Ambient Pulsing */}
+            <div 
+              ref={ambientContainerRef}
+              className="absolute inset-0 overflow-hidden pointer-events-none z-0"
+              style={{ transformOrigin: 'center center' }}
+            >
+              {/* Blob 1 */}
+              <div 
+                ref={blob1Ref}
+                className="absolute w-[500px] h-[500px] rounded-full filter blur-[90px] opacity-[0.38] animate-float-blob-1"
+                style={{
+                  left: '10%',
+                  top: '15%',
+                  background: ambientColors && ambientColors.length > 0 ? ambientColors[0] : 'rgba(168, 85, 247, 0.4)',
+                  transition: 'background 1.5s ease-in-out',
+                }}
+              />
+              {/* Blob 2 */}
+              <div 
+                ref={blob2Ref}
+                className="absolute w-[550px] h-[550px] rounded-full filter blur-[110px] opacity-[0.32] animate-float-blob-2"
+                style={{
+                  right: '12%',
+                  bottom: '10%',
+                  background: ambientColors && ambientColors.length > 1 ? ambientColors[1] : 'rgba(236, 72, 153, 0.3)',
+                  transition: 'background 1.5s ease-in-out',
+                }}
+              />
+              {/* Blob 3 */}
+              <div 
+                ref={blob3Ref}
+                className="absolute w-[450px] h-[450px] rounded-full filter blur-[80px] opacity-[0.26] animate-float-blob-3"
+                style={{
+                  left: '38%',
+                  top: '45%',
+                  background: ambientColors && ambientColors.length > 2 ? ambientColors[2] : 'rgba(59, 130, 246, 0.25)',
+                  transition: 'background 1.5s ease-in-out',
+                }}
+              />
             </div>
 
-            {/* Immersive Lyrics Scrolling View */}
+            {/* Dynamic Backdrop Blur & Dim Overlay that pulses to the beat */}
+            <div 
+              ref={backdropRef}
+              className="absolute inset-0 backdrop-blur-[110px] pointer-events-none z-0"
+              style={{
+                background: 'rgba(0, 0, 0, 0.65)',
+              }}
+            />
+
+            {/* Close Button top-left */}
+            <button
+              onClick={() => { setIsFullscreen(false); setIsSyncMode(false); }}
+              className="absolute top-6 left-6 z-30 p-3 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-neutral-400 hover:text-white"
+              title="Close Fullscreen"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Immersive Lyrics Scrolling View (Standard Split Screen) */}
             {!isSyncMode && (
-              <div
-                ref={fullLyricsContainerRef}
-                className="relative z-10 flex-1 overflow-y-auto px-6 md:px-24 py-10 mask-fade-gradient bg-transparent no-scrollbar"
-              >
-                <div
-                  ref={scrollWrapperRef}
-                  className="w-full"
-                >
-                  <div style={{ height: '35vh' }} />
-                  {syncedLines.length > 0 ? (
-                    syncedLines.map((line, idx) => {
-                      const isActive = idx === activeLineIndex;
-                      return (
-                        <motion.div
-                          key={idx}
-                          ref={isActive ? activeFullLineRef : undefined}
-                          onClick={() => handleLineClick(line.time)}
-                          data-line-index={idx}
-                          className={`lyrics-line py-4 px-8 cursor-pointer transition-all duration-500 text-center select-none my-6 flex items-center justify-center origin-center ${
-                            isActive ? 'active active-line' : ''
+              <div className="relative z-10 flex-1 flex flex-col md:flex-row h-full w-full overflow-hidden">
+                {/* Left Side: Large Album Cover & Playback Controls */}
+                <div className="w-full md:w-[45%] flex flex-col justify-center items-center px-8 md:px-16 py-8 md:py-16 select-none h-full bg-transparent">
+                  <div className="w-full max-w-[360px] flex flex-col gap-6">
+                    
+                    {/* Album Cover Art */}
+                    {currentTrack?.coverArtUrl ? (
+                      <img
+                        src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) || ''}
+                        alt={currentTrack.title}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {
+                            target.src = `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`;
+                          }
+                        }}
+                        className="w-full aspect-square rounded-2xl object-cover shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10"
+                      />
+                    ) : (
+                      <div className="w-full aspect-square rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+                        <Music className="w-20 h-20 text-neutral-700" />
+                      </div>
+                    )}
+
+                    {/* Metadata Row */}
+                    <div className="flex justify-between items-center mt-2 w-full">
+                      <div className="flex flex-col min-w-0 pr-4">
+                        <h2 className="text-xl font-bold tracking-tight truncate text-white">
+                          {currentTrack?.title}
+                        </h2>
+                        <p className="text-sm text-neutral-400 truncate mt-1">
+                          {currentTrack?.artist} {currentTrack?.album ? `— ${currentTrack.album}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleFavToggle}
+                          className={`p-2 rounded-full transition-all active:scale-90 ${
+                            isFav ? 'text-primary' : 'text-neutral-400 hover:text-white'
                           }`}
-                          style={{
-                            fontSize: isActive ? `${fontSize + 22}px` : `${fontSize + 8}px`,
-                            lineHeight: 1.4,
-                            opacity: isActive ? 1.0 : 0.40,
-                            filter: isActive ? 'blur(0px) drop-shadow(0 0 12px rgba(255,255,255,0.45))' : 'blur(1.5px)',
-                            transform: isActive ? 'scale(1.05)' : 'scale(0.93)',
-                            color: 'white',
-                            fontWeight: isActive ? 900 : 700,
-                            letterSpacing: isActive ? '0.02em' : 'normal'
-                          }}
+                          title={isFav ? "Remove from Favorites" : "Add to Favorites"}
                         >
-                          {line.words && line.words.length > 0 ? (
-                            <span className="inline-block transition-all duration-300">
-                              {line.words.map((wordInfo, wIdx) => (
-                                <React.Fragment key={wIdx}>
-                                  <span
-                                    className="karaoke-word"
-                                    data-start={wordInfo.start}
-                                    data-end={wordInfo.end}
-                                  >
-                                    {wordInfo.word}
-                                  </span>
-                                  {wIdx < line.words!.length - 1 && ' '}
-                                </React.Fragment>
-                              ))}
-                            </span>
-                          ) : (
-                            line.text
-                          )}
-                        </motion.div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center text-neutral-400 font-semibold mt-20">
-                      {loading ? 'Fetching lyrics...' : plainLyrics || 'No synced lyrics available for this track.'}
+                          <Star className="w-5 h-5" fill={isFav ? "currentColor" : "none"} />
+                        </button>
+                        <button
+                          onClick={handleStartEdit}
+                          className="p-2 rounded-full text-neutral-400 hover:text-white transition-all active:scale-90"
+                          title="Edit Lyrics"
+                        >
+                          <MoreHorizontal className="w-5 h-5" />
+                        </button>
+                      </div>
                     </div>
-                  )}
-                  <div style={{ height: '35vh' }} />
+
+                    {/* Progress Slider */}
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="relative group flex items-center h-4 w-full">
+                        <input
+                          type="range"
+                          min="0"
+                          max={duration || 100}
+                          value={currentTime}
+                          onChange={(e) => seek(parseFloat(e.target.value))}
+                          className="w-full h-1 rounded-full cursor-pointer appearance-none focus:outline-none"
+                          style={{
+                            background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${
+                              duration > 0 ? (currentTime / duration) * 100 : 0
+                            }%, rgba(255,255,255,0.15) ${
+                              duration > 0 ? (currentTime / duration) * 100 : 0
+                            }%, rgba(255,255,255,0.15) 100%)`
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-neutral-400 font-mono select-none px-0.5">
+                        <span>{formatCurrentTime(currentTime)}</span>
+                        <span>{formatRemainingTime(remainingTime)}</span>
+                      </div>
+                    </div>
+
+                    {/* Playback Control Deck */}
+                    <div className="flex items-center justify-between px-2 w-full">
+                      <button
+                        onClick={toggleShuffle}
+                        className={`p-2 transition-colors active:scale-90 ${
+                          shuffle ? 'text-primary' : 'text-neutral-400 hover:text-white'
+                        }`}
+                        aria-label="Toggle Shuffle"
+                      >
+                        <Shuffle className="w-5 h-5" />
+                      </button>
+
+                      <button
+                        onClick={prevTrack}
+                        className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
+                        aria-label="Previous Track"
+                      >
+                        <SkipBack className="w-6 h-6 fill-current" />
+                      </button>
+
+                      <button
+                        onClick={() => setPlaying(!isPlaying)}
+                        className="p-4 rounded-full bg-white text-black active:scale-90 transition-all shadow-lg flex items-center justify-center hover:bg-neutral-100"
+                        aria-label={isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-6 h-6 fill-black text-black" />
+                        ) : (
+                          <Play className="w-6 h-6 fill-black text-black ml-0.5" />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => nextTrack(true)}
+                        className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
+                        aria-label="Next Track"
+                      >
+                        <SkipForward className="w-6 h-6 fill-current" />
+                      </button>
+
+                      <button
+                        onClick={handleRepeatClick}
+                        className={`p-2 transition-colors active:scale-90 ${
+                          repeat !== 'off' ? 'text-primary' : 'text-neutral-400 hover:text-white'
+                        }`}
+                        aria-label={`Toggle Repeat, currently ${repeat}`}
+                      >
+                        {repeat === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
+                      </button>
+                    </div>
+
+                    {/* Volume Slider */}
+                    <div className="flex items-center gap-3 px-1 w-full mt-2">
+                      <button
+                        onClick={toggleMute}
+                        className="text-neutral-400 hover:text-white transition-colors"
+                        aria-label={isMuted ? 'Unmute' : 'Mute'}
+                      >
+                        {isMuted || volume === 0 ? (
+                          <VolumeX className="w-4 h-4" />
+                        ) : (
+                          <Volume2 className="w-4 h-4" />
+                        )}
+                      </button>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={volume}
+                        onChange={(e) => setVolume(parseFloat(e.target.value))}
+                        className="flex-1 h-1 rounded-full cursor-pointer appearance-none"
+                        style={{
+                          background: `linear-gradient(to right, #fff 0%, #fff ${volume * 100}%, rgba(255,255,255,0.15) ${volume * 100}%, rgba(255,255,255,0.15) 100%)`
+                        }}
+                      />
+                    </div>
+
+                    {/* Highlight Mode Toggle Switcher */}
+                    <div className="flex justify-center mt-6 w-full">
+                      <button
+                        onClick={() => setWordHighlightEnabled(prev => !prev)}
+                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-all active:scale-95 shadow-md"
+                        title="Toggle between word-by-word and line-by-line highlights"
+                      >
+                        {wordHighlightEnabled ? 'Highlighting: Word-by-Word' : 'Highlighting: Line-by-Line'}
+                      </button>
+                    </div>
+
+                  </div>
                 </div>
+
+                {/* Right Side: Interactive Scrolling Lyrics */}
+                <div className="w-full md:w-[55%] flex flex-col relative overflow-hidden h-full">
+                  <div
+                    ref={fullLyricsContainerRef}
+                    className="flex-1 overflow-y-auto px-6 md:px-16 py-20 mask-fade-gradient bg-transparent no-scrollbar scroll-smooth"
+                  >
+                    <div ref={scrollWrapperRef} className="w-full text-left">
+                      <div style={{ height: '35vh' }} />
+                      {syncedLines.length > 0 ? (
+                        syncedLines.map((line, idx) => {
+                          const isActive = idx === activeLineIndex;
+                          return (
+                            <motion.div
+                              key={idx}
+                              ref={isActive ? activeFullLineRef : undefined}
+                              onClick={() => handleLineClick(line.time)}
+                              data-line-index={idx}
+                              className={`lyrics-line py-4 px-2 cursor-pointer transition-all duration-500 text-left select-none my-6 flex items-start justify-start origin-left ${
+                                isActive ? 'active active-line' : ''
+                              }`}
+                              style={{
+                                fontSize: isActive ? `${fontSize + 12}px` : `${fontSize + 2}px`,
+                                lineHeight: 1.5,
+                                opacity: isActive ? 1.0 : 0.30,
+                                transform: isActive ? 'scale(1.02)' : 'none',
+                                color: 'white',
+                                fontWeight: isActive ? 800 : 700,
+                                letterSpacing: '-0.02em'
+                              }}
+                            >
+                              {line.words && line.words.length > 0 && wordHighlightEnabled ? (
+                                <span className="inline-block transition-all duration-300">
+                                  {line.words.map((wordInfo, wIdx) => (
+                                    <React.Fragment key={wIdx}>
+                                      <span
+                                        className="karaoke-word inline-block"
+                                        data-start={wordInfo.start}
+                                        data-end={wordInfo.end}
+                                        style={{ transition: 'color 0.25s ease' }}
+                                      >
+                                        {wordInfo.word}
+                                      </span>
+                                      {wIdx < line.words!.length - 1 && ' '}
+                                    </React.Fragment>
+                                  ))}
+                                </span>
+                              ) : (
+                                line.text
+                              )}
+                            </motion.div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-left text-neutral-400 font-semibold mt-20 text-lg px-2">
+                          {loading ? 'Fetching lyrics...' : plainLyrics || 'No synced lyrics available for this track.'}
+                        </div>
+                      )}
+                      <div style={{ height: '35vh' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Speech Bubble Icon in bottom-right for Sync Creator Toggling */}
+                <button
+                  onClick={startLyricsSync}
+                  className="absolute bottom-6 right-8 z-30 p-3.5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-neutral-400 hover:text-white"
+                  title="Lyrics Sync Creator"
+                >
+                  <MessageSquare size={20} />
+                </button>
               </div>
             )}
 
-            {/* LRC Sync Creator Active Panel */}
+            {/* LRC Sync Creator Mode Layout */}
             {isSyncMode && (
-              <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden">
-                {/* Left side: Timeline list of lyrics */}
-                <div 
-                  ref={syncContainerRef}
-                  className="flex-1 overflow-y-auto px-6 md:px-12 py-10 scroll-smooth border-r border-white/5"
-                >
-                  <div className="h-48" />
-                  {syncLines.map((line, idx) => {
-                    const isSynced = line.time !== null;
-                    const isCurrent = idx === syncIndex;
-                    return (
-                      <div
-                        key={idx}
-                        ref={isCurrent ? syncActiveLineRef : undefined}
-                        className={`py-3.5 px-6 my-2 rounded-xl transition-all duration-300 flex justify-between items-center ${
-                          isCurrent
-                            ? 'bg-red-500/20 text-white font-extrabold border border-red-500/30 scale-102'
-                            : isSynced
-                              ? 'text-neutral-400 font-medium opacity-50 bg-emerald-500/5'
-                              : 'text-neutral-500 font-normal opacity-30'
-                        }`}
-                      >
-                        <span className="text-sm md:text-base">{line.text}</span>
-                        {isSynced && (
-                          <span className="text-xs font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            {formatLrcTime(line.time!).replace('[', '').replace(']', '')}
-                          </span>
-                        )}
-                        {isCurrent && (
-                          <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider animate-pulse">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div className="h-64" />
+              <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden">
+                {/* Clean Custom Header specifically for Sync Creator Mode */}
+                <div className="flex justify-between items-center px-8 py-5 border-b border-white/5 backdrop-blur-md bg-black/30">
+                  <div className="flex items-center gap-4">
+                    {currentTrack?.coverArtUrl && (
+                      <img
+                        src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) || ''}
+                        alt=""
+                        className="w-12 h-12 rounded-lg object-cover shadow-lg animate-[spin_20s_linear_infinite]"
+                        style={{ animationPlayState: isPlaying ? 'running' : 'paused' }}
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {
+                            target.src = `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`;
+                          }
+                        }}
+                      />
+                    )}
+                    <div>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{currentTrack?.title}</Typography>
+                      <Typography variant="caption" sx={{ color: 'neutral.400' }}>{currentTrack?.artist}</Typography>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
+                    <span>Lyrics Sync Creator Mode</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <IconButton onClick={() => { setIsFullscreen(false); setIsSyncMode(false); }} sx={{ color: 'white', bgcolor: 'white/10', '&:hover': { bgcolor: 'white/20' } }}>
+                      <Minimize2 size={18} />
+                    </IconButton>
+                    <IconButton onClick={() => { setIsFullscreen(false); setIsSyncMode(false); onClose(); }} sx={{ color: 'white', bgcolor: 'white/10', '&:hover': { bgcolor: 'white/20' } }}>
+                      <X size={18} />
+                    </IconButton>
+                  </div>
                 </div>
 
-                {/* Right side: Control buttons */}
-                <div className="w-full md:w-80 p-6 flex flex-col justify-center gap-4 bg-black/40 backdrop-blur-md shrink-0">
-                  <div className="text-center mb-6">
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
-                      Interactive Sync
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'neutral-400', display: 'block', mt: 1 }}>
-                      Press <strong>Space</strong> or <strong>Enter</strong> to sync the active line when it is sung.
-                    </Typography>
-                  </div>
-
-                  {/* Playback indicator */}
-                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono">
-                    <span className="text-neutral-400">Audio Track:</span>
-                    <button 
-                      onClick={() => setPlaying(!isPlaying)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white text-black font-semibold hover:bg-neutral-200 transition-all text-[11px]"
-                    >
-                      {isPlaying ? <Pause size={10} /> : <Play size={10} />}
-                      {isPlaying ? 'Pause' : 'Play'}
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={syncCurrentLine}
-                    className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm transition-all shadow-lg shadow-red-600/20 active:scale-97"
+                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                  {/* Left side: Timeline list of lyrics */}
+                  <div 
+                    ref={syncContainerRef}
+                    className="flex-1 overflow-y-auto px-6 md:px-12 py-10 scroll-smooth border-r border-white/5"
                   >
-                    Sync Current Line (Space)
-                  </button>
+                    <div className="h-48" />
+                    {syncLines.map((line, idx) => {
+                      const isSynced = line.time !== null;
+                      const isCurrent = idx === syncIndex;
+                      return (
+                        <div
+                          key={idx}
+                          ref={isCurrent ? syncActiveLineRef : undefined}
+                          className={`py-3.5 px-6 my-2 rounded-xl transition-all duration-300 flex justify-between items-center ${
+                            isCurrent
+                              ? 'bg-red-500/20 text-white font-extrabold border border-red-500/30 scale-102'
+                              : isSynced
+                                ? 'text-neutral-400 font-medium opacity-50 bg-emerald-500/5'
+                                  : 'text-neutral-500 font-normal opacity-30'
+                          }`}
+                        >
+                          <span className="text-sm md:text-base">{line.text}</span>
+                          {isSynced && (
+                            <span className="text-xs font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              {formatLrcTime(line.time!).replace('[', '').replace(']', '')}
+                            </span>
+                          )}
+                          {isCurrent && (
+                            <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider animate-pulse">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <div className="h-64" />
+                  </div>
 
-                  <div className="flex gap-2">
+                  {/* Right side: Control buttons */}
+                  <div className="w-full md:w-80 p-6 flex flex-col justify-center gap-4 bg-black/40 backdrop-blur-md shrink-0">
+                    <div className="text-center mb-6">
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
+                        Interactive Sync
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'neutral-400', display: 'block', mt: 1 }}>
+                        Press <strong>Space</strong> or <strong>Enter</strong> to sync the active line when it is sung.
+                      </Typography>
+                    </div>
+
+                    {/* Playback indicator */}
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono">
+                      <span className="text-neutral-400">Audio Track:</span>
+                      <button 
+                        onClick={() => setPlaying(!isPlaying)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-white text-black font-semibold hover:bg-neutral-200 transition-all text-[11px]"
+                      >
+                        {isPlaying ? <Pause size={10} /> : <Play size={10} />}
+                        {isPlaying ? 'Pause' : 'Play'}
+                      </button>
+                    </div>
+
                     <button
-                      onClick={undoLastSync}
-                      disabled={syncIndex === 0}
-                      className="flex-1 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      onClick={syncCurrentLine}
+                      className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-sm transition-all shadow-lg shadow-red-600/20 active:scale-97"
                     >
-                      Undo (Ctrl+Z)
+                      Sync Current Line (Space)
                     </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={undoLastSync}
+                        disabled={syncIndex === 0}
+                        className="flex-1 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        Undo (Ctrl+Z)
+                      </button>
+                      <button
+                        onClick={skipCurrentLine}
+                        disabled={syncIndex >= syncLines.length}
+                        className="flex-1 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-colors disabled:opacity-30"
+                      >
+                        Skip Line
+                      </button>
+                    </div>
+
+                    <hr className="border-white/5 my-2" />
+
                     <button
-                      onClick={skipCurrentLine}
-                      disabled={syncIndex >= syncLines.length}
-                      className="flex-1 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-colors disabled:opacity-30"
+                      onClick={saveSyncedLyrics}
+                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-lg active:scale-97"
                     >
-                      Skip Line
+                      Save & Apply Synced LRC
+                    </button>
+                    
+                    <button
+                      onClick={resetSync}
+                      className="w-full py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-colors"
+                    >
+                      Reset Timestamps
+                    </button>
+
+                    <button
+                      onClick={() => { setIsSyncMode(false); setIsFullscreen(false); }}
+                      className="w-full py-2.5 rounded-xl bg-neutral-900 border border-red-900/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors"
+                    >
+                      Exit Creator Mode
                     </button>
                   </div>
-
-                  <hr className="border-white/5 my-2" />
-
-                  <button
-                    onClick={saveSyncedLyrics}
-                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-lg active:scale-97"
-                  >
-                    Save & Apply Synced LRC
-                  </button>
-                  
-                  <button
-                    onClick={resetSync}
-                    className="w-full py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-colors"
-                  >
-                    Reset Timestamps
-                  </button>
-
-                  <button
-                    onClick={() => { setIsSyncMode(false); setIsFullscreen(false); }}
-                    className="w-full py-2.5 rounded-xl bg-neutral-900 border border-red-900/30 text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors"
-                  >
-                    Exit Creator Mode
-                  </button>
                 </div>
               </div>
             )}

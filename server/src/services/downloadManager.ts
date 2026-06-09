@@ -3,9 +3,8 @@ import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { ytdlpPool } from './processPool';
-import { isValidVideoId } from './youtubeService';
+import { isValidVideoId, YT_DLP_PATH } from './youtubeService';
 
-const YT_DLP_PATH = path.resolve(__dirname, '..', '..', 'yt-dlp.exe');
 const TRACKS_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'tracks');
 
 export interface DownloadJob {
@@ -144,7 +143,22 @@ class DownloadManager extends EventEmitter {
 
     const proc = this.activeProcesses.get(jobId);
     if (proc) {
-      proc.kill('SIGTERM');
+      try {
+        proc.kill('SIGTERM');
+        const killTimeout = setTimeout(() => {
+          if (proc.exitCode === null && proc.signalCode === null) {
+            console.warn(`[DownloadManager] Process for job ${jobId} did not exit after SIGTERM. Escalate to SIGKILL.`);
+            try {
+              proc.kill('SIGKILL');
+            } catch {
+              // Ignore if already dead
+            }
+          }
+        }, 2000);
+        killTimeout.unref?.();
+      } catch {
+        // Process may already be dead
+      }
     }
 
     job.status = 'failed';

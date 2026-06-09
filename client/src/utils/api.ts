@@ -146,9 +146,16 @@ export const api = {
   },
 
   /** Server cover art URL */
-  coverUrl(path: string): string {
-    if (path.startsWith('http')) return path;
-    return `${API_BASE}${path}`;
+  coverUrl(path: string | null | undefined, videoId?: string): string | null {
+    if (!path) {
+      if (videoId) {
+        return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+      }
+      return null;
+    }
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
+    if (path.startsWith('//')) return `https:${path}`;
+    return `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
   },
 
   /** Generic POST helper */

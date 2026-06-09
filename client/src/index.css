@@ -8,6 +8,12 @@
   
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+  
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
   
   --color-accent: var(--accent);
   --color-border-primary: var(--border-primary);
@@ -20,10 +26,16 @@
   --bg-surface: #1a1a1a;
   
   --text-primary: #ffffff;
-  --text-secondary: #737373;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --text-disabled: #525252;
   
   --accent: #ffffff;
   --border-primary: #262626;
+
+  --primary: var(--primary-color, #a855f7);
+  --primary-light: var(--primary-light-color, #c084fc);
+  --primary-dark: var(--primary-dark-color, #7c3aed);
 }
 
 :root.light {
@@ -32,11 +44,17 @@
   --bg-tertiary: #f5f5f5;
   --bg-surface: #eeeeee;
   
-  --text-primary: #000000;
-  --text-secondary: #737373;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-tertiary: #737373;
+  --text-disabled: #a3a3a3;
   
   --accent: #000000;
   --border-primary: #e5e5e5;
+
+  --primary: var(--primary-color, #7c3aed);
+  --primary-light: var(--primary-light-color, #a855f7);
+  --primary-dark: var(--primary-dark-color, #6d28d9);
 }
 
 /* ── Global Reset ── */
@@ -348,19 +366,19 @@ input[type="range"]::-webkit-slider-runnable-track {
 .karaoke-word {
   position: relative;
   display: inline-block;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
   transform: scale(1.0);
   transform-origin: center;
   will-change: transform, filter;
   /* Margin to separate words naturally (breathing room for scale) */
   margin-right: 0.05em;
   
-  /* Text gradient wipe with soft feathering */
+  /* Text gradient wipe with soft feathering (Apple Music style) */
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    #ffffff var(--word-progress, 0%),
-    rgba(255, 255, 255, 0.28) var(--word-progress, 0%),
+    #ffffff calc(var(--word-progress, 0%) - 5%),
+    rgba(255, 255, 255, 0.28) calc(var(--word-progress, 0%) + 5%),
     rgba(255, 255, 255, 0.28) 100%
   );
   -webkit-background-clip: text;
@@ -382,6 +400,27 @@ input[type="range"]::-webkit-slider-runnable-track {
   color: #ffffff !important;
 }
 
+.light .karaoke-word {
+  background: linear-gradient(
+    90deg,
+    #0a0a0a 0%,
+    #0a0a0a calc(var(--word-progress, 0%) - 5%),
+    rgba(10, 10, 10, 0.28) calc(var(--word-progress, 0%) + 5%),
+    rgba(10, 10, 10, 0.28) 100%
+  );
+}
+
+.light .karaoke-word.active {
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.25)) !important;
+}
+
+.light .karaoke-word.completed {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  color: #0a0a0a !important;
+}
+
 .lyrics-line {
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
@@ -393,15 +432,15 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 /* ── Floating Blob Animations ── */
 .animate-float-blob-1 {
-  animation: float-blob-1 25s infinite alternate ease-in-out;
+  animation: float-blob-1 12s infinite alternate ease-in-out;
 }
 
 .animate-float-blob-2 {
-  animation: float-blob-2 30s infinite alternate ease-in-out;
+  animation: float-blob-2 15s infinite alternate ease-in-out;
 }
 
 .animate-float-blob-3 {
-  animation: float-blob-3 20s infinite alternate ease-in-out;
+  animation: float-blob-3 10s infinite alternate ease-in-out;
 }
 
 /* ── Hide scrollbars while keeping functionality ── */
@@ -412,5 +451,37 @@ input[type="range"]::-webkit-slider-runnable-track {
 .no-scrollbar {
   -ms-overflow-style: none !important;  /* IE and Edge */
   scrollbar-width: none !important;  /* Firefox */
+}
+
+/* ── Micro-Equalizer Animations ── */
+@keyframes bounce-bar-1 {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1.0); }
+}
+@keyframes bounce-bar-2 {
+  0%, 100% { transform: scaleY(0.2); }
+  50% { transform: scaleY(0.85); }
+}
+@keyframes bounce-bar-3 {
+  0%, 100% { transform: scaleY(0.40); }
+  50% { transform: scaleY(0.95); }
+}
+.equalizer-bar-1 {
+  animation: bounce-bar-1 1.2s infinite ease-in-out;
+  transform-origin: bottom;
+}
+.equalizer-bar-2 {
+  animation: bounce-bar-2 0.8s infinite ease-in-out;
+  transform-origin: bottom;
+}
+.equalizer-bar-3 {
+  animation: bounce-bar-3 1.0s infinite ease-in-out;
+  transform-origin: bottom;
+}
+
+/* Hide player bar when fullscreen lyrics are open */
+body.fullscreen-lyrics-active footer,
+body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
+  display: none !important;
 }
 

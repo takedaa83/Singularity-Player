@@ -2,19 +2,21 @@ import { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider, CssBaseline } from '@mui/material'
 import { BrowserRouter } from 'react-router-dom'
-import { darkTheme, lightTheme } from './theme/muiTheme'
+import { getMuiTheme } from './theme/muiTheme'
+import { useSettingsStore } from './stores/settingsStore'
 import './index.css'
 import App from './App.tsx'
 
 const DynamicThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState(
-    document.documentElement.classList.contains('light') ? lightTheme : darkTheme
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(
+    document.documentElement.classList.contains('light') ? 'light' : 'dark'
   );
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
       const isLight = document.documentElement.classList.contains('light');
-      setCurrentTheme(isLight ? lightTheme : darkTheme);
+      setThemeMode(isLight ? 'light' : 'dark');
     });
 
     observer.observe(document.documentElement, {
@@ -24,10 +26,12 @@ const DynamicThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Initial check
     const isLight = document.documentElement.classList.contains('light');
-    setCurrentTheme(isLight ? lightTheme : darkTheme);
+    setThemeMode(isLight ? 'light' : 'dark');
 
     return () => observer.disconnect();
   }, []);
+
+  const currentTheme = getMuiTheme(themeMode, accentColor);
 
   return <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>;
 };

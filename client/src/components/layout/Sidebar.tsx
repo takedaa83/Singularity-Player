@@ -18,6 +18,7 @@ interface SidebarProps {
   setShowEqualizer: (show: boolean) => void;
   refreshTrigger: number;
   triggerRefresh: () => void;
+  onUploadClick: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -28,7 +29,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   showEqualizer,
   setShowEqualizer,
   refreshTrigger,
-  triggerRefresh
+  triggerRefresh,
+  onUploadClick
 }) => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const { getAllPlaylists, savePlaylist, deletePlaylist, getAllTracks, saveTrack, getAllFavorites, toggleFavorite } = useLibraryDB();
@@ -139,7 +141,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const mainNav = [
     { id: 'home', icon: Home, label: 'Home' },
-    { id: 'search', icon: Search, label: 'Explore' },
     { id: 'library', icon: FolderHeart, label: 'Library' },
     { id: 'favorites', icon: Heart, label: 'Favorites', color: tokens.colors.accent.pink },
     { id: 'history', icon: Clock, label: 'History' },
@@ -208,6 +209,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </Typography>
           </div>
         </div>
+
+        {/* Upload Music Button */}
+        <Box sx={{ px: 1, mt: 1, mb: 0.5 }}>
+          <button
+            onClick={onUploadClick}
+            aria-label="Upload music"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
+            style={{
+              background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+              color: '#fff',
+              boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Music</span>
+          </button>
+        </Box>
 
         {/* Main Navigation */}
         <nav className="flex flex-col gap-0.5">

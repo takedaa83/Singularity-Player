@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { Play, Pause, Heart, Plus, Download, Trash2, Music, Radio } from 'lucide-react';
+import { Play, Pause, Heart, Plus, ListPlus, Download, Trash2, Music, Radio, Loader2 } from 'lucide-react';
 import { Track } from '../../types';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -30,7 +30,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   onDeleteSuccess,
   refreshTrigger
 }) => {
-  const { currentTrack, isPlaying, playTrack, addToQueue, favorites, setQueue } = usePlayerStore();
+  const { currentTrack, isPlaying, playTrack, addToQueue, playNext, favorites, setQueue, isBuffering } = usePlayerStore();
   const { toggleFavorite, deleteTrack, getAllTracks } = useLibraryDB();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,7 +61,10 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   };
 
   const handleFavoriteClick = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     try {
       const nextState = await toggleFavorite(track.id);
       toast(nextState ? 'Added to favorites' : 'Removed from favorites', 'success');
@@ -72,7 +75,10 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   };
 
   const handleCreateSimilarPlaylist = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     try {
       toast(`Generating song radio for "${track.title}"...`, 'info');
       const similarTracks = await PlaylistGenerator.generateSimilarTracks(track);
@@ -91,6 +97,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
 
   const handleDownloadClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     try {
       useDownloadStore.getState().enqueue(track);
       toast('Added to download queue', 'info');
@@ -155,161 +162,187 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   };
 
   return (
-    <div 
-      ref={cardRef}
-      onClick={isMultiSelectMode ? onToggleSelect : handlePlayClick}
-      onContextMenu={handleContextMenu}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer border select-none ${
-        isCurrent 
-          ? 'bg-white/10 border-white/30' 
-          : isSelected
-            ? 'bg-white/8 border-white/20'
-            : 'bg-transparent border-neutral-800'
-      }`}
-    >
-      {/* 1. Track Info (Art + Title/Artist) */}
-      <div className="flex items-center gap-4 truncate flex-1">
-        {/* Multi-select Checkbox OR Play indicator */}
-        {isMultiSelectMode ? (
-          <div 
-            onClick={(e) => { e.stopPropagation(); onToggleSelect?.(); }}
-            className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-              isSelected 
-                ? 'bg-white border-white text-black' 
-                : 'border-neutral-600 hover:border-white'
-            }`}
-          >
-            {isSelected && <span className="text-[10px] font-bold">✓</span>}
-          </div>
-        ) : (
-          <div className="w-6 text-center text-xs text-neutral-500 group-hover:hidden">
-            {isCurrent && isPlaying ? (
-              <div className="flex justify-center items-end gap-0.5 h-3.5 w-6">
-                <span className="w-0.5 h-3 bg-white animate-[pulse_1s_infinite_alternate]" />
-                <span className="w-0.5 h-2 bg-white animate-[pulse_0.7s_infinite_alternate]" />
-                <span className="w-0.5 h-3.5 bg-white animate-[pulse_1.2s_infinite_alternate]" />
-              </div>
-            ) : (
-              <span className="font-mono text-neutral-600">#</span>
-            )}
-          </div>
-        )}
-
-        {/* Hover play controls */}
-        {!isMultiSelectMode && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handlePlayClick(); }}
-            className="w-6 justify-center items-center hidden group-hover:flex text-neutral-400 hover:text-white"
-          >
-            {isCurrent && isPlaying ? (
-              <Pause className="w-4 h-4 fill-white" />
-            ) : (
-              <Play className="w-4 h-4 fill-white ml-0.5" />
-            )}
-          </button>
-        )}
-
-        {/* Artwork */}
-        <div className="w-11 h-11 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 relative">
-          {track.coverArtUrl ? (
-            <img src={track.coverArtUrl} alt={track.title} className="w-full h-full object-cover" loading="lazy" />
+    <>
+      <div 
+        ref={cardRef}
+        onClick={isMultiSelectMode ? onToggleSelect : handlePlayClick}
+        onContextMenu={handleContextMenu}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer border select-none ${
+          isCurrent 
+            ? 'bg-primary/15 border-primary/30' 
+            : isSelected
+              ? 'bg-primary/10 border-primary/20'
+              : 'bg-transparent border-border-primary'
+        }`}
+      >
+        {/* 1. Track Info (Art + Title/Artist) */}
+        <div className="flex items-center gap-4 truncate flex-1">
+          {/* Multi-select Checkbox OR Play indicator */}
+          {isMultiSelectMode ? (
+            <div 
+              onClick={(e) => { e.stopPropagation(); onToggleSelect?.(); }}
+              className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                isSelected 
+                  ? 'bg-primary border-primary text-bg-primary' 
+                  : 'border-text-disabled hover:border-text-primary'
+              }`}
+            >
+              {isSelected && <span className="text-[10px] font-bold">✓</span>}
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-neutral-900">
-              <Music className="w-4 h-4 text-neutral-600" />
+            <div className="w-6 text-center text-xs text-text-tertiary group-hover:hidden flex items-center justify-center">
+              {isCurrent && isBuffering ? (
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              ) : isCurrent && isPlaying ? (
+                <div className="flex justify-center items-end gap-0.5 h-3.5 w-6">
+                  <span className="w-0.5 h-3 bg-primary animate-[pulse_1s_infinite_alternate]" />
+                  <span className="w-0.5 h-2 bg-primary animate-[pulse_0.7s_infinite_alternate]" />
+                  <span className="w-0.5 h-3.5 bg-primary animate-[pulse_1.2s_infinite_alternate]" />
+                </div>
+              ) : (
+                <span className="font-mono text-text-disabled">#</span>
+              )}
             </div>
           )}
-        </div>
 
-        {/* Title & Artist */}
-        <div className="flex flex-col truncate">
-          <span className={`text-sm font-semibold truncate ${isCurrent ? 'text-white' : 'text-neutral-200'}`}>
-            {track.title}
-          </span>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span 
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/artist/${encodeURIComponent(track.artist)}`);
-              }}
-              className="text-xs text-neutral-500 hover:text-white hover:underline cursor-pointer truncate"
-            >
-              {track.artist}
-            </span>
-            <span className="px-1.5 py-0.5 rounded bg-neutral-800 text-[9px] font-mono text-neutral-400 border border-neutral-700">
-              {getSourceLabel()}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Metadata (Album + Duration) */}
-      <div className="flex items-center gap-6 shrink-0 text-xs text-neutral-500">
-        <span 
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/album/${encodeURIComponent(track.album)}?artist=${encodeURIComponent(track.artist)}`);
-          }}
-          className="hidden md:inline-block w-40 hover:text-white hover:underline cursor-pointer truncate"
-        >
-          {track.album}
-        </span>
-        <span className="font-mono w-10 text-right">{formatDuration(track.duration)}</span>
-
-        {/* 3. Action Buttons */}
-        <div className="flex items-center gap-1 ml-2">
-          {/* Add to Queue */}
-          <button
-            onClick={(e) => { e.stopPropagation(); addToQueue(track); toast('Added to queue', 'info'); }}
-            className="p-1.5 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors active:scale-90"
-            title="Add to Play Queue"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-
-          {/* Start Song Radio */}
-          <button
-            onClick={handleCreateSimilarPlaylist}
-            className="p-1.5 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors active:scale-90"
-            title="Start Song Radio (Similar Tracks Mix)"
-          >
-            <Radio className="w-4 h-4" />
-          </button>
-
-          {/* Favorite toggle */}
-          <button
-            onClick={handleFavoriteClick}
-            className={`p-1.5 rounded hover:bg-white/10 transition-colors ${
-              liked ? 'text-white' : 'text-neutral-500 hover:text-white'
-            }`}
-            title="Like / Favorite"
-          >
-            <Heart className={`w-4 h-4 ${liked ? 'fill-white' : ''}`} />
-          </button>
-
-          {/* Download button */}
-          <button
-            onClick={handleDownloadClick}
-            disabled={downloading}
-            className={`p-1.5 rounded hover:bg-white/10 transition-colors ${
-              downloading ? 'text-neutral-600 cursor-wait' : 'text-neutral-500 hover:text-white'
-            }`}
-            title={downloading ? 'Downloading...' : 'Download track'}
-          >
-            <Download className={`w-4 h-4 ${downloading ? 'animate-pulse' : ''}`} />
-          </button>
-
-          {/* Delete local file track button */}
-          {track.source === 'local' && (
+          {/* Hover play controls */}
+          {!isMultiSelectMode && (
             <button
-              onClick={handleDeleteClick}
-              className="p-1.5 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors"
-              title="Delete from Library"
+              onClick={(e) => { e.stopPropagation(); handlePlayClick(); }}
+              className="w-6 justify-center items-center hidden group-hover:flex text-text-secondary hover:text-text-primary"
             >
-              <Trash2 className="w-4 h-4" />
+              {isCurrent && isBuffering ? (
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              ) : isCurrent && isPlaying ? (
+                <Pause className="w-4 h-4 fill-current" />
+              ) : (
+                <Play className="w-4 h-4 fill-current ml-0.5" />
+              )}
             </button>
           )}
+
+          {/* Artwork */}
+          <div className="w-11 h-11 rounded-lg overflow-hidden bg-bg-tertiary border border-border-primary shrink-0 relative">
+            {api.coverUrl(track.coverArtUrl, track.videoId) ? (
+              <img 
+                src={api.coverUrl(track.coverArtUrl, track.videoId)!} 
+                alt={track.title} 
+                className="w-full h-full object-cover" 
+                loading="lazy" 
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (track.videoId && target.src !== `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`) {
+                    target.src = `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`;
+                  }
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-bg-tertiary">
+                <Music className="w-4 h-4 text-text-disabled" />
+              </div>
+            )}
+          </div>
+
+          {/* Title & Artist */}
+          <div className="flex flex-col truncate">
+            <span className={`text-sm font-semibold truncate ${isCurrent ? 'text-primary' : 'text-text-primary'}`}>
+              {track.title}
+            </span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/artist/${encodeURIComponent(track.artist)}`);
+                }}
+                className="text-xs text-text-tertiary hover:text-text-primary hover:underline cursor-pointer truncate"
+              >
+                {track.artist}
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-bg-surface text-[9px] font-mono text-text-secondary border border-border-primary">
+                {getSourceLabel()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Metadata (Album + Duration) */}
+        <div className="flex items-center gap-6 shrink-0 text-xs text-text-tertiary">
+          <span 
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/album/${encodeURIComponent(track.album)}?artist=${encodeURIComponent(track.artist)}`);
+            }}
+            className="hidden md:inline-block w-40 hover:text-text-primary hover:underline cursor-pointer truncate"
+          >
+            {track.album}
+          </span>
+          <span className="font-mono w-10 text-right">{formatDuration(track.duration)}</span>
+
+          {/* 3. Action Buttons */}
+          <div className="flex items-center gap-1 ml-2">
+            {/* Play Next */}
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); playNext(track); toast('Will play next', 'info'); }}
+              className="p-1.5 rounded hover:bg-text-primary/10 text-text-tertiary hover:text-text-primary transition-colors active:scale-90"
+              title="Play Next"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+
+            {/* Add to Queue */}
+            <button
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); addToQueue(track); toast('Added to queue', 'info'); }}
+              className="p-1.5 rounded hover:bg-text-primary/10 text-text-tertiary hover:text-text-primary transition-colors active:scale-90"
+              title="Add to Play Queue"
+            >
+              <ListPlus className="w-4 h-4" />
+            </button>
+
+            {/* Start Song Radio */}
+            <button
+              onClick={handleCreateSimilarPlaylist}
+              className="p-1.5 rounded hover:bg-text-primary/10 text-text-tertiary hover:text-text-primary transition-colors active:scale-90"
+              title="Start Song Radio (Similar Tracks Mix)"
+            >
+              <Radio className="w-4 h-4" />
+            </button>
+
+            {/* Favorite toggle */}
+            <button
+              onClick={handleFavoriteClick}
+              className={`p-1.5 rounded hover:bg-text-primary/10 transition-colors ${
+                liked ? 'text-primary' : 'text-text-tertiary hover:text-text-primary'
+              }`}
+              title="Like / Favorite"
+            >
+              <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
+            </button>
+
+            {/* Download button */}
+            <button
+              onClick={handleDownloadClick}
+              disabled={downloading}
+              className={`p-1.5 rounded hover:bg-text-primary/10 transition-colors ${
+                downloading ? 'text-text-disabled cursor-wait' : 'text-text-tertiary hover:text-text-primary'
+              }`}
+              title={downloading ? 'Downloading...' : 'Download track'}
+            >
+              <Download className={`w-4 h-4 ${downloading ? 'animate-pulse' : ''}`} />
+            </button>
+
+            {/* Delete local file track button */}
+            {track.source === 'local' && (
+              <button
+                onClick={handleDeleteClick}
+                className="p-1.5 rounded hover:bg-text-primary/10 text-text-tertiary hover:text-red-400 transition-colors"
+                title="Delete from Library"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <TrackContextMenu
@@ -318,6 +351,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
         onClose={() => setContextMenuPosition(null)}
         onPlay={handlePlayClick}
         onAddToQueue={() => { addToQueue(track); toast('Added to queue', 'info'); }}
+        onPlayNext={() => { playNext(track); toast('Will play next', 'info'); }}
         onToggleFavorite={handleFavoriteClick}
         onDownload={async () => {
           try {
@@ -334,7 +368,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
         isFavorite={liked}
         onCreateSimilarPlaylist={handleCreateSimilarPlaylist}
       />
-    </div>
+    </>
   );
 });
 TrackCard.displayName = 'TrackCard';

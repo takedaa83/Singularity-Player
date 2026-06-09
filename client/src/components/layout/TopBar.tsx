@@ -36,24 +36,26 @@ export const TopBar: React.FC<TopBarProps> = ({
         borderBottom: `1px solid ${tokens.colors.surfaceBorder}`,
       }}
     >
-      {/* Mobile menu button */}
-      {onMenuClick && (
-        <IconButton
-          onClick={onMenuClick}
-          aria-label="Open menu"
-          sx={{ display: { lg: 'none' }, color: tokens.colors.textSecondary }}
-        >
-          <Menu className="w-5 h-5" />
-        </IconButton>
-      )}
+      {/* Left balancing box (Menu button on mobile, empty on desktop) */}
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        {onMenuClick && (
+          <IconButton
+            onClick={onMenuClick}
+            aria-label="Open menu"
+            sx={{ display: { lg: 'none' }, color: tokens.colors.textSecondary, p: 0.5 }}
+          >
+            <Menu className="w-5 h-5" />
+          </IconButton>
+        )}
+      </Box>
 
-      {/* Search Field */}
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', maxWidth: 520 }}>
+      {/* Centered Search Field */}
+      <Box sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', justifyContent: 'center' }}>
         <SearchInput onSearch={onSearch} initialValue={searchQuery} />
       </Box>
 
-      {/* Action Buttons */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
+      {/* Right Action Buttons */}
+      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: { xs: 1, sm: 1.5 } }}>
         {/* Download indicator */}
         {activeDownloadCount > 0 && (
           <Tooltip title={`${activeDownloadCount} download${activeDownloadCount > 1 ? 's' : ''} active`}>
@@ -74,29 +76,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             </IconButton>
           </Tooltip>
         )}
-
-        {/* Upload */}
-        <button
-          onClick={onUploadClick}
-          aria-label="Upload music"
-          className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl font-medium text-xs sm:text-sm active:scale-95 transition-all"
-          style={{
-            background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-            color: '#fff',
-          }}
-        >
-          <UploadCloud className="w-4 h-4" />
-          <span className="hidden sm:inline">Upload</span>
-        </button>
-
-        {/* Divider */}
-        <Box
-          sx={{
-            width: 1, height: 20,
-            backgroundColor: tokens.colors.surfaceBorder,
-            display: { xs: 'none', sm: 'block' },
-          }}
-        />
 
         {/* Theme Toggle */}
         <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>

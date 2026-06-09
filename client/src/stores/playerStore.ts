@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Track, SpatialAudioConfig, DEFAULT_USER_SETTINGS } from '../types';
 import { initDB } from '../lib/db';
 import { api } from '../utils/api';
+import { isDuplicateTrack } from '../utils/trackUtils';
 
 const triggerPrefetch = (track: Track | null) => {
   if (!track || track.source !== 'youtube') return;
@@ -42,11 +43,14 @@ interface PlayerState {
   spatialAudioEnabled: boolean;
   spatialAudioConfig: SpatialAudioConfig;
   favorites: string[]; // Track IDs of favorited tracks
+  isBuffering: boolean;
+  streamingQuality: 'high' | 'medium' | 'low';
   
   // Actions
   setPlaying: (playing: boolean) => void;
   playTrack: (track: Track, newQueue?: Track[]) => void;
   addToQueue: (track: Track) => void;
+  playNext: (track: Track) => void;
   setQueue: (queue: Track[], startIndex?: number) => void;
   nextTrack: (force?: boolean) => void;
   prevTrack: () => void;
@@ -64,6 +68,8 @@ interface PlayerState {
   removeFromQueue: (index: number) => void;
   reorderQueue: (newQueue: Track[]) => void;
   loadFavorites: () => Promise<void>;
+  setBuffering: (buffering: boolean) => void;
+  setStreamingQuality: (quality: 'high' | 'medium' | 'low') => void;
 }
 
 // Helper to shuffle queue using Fisher-Yates
@@ -96,8 +102,12 @@ export const usePlayerStore = create<PlayerState>()(
       isMuted: false,
       prevVolume: 0.8,
       favorites: [],
+      isBuffering: false,
+      streamingQuality: 'high',
 
       setPlaying: (playing) => set({ isPlaying: playing }),
+      setBuffering: (buffering) => set({ isBuffering: buffering }),
+      setStreamingQuality: (quality) => set({ streamingQuality: quality }),
 
       playTrack: (track, newQueue) => {
         const { queue } = get();
@@ -120,9 +130,56 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       addToQueue: (track) => {
-        const { queue } = get();
-        if (queue.some(t => t.id === track.id)) return; // no duplicates in queue
-        set({ queue: [...queue, track] });
+        const { queue, currentTrack } = get();
+        // Prevent exact ID duplicates or alternate duplicate versions (remixes, lofi, etc.) of already queued songs
+        if (queue.some(t => t.id === track.id || isDuplicateTrack(t, track))) return;
+        const newQueue = [...queue, track];
+        if (!currentTrack) {
+          set({
+            queue: newQueue,
+            currentTrack: track,
+            activeQueueIndex: 0,
+            isPlaying: false
+          });
+        } else {
+          set({ queue: newQueue });
+        }
+      },
+
+      playNext: (track) => {
+        const { queue, currentTrack } = get();
+        
+        // Remove track or duplicate versions from queue if already present to prevent duplicates
+        let updatedQueue = queue.filter(t => t.id !== track.id && !isDuplicateTrack(t, track));
+        
+        if (!currentTrack) {
+          // If nothing is playing, play immediately
+          set({
+            queue: [track, ...updatedQueue],
+            currentTrack: track,
+            activeQueueIndex: 0,
+            isPlaying: true
+          });
+          prefetchNextQueuedTrack([track, ...updatedQueue], 0, get().shuffle, get().repeat);
+          return;
+        }
+        
+        // Find current track index in the updated queue
+        const currIndex = updatedQueue.findIndex(t => t.id === currentTrack.id);
+        const insertIndex = currIndex !== -1 ? currIndex + 1 : 0;
+        
+        // Insert track next
+        updatedQueue.splice(insertIndex, 0, track);
+        
+        // Recalculate new active queue index
+        const newActiveIndex = updatedQueue.findIndex(t => t.id === currentTrack.id);
+        
+        set({
+          queue: updatedQueue,
+          activeQueueIndex: newActiveIndex >= 0 ? newActiveIndex : 0
+        });
+        
+        prefetchNextQueuedTrack(updatedQueue, newActiveIndex >= 0 ? newActiveIndex : 0, get().shuffle, get().repeat);
       },
 
       setQueue: (newQueue, startIndex = 0) => {
@@ -334,6 +391,7 @@ export const usePlayerStore = create<PlayerState>()(
         visualizerStyle: state.visualizerStyle,
         spatialAudioEnabled: state.spatialAudioEnabled,
         spatialAudioConfig: state.spatialAudioConfig,
+        streamingQuality: state.streamingQuality,
       }),
     }
   )

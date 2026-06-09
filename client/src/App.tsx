@@ -56,6 +56,25 @@ const pageVariants = {
   }
 };
 
+// Helper to calculate lighter/darker accent shades for hover/active states
+const adjustHexColor = (hex: string, percent: number) => {
+  try {
+    const cleanHex = hex.replace('#', '');
+    let num = parseInt(cleanHex, 16);
+    let r = (num >> 16) + Math.round(2.55 * percent);
+    let g = ((num >> 8) & 0x00ff) + Math.round(2.55 * percent);
+    let b = (num & 0x0000ff) + Math.round(2.55 * percent);
+
+    r = Math.min(255, Math.max(0, r));
+    g = Math.min(255, Math.max(0, g));
+    b = Math.min(255, Math.max(0, b));
+
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  } catch (e) {
+    return hex;
+  }
+};
+
 const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div {...pageVariants}>{children}</motion.div>
 );
@@ -80,10 +99,15 @@ export const App: React.FC = () => {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedTrackIds, setSelectedTrackIds] = useState<Set<string>>(new Set());
 
-  // Synchronize theme with HTML document element classes
+  // Synchronize theme, accent color, and compact mode with HTML document element classes and variables
   const theme = useSettingsStore((s) => s.settings.theme);
+  const accentColor = useSettingsStore((s) => s.settings.accentColor);
+  const compactMode = useSettingsStore((s) => s.settings.compactMode);
+
   useEffect(() => {
     const root = document.documentElement;
+    
+    // 1. Sync theme class
     if (theme === 'light') {
       root.classList.add('light');
       root.classList.remove('dark');
@@ -91,7 +115,19 @@ export const App: React.FC = () => {
       root.classList.add('dark');
       root.classList.remove('light');
     }
-  }, [theme]);
+
+    // 2. Sync compact mode class
+    if (compactMode) {
+      root.classList.add('compact');
+    } else {
+      root.classList.remove('compact');
+    }
+
+    // 3. Sync dynamic accent properties
+    root.style.setProperty('--primary-color', accentColor);
+    root.style.setProperty('--primary-light-color', adjustHexColor(accentColor, 15));
+    root.style.setProperty('--primary-dark-color', adjustHexColor(accentColor, -15));
+  }, [theme, accentColor, compactMode]);
 
   // Audio engine (no longer returns currentTime/duration — uses external store)
   const { seek, getAnalyser } = useAudioEngine();
@@ -103,9 +139,22 @@ export const App: React.FC = () => {
   // Playback session analytics tracking
   // handled via <PlaybackAnalyticsTracker /> in render
 
-  // Load favorites into player store on mount
+  // Load favorites and synchronize settings store into player store on mount
   useEffect(() => {
     usePlayerStore.getState().loadFavorites().catch(console.error);
+
+    const playerState = usePlayerStore.getState();
+    const settingsState = useSettingsStore.getState().settings;
+
+    // Sync settings values into the player store
+    playerState.setVolume(settingsState.volume);
+    usePlayerStore.setState({ shuffle: settingsState.shuffle });
+    playerState.setRepeat(settingsState.repeat);
+    playerState.setCrossfadeDuration(settingsState.crossfadeDuration);
+    playerState.setPlaybackSpeed(settingsState.playbackSpeed);
+    playerState.setEqualizerBands(settingsState.eqBands);
+    playerState.setSpatialAudioEnabled(settingsState.spatialAudioEnabled);
+    playerState.setSpatialAudioConfig(settingsState.spatialAudioConfig);
   }, []);
 
   // History tracking
@@ -159,7 +208,7 @@ export const App: React.FC = () => {
   const selectedPlaylistId = playlistMatch ? playlistMatch[1] : null;
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-black overflow-hidden font-sans relative">
+    <div className="w-screen h-screen flex flex-col bg-bg-primary overflow-hidden font-sans relative">
       <PlaybackAnalyticsTracker />
       {/* Main Layout Container */}
       <div className="flex-1 flex overflow-hidden relative z-10">
@@ -192,11 +241,15 @@ export const App: React.FC = () => {
             setShowEqualizer={setShowEqualizer}
             refreshTrigger={refreshTrigger}
             triggerRefresh={triggerRefresh}
+            onUploadClick={() => {
+              setShowUpload(true);
+              setMobileSidebarOpen(false);
+            }}
           />
         </div>
 
         {/* Central Dashboard Panel */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-black">
+        <main className="flex-1 flex flex-col overflow-hidden bg-bg-primary">
           <TopBar
             onSearch={handleSearchSubmit}
             searchQuery={searchQuery}
@@ -204,7 +257,7 @@ export const App: React.FC = () => {
             onMenuClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           />
 
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 relative">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-36 sm:pb-6 relative">
             <Suspense fallback={<LazyFallback />}>
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>

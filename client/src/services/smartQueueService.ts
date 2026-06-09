@@ -3,178 +3,433 @@ import { initDB } from '../lib/db';
 import { Track } from '../types';
 import { api } from '../utils/api';
 
-// Deterministic audio feature extractor
 export interface AudioFeatures {
   bpm: number;
   energy: number;
+  valence: number;
+  danceability: number;
+  acousticness: number;
+  instrumentalness: number;
   genre: string;
   year: number;
 }
 
-/**
- * Computes deterministic audio traits (BPM, Energy) for a track.
- * This guarantees consistency for similarity comparisons without database schema changes.
- */
+const GENRE_FAMILIES: Record<string, string[]> = {
+  rock: ['rock', 'alternative rock', 'indie rock', 'punk rock', 'metal', 'grunge', 'hard rock', 'soft rock', 'alt-rock', 'indie-rock'],
+  pop: ['pop', 'dance', 'synthpop', 'indie pop', 'electro-pop', 'bedroom pop', 'k-pop', 'j-pop'],
+  hiphop: ['hip hop', 'rap', 'trap', 'r&b', 'soul', 'hip-hop', 'lofi hip hop'],
+  electronic: ['electronic', 'edm', 'house', 'techno', 'ambient', 'chillout', 'downtempo', 'synthwave'],
+  classical: ['classical', 'instrumental', 'orchestral', 'piano', 'ambient classical'],
+  jazz: ['jazz', 'blues', 'soul', 'funk']
+};
+
+import {
+  cleanString,
+  normalizeTitleForDuplication,
+  isDuplicateTrack
+} from '../utils/trackUtils';
+
+export {
+  cleanString,
+  normalizeTitleForDuplication,
+  isDuplicateTrack
+};
+
+const QUALITY_BLACKLIST_PATTERNS = [
+  /^untitled/i,
+  /test\s*track/i,
+  /no\s*title/i,
+  /unknown\s*track/i,
+  /10\s*hours?/i,
+  /ringtone/i,
+  /whatsapp\s*status/i,
+  /earrape/i,
+  /bass\s*boost(ed)?/i,
+  /low\s*quality/i,
+];
+
+export function areGenresRelated(genreA: string, genreB: string): boolean {
+  const gA = (genreA || '').toLowerCase().trim();
+  const gB = (genreB || '').toLowerCase().trim();
+  if (!gA || !gB) return false;
+  if (gA === gB) return true;
+  for (const family in GENRE_FAMILIES) {
+    const list = GENRE_FAMILIES[family];
+    const hasA = list.some(g => gA.includes(g) || g.includes(gA));
+    const hasB = list.some(g => gB.includes(g) || g.includes(gB));
+    if (hasA && hasB) return true;
+  }
+  return false;
+}
+
+export function hasRealAudioFeatures(track: Track): boolean {
+  return (
+    (track.bpm !== undefined && track.bpm !== null && track.bpm > 0) ||
+    (track.audioFeatures !== undefined && track.audioFeatures !== null)
+  );
+}
+
+export function passesQualityFilter(track: Track): boolean {
+  const title = (track.title || '').trim();
+  const artist = (track.artist || '').trim();
+  if (!title || title.length < 2) return false;
+  if (!artist || artist.length < 1) return false;
+  if (track.duration !== undefined && track.duration !== null) {
+    if (track.duration < 60 || track.duration > 900) return false;
+  }
+  for (const pattern of QUALITY_BLACKLIST_PATTERNS) {
+    if (pattern.test(title)) return false;
+  }
+  return true;
+}
+
+// Keep isHighQualityTrack name for compatibility with imports in playlistGenerator.ts
+export function isHighQualityTrack(track: Track): boolean {
+  return passesQualityFilter(track);
+}
+
+function fnv1a(str: string): number {
+  let hash = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function getAudioFeatures(track: Track): AudioFeatures {
-  const seed = track.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  // Deterministic BPM between 75 and 165
-  const bpm = 75 + (seed % 91);
-  // Deterministic Energy between 0.1 and 1.0
-  const energy = 0.1 + ((seed % 100) / 100) * 0.9;
+  const genre = (track.genre || 'Pop').toLowerCase().trim();
+  const year = track.year || 2018;
+  if (hasRealAudioFeatures(track)) {
+    const bpm = track.bpm || track.audioFeatures?.bpm || 120;
+    const energy = track.energy !== undefined && track.energy !== null ? track.energy : (track.audioFeatures?.energy ?? 0.5);
+    const valence = track.valence !== undefined && track.valence !== null ? track.valence : (track.audioFeatures?.valence ?? 0.5);
+    const danceability = track.danceability !== undefined && track.danceability !== null ? track.danceability : (track.audioFeatures?.danceability ?? 0.5);
+    const acousticness = track.acousticness !== undefined && track.acousticness !== null ? track.acousticness : (track.audioFeatures?.acousticness ?? 0.5);
+    const instrumentalness = track.instrumentalness !== undefined && track.instrumentalness !== null ? track.instrumentalness : (track.audioFeatures?.instrumentalness ?? 0.5);
+    return { bpm, energy, valence, danceability, acousticness, instrumentalness, genre, year };
+  }
+  const cleanedTitle = cleanString(track.title || '');
+  const cleanedArtist = cleanString(track.artist || '');
+  const seed = fnv1a(`${cleanedTitle}|${cleanedArtist}`);
   return {
-    bpm,
-    energy,
-    genre: (track.genre || 'Pop').toLowerCase().trim(),
-    year: track.year || 2018,
+    bpm: 75 + (seed % 91),
+    energy: 0.1 + ((seed % 100) / 100) * 0.9,
+    valence: ((seed * 7) % 100) / 100,
+    danceability: ((seed * 13) % 100) / 100,
+    acousticness: ((seed * 17) % 100) / 100,
+    instrumentalness: ((seed * 23) % 100) / 100,
+    genre,
+    year,
   };
 }
 
+export function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+function getFeatureVector(f: AudioFeatures): number[] {
+  return [
+    f.energy * 1.5,
+    f.valence * 1.5,
+    f.danceability * 1.0,
+    f.acousticness * 0.8,
+    f.instrumentalness * 0.8,
+  ];
+}
+
+function computeSessionVector(sessionTracks: Track[]): number[] | null {
+  const vectors = sessionTracks
+    .filter(t => hasRealAudioFeatures(t))
+    .map(t => getFeatureVector(getAudioFeatures(t)));
+  if (vectors.length === 0) return null;
+  const sum = vectors[0].map((_, i) => vectors.reduce((acc, v) => acc + v[i], 0));
+  return sum.map(s => s / vectors.length);
+}
+
+type DiscoveryTier = 'familiar' | 'discovery' | 'wildcard';
+
+interface ScoredTrack {
+  track: Track;
+  score: number;
+  tier: DiscoveryTier;
+}
+
 export const SmartQueueService = {
-  /**
-   * Scores all tracks in the library against the currently playing track
-   * and appends the top 5 matches to the end of the playback queue.
-   */
   async triggerAutoQueue(currentTrack: Track): Promise<void> {
     try {
       const playerStore = usePlayerStore.getState();
-      const db = await initDB();
+      if (playerStore.queue.length >= 50) return;
 
-      // Resolve videoId or fallback to title/artist
+      const db = await initDB();
       const videoId = currentTrack.videoId || (currentTrack.id.startsWith('yt-') ? currentTrack.id.replace('yt-', '') : undefined);
 
       let relatedTracks: Track[] = [];
       try {
         const results = await api.ytRadio(videoId, currentTrack.title, currentTrack.artist);
-        if (results && results.length > 0) {
-          relatedTracks = results;
-        }
+        if (results && results.length > 0) relatedTracks = results;
       } catch (err) {
         console.error('[SmartQueueService] Failed to fetch related tracks online:', err);
       }
 
-      // Fallback to local DB if online recommendation fails
-      if (relatedTracks.length === 0) {
-        relatedTracks = await db.getAll('tracks');
-      }
-
+      if (relatedTracks.length === 0) relatedTracks = await db.getAll('tracks');
       if (relatedTracks.length === 0) return;
 
-      // Save all resolved tracks to IndexedDB so they can be parsed by local queries
+      relatedTracks = relatedTracks
+        .filter(passesQualityFilter)
+        .filter(t => !isDuplicateTrack(t, currentTrack));
+
+      const existingDocs = await Promise.all(relatedTracks.map(t => db.get('tracks', t.id)));
+      const existingMap = new Map<string, boolean>(
+        existingDocs.filter((t): t is Track => !!t).map(t => [t.id, true])
+      );
       const tx = db.transaction('tracks', 'readwrite');
       for (const track of relatedTracks) {
-        const existing = await tx.store.get(track.id);
-        if (!existing) {
-          await tx.store.put(track);
-        }
+        if (!existingMap.has(track.id)) tx.store.put(track);
       }
       await tx.done;
 
-      // Fetch history and build set of recently played track IDs in the last 2 hours
-      const history = await db.getAllFromIndex('history', 'playedAt');
       const twoHoursAgo = Date.now() - 2 * 60 * 60 * 1000;
-      const recentlyPlayedIds = new Set<string>(
-        history
-          .filter(entry => entry.playedAt > twoHoursAgo)
-          .map(entry => entry.trackId)
-      );
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
-      // Do not repeat tracks already in the player queue
+      const recentHistory = await db.getAllFromIndex('history', 'playedAt', IDBKeyRange.lowerBound(twoHoursAgo));
+      const recentlyPlayedIds = new Set<string>(recentHistory.map(entry => entry.trackId));
+
+      const monthHistory = await db.getAllFromIndex('history', 'playedAt', IDBKeyRange.lowerBound(thirtyDaysAgo));
+      const playedInLast30Days = new Set<string>(monthHistory.map(entry => entry.trackId));
+
       const queueIds = new Set<string>(playerStore.queue.map(t => t.id));
 
-      // Find top genres/artists from play session history + favorites
-      const sessions = await db.getAll('playSessions');
+      const recentSessions = await db.getAllFromIndex('playSessions', 'startTime', IDBKeyRange.lowerBound(thirtyDaysAgo));
+      const completedSessionTrackIds = new Set<string>(recentSessions.filter(s => s.completed).map(s => s.trackId));
+
       const favorites = await db.getAll('favorites');
       const favoriteTrackIds = new Set(favorites.map(f => f.trackId));
-
       const favoriteArtists = new Set<string>();
       const favoriteGenres = new Set<string>();
 
-      // Read preferences from favorites
-      const allLocalTracks = await db.getAll('tracks');
-      for (const track of allLocalTracks) {
-        if (favoriteTrackIds.has(track.id)) {
-          if (track.artist) favoriteArtists.add(track.artist.toLowerCase().trim());
-          if (track.genre) favoriteGenres.add(track.genre.toLowerCase().trim());
+      const targetTrackIds = new Set<string>([...favoriteTrackIds, ...completedSessionTrackIds]);
+      const trackDocs = await Promise.all(Array.from(targetTrackIds).map(id => db.get('tracks', id)));
+      const tracksToAnalyze = trackDocs.filter((t): t is Track => !!t);
+      const trackMap = new Map<string, Track>(tracksToAnalyze.map(t => [t.id, t]));
+
+      for (const fId of favoriteTrackIds) {
+        const track = trackMap.get(fId);
+        if (track) {
+          const artist = (track.artist || '').toLowerCase().trim();
+          const genre = (track.genre || '').toLowerCase().trim();
+          if (artist) favoriteArtists.add(artist);
+          if (genre) favoriteGenres.add(genre);
         }
       }
 
-      // Add high-affinity items from completed play sessions
-      for (const s of sessions) {
+      for (const s of recentSessions) {
         if (s.completed) {
-          const track = allLocalTracks.find(t => t.id === s.trackId);
+          const track = trackMap.get(s.trackId);
           if (track) {
-            if (track.artist) favoriteArtists.add(track.artist.toLowerCase().trim());
-            if (track.genre) favoriteGenres.add(track.genre.toLowerCase().trim());
+            const artist = (track.artist || '').toLowerCase().trim();
+            const genre = (track.genre || '').toLowerCase().trim();
+            if (artist) favoriteArtists.add(artist);
+            if (genre) favoriteGenres.add(genre);
           }
         }
       }
 
-      // Score every resolved song
+      const sessionTrackIds = Array.from(recentlyPlayedIds).slice(-5);
+      const sessionTrackDocs = await Promise.all(sessionTrackIds.map(id => db.get('tracks', id)));
+      const sessionTracks = sessionTrackDocs.filter((t): t is Track => !!t);
+      const sessionVector = computeSessionVector([currentTrack, ...sessionTracks]);
+
+      const sessionGenres = new Map<string, number>();
+      for (const t of [currentTrack, ...sessionTracks]) {
+        const g = (t.genre || '').toLowerCase().trim();
+        if (g) sessionGenres.set(g, (sessionGenres.get(g) || 0) + 1);
+      }
+      const dominantSessionGenre = [...sessionGenres.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+
+      const currentHasReal = hasRealAudioFeatures(currentTrack);
       const currentFeatures = getAudioFeatures(currentTrack);
-      const scoredTracks = relatedTracks
-        .filter(track => track.id !== currentTrack.id && !queueIds.has(track.id))
+      const currentVector = getFeatureVector(currentFeatures);
+
+      const scored: ScoredTrack[] = relatedTracks
+        .filter(track => {
+          if (track.id === currentTrack.id) return false;
+          if (queueIds.has(track.id)) return false;
+          if (isDuplicateTrack(track, currentTrack)) return false;
+          if (playerStore.queue.some(q => isDuplicateTrack(q, track))) return false;
+          return true;
+        })
         .map(track => {
+          const candidateHasReal = hasRealAudioFeatures(track);
+          const candArtist = (track.artist || '').toLowerCase().trim();
+          const currArtist = (currentTrack.artist || '').toLowerCase().trim();
+          const candGenre = (track.genre || '').toLowerCase().trim();
+          const currGenre = (currentTrack.genre || '').toLowerCase().trim();
           let score = 0;
-          const features = getAudioFeatures(track);
 
-          // A. Genre Match (+10 pts)
-          if (features.genre === currentFeatures.genre && features.genre !== 'unknown') {
-            score += 10;
-          } else if (favoriteGenres.has(features.genre)) {
-            score += 3;
+          if (!currentHasReal || !candidateHasReal) {
+            if (candGenre && candGenre === currGenre && candGenre !== 'unknown') {
+              score += 0.40;
+            } else if (areGenresRelated(candGenre, currGenre) && candGenre !== 'unknown') {
+              score += 0.25;
+            } else if (favoriteGenres.has(candGenre)) {
+              score += 0.15;
+            }
+
+            if (candArtist && candArtist === currArtist) {
+              score += 0.30;
+            } else if (favoriteArtists.has(candArtist)) {
+              score += 0.15;
+            }
+
+            const candAlbum = (track.album || '').toLowerCase().trim();
+            const currAlbum = (currentTrack.album || '').toLowerCase().trim();
+            if (candAlbum && candAlbum === currAlbum && candAlbum !== 'unknown') {
+              score += 0.15;
+            }
+
+            if (track.year && currentTrack.year) {
+              const yearDiff = Math.abs(track.year - currentTrack.year);
+              if (yearDiff <= 3) score += 0.10;
+              else if (yearDiff <= 10) score += 0.05;
+            }
+
+            if (track.source === currentTrack.source) score += 0.05;
+            if (dominantSessionGenre && candGenre === dominantSessionGenre) score += 0.08;
+          } else {
+            const features = getAudioFeatures(track);
+            const candidateVector = getFeatureVector(features);
+            score = cosineSimilarity(currentVector, candidateVector);
+
+            if (sessionVector) {
+              score += cosineSimilarity(sessionVector, candidateVector) * 0.20;
+            }
+
+            if (features.genre === currentFeatures.genre && features.genre !== 'unknown') {
+              score += 0.15;
+            } else if (areGenresRelated(features.genre, currentFeatures.genre) && features.genre !== 'unknown') {
+              score += 0.08;
+            } else if (favoriteGenres.has(features.genre)) {
+              score += 0.05;
+            } else if (features.genre !== 'unknown' && currentFeatures.genre !== 'unknown') {
+              score -= 0.15;
+            }
+
+            if (dominantSessionGenre && features.genre === dominantSessionGenre) score += 0.07;
+
+            const bpmDiffPercent = Math.abs(features.bpm - currentFeatures.bpm) / currentFeatures.bpm;
+            if (bpmDiffPercent <= 0.10) score += 0.10;
+            else if (bpmDiffPercent <= 0.20) score += 0.03;
+
+            if (currentFeatures.energy > 0.7 && features.energy < currentFeatures.energy * 0.8) {
+              score -= 0.30;
+            }
+
+            if (candArtist && candArtist === currArtist) {
+              score += 0.15;
+            } else if (favoriteArtists.has(candArtist)) {
+              score += 0.05;
+            }
           }
 
-          // B. Artist Match (+8 pts if same artist, +5 pts if favorite artist)
-          const cleanArtist = track.artist.toLowerCase().trim();
-          if (cleanArtist === currentTrack.artist.toLowerCase().trim()) {
-            score += 8;
-          } else if (favoriteArtists.has(cleanArtist)) {
-            score += 5;
-          }
-
-          // C. BPM Flow Matching (+5 pts if within ±10%)
-          const bpmDiffPercent = Math.abs(features.bpm - currentFeatures.bpm) / currentFeatures.bpm;
-          if (bpmDiffPercent <= 0.10) {
-            score += 5;
-          } else if (bpmDiffPercent <= 0.20) {
-            score += 2;
-          }
-
-          // D. Energy Level Alignment (+4 pts if within 0.15 diff)
-          const energyDiff = Math.abs(features.energy - currentFeatures.energy);
-          if (energyDiff <= 0.15) {
-            score += 4;
-          }
-
-          // E. Era/Year Proximity (+2 pts if within 5 years)
-          const yearDiff = Math.abs(features.year - currentFeatures.year);
-          if (yearDiff <= 5) {
-            score += 2;
-          }
-
-          // F. Strict Anti-Repeat Check (-100 pts if played in past 2 hours)
           if (recentlyPlayedIds.has(track.id)) {
-            score -= 100;
+            score -= 2.0;
+          } else if (!playedInLast30Days.has(track.id)) {
+            score += 0.08;
           }
 
-          // G. Favorited state bonus (+3 pts)
-          if (favoriteTrackIds.has(track.id)) {
-            score += 3;
+          if (favoriteTrackIds.has(track.id)) score += 0.05;
+          if (completedSessionTrackIds.has(track.id)) score += 0.06;
+
+          const isSameArtist = candArtist === (currentTrack.artist || '').toLowerCase().trim();
+          const isFavoriteArtist = favoriteArtists.has(candArtist);
+          const isSameGenre = candGenre === (currentTrack.genre || '').toLowerCase().trim() || areGenresRelated(candGenre, (currentTrack.genre || '').toLowerCase().trim());
+
+          let tier: DiscoveryTier;
+          if (isSameArtist || (isSameGenre && isFavoriteArtist)) {
+            tier = 'familiar';
+          } else if (isSameGenre || isFavoriteArtist) {
+            tier = 'discovery';
+          } else {
+            tier = 'wildcard';
           }
 
-          return { track, score };
+          return { track, score, tier };
         });
 
-      // Select top 5 tracks
-      const topScored = scoredTracks
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5)
-        .map(item => item.track);
+      const TARGET = 5;
+      const FAMILIAR_SLOTS = Math.round(TARGET * 0.60);
+      const WILDCARD_SLOTS = Math.max(1, Math.round(TARGET * 0.10));
+      const DISCOVERY_SLOTS = TARGET - FAMILIAR_SLOTS - WILDCARD_SLOTS;
 
-      if (topScored.length > 0) {
-        console.log('[SmartQueueService] Appending auto-queue:', topScored.map(t => `${t.artist} - ${t.title}`));
-        const newQueue = [...playerStore.queue, ...topScored];
-        usePlayerStore.setState({ queue: newQueue });
+      const familiars = scored.filter(s => s.tier === 'familiar').sort((a, b) => b.score - a.score);
+      const discoveries = scored.filter(s => s.tier === 'discovery').sort((a, b) => b.score - a.score);
+      const wildcards = scored.filter(s => s.tier === 'wildcard').sort((a, b) => b.score - a.score);
+
+      const candidatePool: ScoredTrack[] = [
+        ...familiars.slice(0, FAMILIAR_SLOTS),
+        ...discoveries.slice(0, DISCOVERY_SLOTS),
+        ...wildcards.slice(0, WILDCARD_SLOTS),
+      ];
+
+      if (candidatePool.length < TARGET) {
+        const poolIds = new Set(candidatePool.map(s => s.track.id));
+        const fallback = scored.sort((a, b) => b.score - a.score);
+        for (const item of fallback) {
+          if (!poolIds.has(item.track.id)) {
+            candidatePool.push(item);
+            poolIds.add(item.track.id);
+          }
+          if (candidatePool.length >= TARGET) break;
+        }
+      }
+
+      const selectedTracks: Track[] = [];
+      const artistCount = new Map<string, number>();
+      const lastTrackInQueue = playerStore.queue[playerStore.queue.length - 1];
+      let cleanLastArtist = ((lastTrackInQueue ? lastTrackInQueue.artist : currentTrack.artist) || '').toLowerCase().trim();
+      const sortedPool = [...candidatePool].sort((a, b) => b.score - a.score);
+
+      while (selectedTracks.length < TARGET && sortedPool.length > 0) {
+        let indexToPick = sortedPool.findIndex(item => {
+          const artist = (item.track.artist || '').toLowerCase().trim();
+          const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
+          return !isDup && artist !== cleanLastArtist && (artistCount.get(artist) || 0) < 2;
+        });
+
+        if (indexToPick === -1) {
+          indexToPick = sortedPool.findIndex(item => {
+            const artist = (item.track.artist || '').toLowerCase().trim();
+            const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
+            return !isDup && (artistCount.get(artist) || 0) < 2;
+          });
+        }
+
+        if (indexToPick === -1) {
+          indexToPick = sortedPool.findIndex(item => !selectedTracks.some(t => isDuplicateTrack(t, item.track)));
+        }
+
+        if (indexToPick === -1) indexToPick = 0;
+
+        const picked = sortedPool.splice(indexToPick, 1)[0].track;
+        selectedTracks.push(picked);
+        const pickedArtist = (picked.artist || '').toLowerCase().trim();
+        artistCount.set(pickedArtist, (artistCount.get(pickedArtist) || 0) + 1);
+        cleanLastArtist = pickedArtist;
+      }
+
+      if (selectedTracks.length > 0) {
+        console.log('[SmartQueueService] Appending auto-queue:', selectedTracks.map(t => `${t.artist} - ${t.title}`));
+        usePlayerStore.setState({ queue: [...playerStore.queue, ...selectedTracks] });
       }
     } catch (e) {
       console.error('[SmartQueueService] Auto queue generation failed:', e);

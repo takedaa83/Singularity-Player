@@ -1,6 +1,6 @@
 import { Track, Playlist } from '../types';
 import { initDB } from '../lib/db';
-import { getAudioFeatures } from './smartQueueService';
+import { getAudioFeatures, cosineSimilarity, areGenresRelated, hasRealAudioFeatures, isDuplicateTrack, isHighQualityTrack } from './smartQueueService';
 import { api } from '../utils/api';
 
 export type VibeType = 'Workout' | 'Focus' | 'Late Night' | 'Chill' | 'Party';
@@ -122,12 +122,18 @@ export const PlaylistGenerator = {
         matchingTracks = onlineTracks;
       }
 
-      // Save tracks to IndexedDB so they can be parsed by local queries
+      // Pre-check track presence in IndexedDB to avoid nested awaits inside transaction
+      const existingDocs = await Promise.all(
+        matchingTracks.map(track => db.get('tracks', track.id))
+      );
+      const existingMap = new Map<string, boolean>(
+        existingDocs.filter((t): t is Track => !!t).map(t => [t.id, true])
+      );
+
       const tx = db.transaction('tracks', 'readwrite');
       for (const track of matchingTracks) {
-        const existing = await tx.store.get(track.id);
-        if (!existing) {
-          await tx.store.put(track);
+        if (!existingMap.has(track.id)) {
+          tx.store.put(track);
         }
       }
       await tx.done;
@@ -180,21 +186,73 @@ export const PlaylistGenerator = {
       // Fallback to local DB if online radio recommendation fails
       if (relatedTracks.length === 0) {
         const allTracks = await db.getAll('tracks');
+        const sourceHasReal = hasRealAudioFeatures(sourceTrack);
         const sourceFeatures = getAudioFeatures(sourceTrack);
+        const getVector = (f: any) => [
+          f.energy * 1.5,
+          f.valence * 1.5,
+          f.danceability * 1.0,
+          f.acousticness * 0.8,
+          f.instrumentalness * 0.8
+        ];
+        const sourceVector = getVector(sourceFeatures);
         
         relatedTracks = allTracks
+          .filter(track => track.id !== sourceTrack.id && !isDuplicateTrack(sourceTrack, track) && isHighQualityTrack(track))
           .map(track => {
-            if (track.id === sourceTrack.id) return { track, similarity: 1.0 };
-            const features = getAudioFeatures(track);
-            const bpmDiff = Math.abs(features.bpm - sourceFeatures.bpm) / sourceFeatures.bpm;
-            const energyDiff = Math.abs(features.energy - sourceFeatures.energy);
-            let similarity = 1.0 - (bpmDiff + energyDiff) / 2;
-            if (features.genre === sourceFeatures.genre && sourceFeatures.genre !== 'unknown') {
-              similarity += 0.10;
+            const candidateHasReal = hasRealAudioFeatures(track);
+            let similarity = 0;
+            
+            if (!sourceHasReal || !candidateHasReal) {
+              // Cold start fallback scoring mapped to similarity range [0.0, 1.0]
+              const candGenre = (track.genre || '').toLowerCase().trim();
+              const srcGenre = (sourceTrack.genre || '').toLowerCase().trim();
+              if (candGenre && candGenre === srcGenre && candGenre !== 'unknown') {
+                similarity += 0.40;
+              } else if (areGenresRelated(candGenre, srcGenre) && candGenre !== 'unknown') {
+                similarity += 0.25;
+              }
+              
+              const candArtist = (track.artist || '').toLowerCase().trim();
+              const srcArtist = (sourceTrack.artist || '').toLowerCase().trim();
+              if (candArtist && candArtist === srcArtist) {
+                similarity += 0.30;
+              }
+              
+              const candAlbum = (track.album || '').toLowerCase().trim();
+              const srcAlbum = (sourceTrack.album || '').toLowerCase().trim();
+              if (candAlbum && candAlbum === srcAlbum && candAlbum !== 'unknown') {
+                similarity += 0.15;
+              }
+              
+              if (track.year && sourceTrack.year) {
+                const yearDiff = Math.abs(track.year - sourceTrack.year);
+                if (yearDiff <= 3) {
+                  similarity += 0.10;
+                } else if (yearDiff <= 10) {
+                  similarity += 0.05;
+                }
+              }
+            } else {
+              const features = getAudioFeatures(track);
+              const candidateVector = getVector(features);
+              similarity = cosineSimilarity(sourceVector, candidateVector);
+              
+              // Add genre bonus
+              if (features.genre === sourceFeatures.genre && sourceFeatures.genre !== 'unknown') {
+                similarity += 0.15;
+              } else if (areGenresRelated(features.genre, sourceFeatures.genre) && features.genre !== 'unknown') {
+                similarity += 0.08;
+              }
+              // Add BPM alignment bonus
+              const bpmDiff = Math.abs(features.bpm - sourceFeatures.bpm) / sourceFeatures.bpm;
+              if (bpmDiff <= 0.10) {
+                similarity += 0.05;
+              }
             }
             return { track, similarity: Math.min(1.0, similarity) };
           })
-          .filter(item => item.similarity >= 0.50)
+          .filter(item => item.similarity >= 0.25)
           .sort((a, b) => b.similarity - a.similarity)
           .map(item => item.track);
       }
@@ -207,11 +265,17 @@ export const PlaylistGenerator = {
 
       // Ensure all online tracks are written to IndexedDB
       if (relatedTracks.length > 0) {
+        const existingDocs = await Promise.all(
+          relatedTracks.map(track => db.get('tracks', track.id))
+        );
+        const existingMap = new Map<string, boolean>(
+          existingDocs.filter((t): t is Track => !!t).map(t => [t.id, true])
+        );
+
         const tx = db.transaction('tracks', 'readwrite');
         for (const track of relatedTracks) {
-          const existing = await tx.store.get(track.id);
-          if (!existing) {
-            await tx.store.put(track);
+          if (!existingMap.has(track.id)) {
+            tx.store.put(track);
           }
         }
         await tx.done;
@@ -279,21 +343,73 @@ export const PlaylistGenerator = {
       // Fallback to local DB if online radio recommendation fails
       if (relatedTracks.length === 0) {
         const allTracks = await db.getAll('tracks');
+        const sourceHasReal = hasRealAudioFeatures(sourceTrack);
         const sourceFeatures = getAudioFeatures(sourceTrack);
+        const getVector = (f: any) => [
+          f.energy * 1.5,
+          f.valence * 1.5,
+          f.danceability * 1.0,
+          f.acousticness * 0.8,
+          f.instrumentalness * 0.8
+        ];
+        const sourceVector = getVector(sourceFeatures);
         
         relatedTracks = allTracks
+          .filter(track => track.id !== sourceTrack.id && !isDuplicateTrack(sourceTrack, track) && isHighQualityTrack(track))
           .map(track => {
-            if (track.id === sourceTrack.id) return { track, similarity: 1.0 };
-            const features = getAudioFeatures(track);
-            const bpmDiff = Math.abs(features.bpm - sourceFeatures.bpm) / sourceFeatures.bpm;
-            const energyDiff = Math.abs(features.energy - sourceFeatures.energy);
-            let similarity = 1.0 - (bpmDiff + energyDiff) / 2;
-            if (features.genre === sourceFeatures.genre && sourceFeatures.genre !== 'unknown') {
-              similarity += 0.10;
+            const candidateHasReal = hasRealAudioFeatures(track);
+            let similarity = 0;
+            
+            if (!sourceHasReal || !candidateHasReal) {
+              // Cold start fallback scoring mapped to similarity range [0.0, 1.0]
+              const candGenre = (track.genre || '').toLowerCase().trim();
+              const srcGenre = (sourceTrack.genre || '').toLowerCase().trim();
+              if (candGenre && candGenre === srcGenre && candGenre !== 'unknown') {
+                similarity += 0.40;
+              } else if (areGenresRelated(candGenre, srcGenre) && candGenre !== 'unknown') {
+                similarity += 0.25;
+              }
+              
+              const candArtist = (track.artist || '').toLowerCase().trim();
+              const srcArtist = (sourceTrack.artist || '').toLowerCase().trim();
+              if (candArtist && candArtist === srcArtist) {
+                similarity += 0.30;
+              }
+              
+              const candAlbum = (track.album || '').toLowerCase().trim();
+              const srcAlbum = (sourceTrack.album || '').toLowerCase().trim();
+              if (candAlbum && candAlbum === srcAlbum && candAlbum !== 'unknown') {
+                similarity += 0.15;
+              }
+              
+              if (track.year && sourceTrack.year) {
+                const yearDiff = Math.abs(track.year - sourceTrack.year);
+                if (yearDiff <= 3) {
+                  similarity += 0.10;
+                } else if (yearDiff <= 10) {
+                  similarity += 0.05;
+                }
+              }
+            } else {
+              const features = getAudioFeatures(track);
+              const candidateVector = getVector(features);
+              similarity = cosineSimilarity(sourceVector, candidateVector);
+              
+              // Add genre bonus
+              if (features.genre === sourceFeatures.genre && sourceFeatures.genre !== 'unknown') {
+                similarity += 0.15;
+              } else if (areGenresRelated(features.genre, sourceFeatures.genre) && features.genre !== 'unknown') {
+                similarity += 0.08;
+              }
+              // Add BPM alignment bonus
+              const bpmDiff = Math.abs(features.bpm - sourceFeatures.bpm) / sourceFeatures.bpm;
+              if (bpmDiff <= 0.10) {
+                similarity += 0.05;
+              }
             }
             return { track, similarity: Math.min(1.0, similarity) };
           })
-          .filter(item => item.similarity >= 0.50)
+          .filter(item => item.similarity >= 0.25)
           .sort((a, b) => b.similarity - a.similarity)
           .map(item => item.track);
       }
@@ -306,11 +422,17 @@ export const PlaylistGenerator = {
 
       // Ensure all online tracks are written to IndexedDB
       if (relatedTracks.length > 0) {
+        const existingDocs = await Promise.all(
+          relatedTracks.map(track => db.get('tracks', track.id))
+        );
+        const existingMap = new Map<string, boolean>(
+          existingDocs.filter((t): t is Track => !!t).map(t => [t.id, true])
+        );
+
         const tx = db.transaction('tracks', 'readwrite');
         for (const track of relatedTracks) {
-          const existing = await tx.store.get(track.id);
-          if (!existing) {
-            await tx.store.put(track);
+          if (!existingMap.has(track.id)) {
+            tx.store.put(track);
           }
         }
         await tx.done;

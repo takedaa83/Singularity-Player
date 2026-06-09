@@ -31,6 +31,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { ViewHeader } from '../ui/ViewHeader';
 
 import { DownloadProgressBar } from './DownloadProgressBar';
+import { api } from '../../utils/api';
 
 // ─── Individual Download Item ────────────────────────────────────────
 
@@ -85,10 +86,16 @@ const DownloadItem: React.FC<{ item: DownloadQueueItem }> = ({ item }) => {
           backgroundColor: tokens.colors.surface,
         }}
       >
-        {item.track.coverArtUrl && (
+        {api.coverUrl(item.track.coverArtUrl, item.track.videoId) && (
           <img
-            src={item.track.coverArtUrl}
+            src={api.coverUrl(item.track.coverArtUrl, item.track.videoId)!}
             alt=""
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (item.track.videoId && target.src !== `https://i.ytimg.com/vi/${item.track.videoId}/hqdefault.jpg`) {
+                target.src = `https://i.ytimg.com/vi/${item.track.videoId}/hqdefault.jpg`;
+              }
+            }}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         )}

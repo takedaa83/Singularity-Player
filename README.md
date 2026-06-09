@@ -82,13 +82,13 @@ Any track can be downloaded and cached as a local audio blob in the browser. The
 
 ### 📝 Advanced Lyrics Engine
 
-Singularity Player features a multi-layered lyrics pipeline that fetches, parses, and caches synchronized lyrics automatically. It leverages the following prioritized sources:
-1. **Musixmatch Desktop Client Scraper (Primary)**: Connects to Musixmatch's desktop API to retrieve standard LRC and word-level `richsync` karaoke coordinates. Richsync data is parsed and formatted into Enhanced LRC (`<mm:ss.xx>`) format, allowing character-by-character coloring and sweeps.
-2. **LRCLIB (Secondary)**: Fallback search to fetch verified synchronized lyrics from the public LRCLIB database.
-3. **YouTube Captions/Transcripts (Tertiary)**: Extract captions and transcripts dynamically from the streaming video using YouTube's InnerTube API.
-4. **NetEase Music (Quaternary)**: Fallback search using NetEase's public API to locate synchronized and translation lyrics.
+Singularity Player features a premium, multi-layered lyrics pipeline that fetches, parses, and caches synchronized lyrics automatically, offering a fully interactive, cinema-grade presentation:
 
-All successfully resolved lyrics are cached both in-memory and on the server's local disk (`/uploads/lyrics`) to guarantee sub-millisecond retrieval speeds and strictly respect external API rate limits.
+- **Interactive Lyrics-Seeking**: Click or tap on any lyric line to instantly jump the audio playback to that specific point in the track.
+- **Apple Music-Style Progressive Sweeps**: Soft, feathered letter-by-letter karaoke coloring and elastic scaling transitions that follow the vocal pace of the singer.
+- **Beat-Synced Ambient Backdrop**: Glowing, floating blurred colorful blobs that extract and morph to match the album art's dominant palette, scaling and breathing dynamically in sync with the song's bass beats.
+- **Buffer-Aware Playback Sync**: Automatically freezes visual timeline progression when the track is loading or buffering, preventing desynchronization.
+- **Multi-Source Aggregation**: Fetches lyrics dynamically from Musixmatch (with Richsync support), LRCLIB, YouTube transcripts, and NetEase, caching results on disk to minimize external api calls.
 
 ---
 

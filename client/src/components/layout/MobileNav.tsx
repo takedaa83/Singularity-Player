@@ -38,7 +38,7 @@ export const MobileNav: React.FC = () => {
       sx={{
         display: { xs: 'block', md: 'none' },
         position: 'fixed',
-        bottom: 80, // Sit just above the PlayerBar which is at bottom: 0 (or bottom: 8px)
+        bottom: 0, // Sit flush at the bottom of the screen
         left: 0,
         right: 0,
         zIndex: 40,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { Play, ListPlus, Heart, Download, Trash2, User, Disc, Package, Radio } from 'lucide-react';
+import { Play, ListPlus, Plus, Heart, Download, Trash2, User, Disc, Package, Radio } from 'lucide-react';
 import { Track } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 
@@ -10,6 +10,7 @@ interface TrackContextMenuProps {
   onClose: () => void;
   onPlay?: () => void;
   onAddToQueue?: () => void;
+  onPlayNext?: () => void;
   onToggleFavorite?: () => void;
   onDownload?: () => void;
   onAddToBatch?: () => void;
@@ -26,6 +27,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
   onClose,
   onPlay,
   onAddToQueue,
+  onPlayNext,
   onToggleFavorite,
   onDownload,
   onAddToBatch,
@@ -46,7 +48,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
       slotProps={{ paper: { sx: { minWidth: 200, py: 0.5 } } }}
     >
       {onPlay && (
-        <MenuItem onClick={() => { onPlay(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onPlay(); onClose(); }}>
           <ListItemIcon>
             <Play size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -54,15 +56,23 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
         </MenuItem>
       )}
       {onAddToQueue && (
-        <MenuItem onClick={() => { onAddToQueue(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onAddToQueue(); onClose(); }}>
           <ListItemIcon>
             <ListPlus size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
           <ListItemText>Add to Queue</ListItemText>
         </MenuItem>
       )}
+      {onPlayNext && (
+        <MenuItem onClick={(e) => { e.stopPropagation(); onPlayNext(); onClose(); }}>
+          <ListItemIcon>
+            <Plus size={16} color={tokens.colors.textSecondary} />
+          </ListItemIcon>
+          <ListItemText>Play Next</ListItemText>
+        </MenuItem>
+      )}
       {onCreateSimilarPlaylist && (
-        <MenuItem onClick={() => { onCreateSimilarPlaylist(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onCreateSimilarPlaylist(); onClose(); }}>
           <ListItemIcon>
             <Radio size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -73,7 +83,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
       <Divider sx={{ my: 0.5 }} />
 
       {onToggleFavorite && (
-        <MenuItem onClick={() => { onToggleFavorite(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onToggleFavorite(); onClose(); }}>
           <ListItemIcon>
             <Heart
               size={16}
@@ -87,7 +97,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
         </MenuItem>
       )}
       {onDownload && (
-        <MenuItem onClick={() => { onDownload(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onDownload(); onClose(); }}>
           <ListItemIcon>
             <Download size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -95,7 +105,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
         </MenuItem>
       )}
       {onAddToBatch && (
-        <MenuItem onClick={() => { onAddToBatch(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onAddToBatch(); onClose(); }}>
           <ListItemIcon>
             <Package size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -106,7 +116,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
       <Divider sx={{ my: 0.5 }} />
 
       {onGoToArtist && (
-        <MenuItem onClick={() => { onGoToArtist(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onGoToArtist(); onClose(); }}>
           <ListItemIcon>
             <User size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -114,7 +124,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
         </MenuItem>
       )}
       {onGoToAlbum && (
-        <MenuItem onClick={() => { onGoToAlbum(); onClose(); }}>
+        <MenuItem onClick={(e) => { e.stopPropagation(); onGoToAlbum(); onClose(); }}>
           <ListItemIcon>
             <Disc size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
@@ -125,7 +135,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
       {onDelete && (
         <>
           <Divider sx={{ my: 0.5 }} />
-          <MenuItem onClick={() => { onDelete(); onClose(); }}>
+          <MenuItem onClick={(e) => { e.stopPropagation(); onDelete(); onClose(); }}>
             <ListItemIcon>
               <Trash2 size={16} color={tokens.colors.error} />
             </ListItemIcon>

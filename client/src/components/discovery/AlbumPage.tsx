@@ -110,7 +110,7 @@ export const AlbumPage: React.FC = () => {
           <div
             className="absolute inset-0 -z-10 opacity-15 blur-[60px] scale-125"
             style={{
-              backgroundImage: `url(${coverArtUrl})`,
+              backgroundImage: `url(${api.coverUrl(coverArtUrl, libraryTracks[0]?.videoId || discoveredTracks[0]?.videoId) || ''})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
@@ -119,8 +119,19 @@ export const AlbumPage: React.FC = () => {
 
         {/* Artwork cover container */}
         <div className="w-48 h-48 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-2xl shrink-0 flex items-center justify-center relative group">
-          {coverArtUrl ? (
-            <img src={coverArtUrl} alt={albumName} className="w-full h-full object-cover" />
+          {api.coverUrl(coverArtUrl, libraryTracks[0]?.videoId || discoveredTracks[0]?.videoId) ? (
+            <img 
+              src={api.coverUrl(coverArtUrl, libraryTracks[0]?.videoId || discoveredTracks[0]?.videoId)!} 
+              alt={albumName} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                const vId = libraryTracks[0]?.videoId || discoveredTracks[0]?.videoId;
+                if (vId && target.src !== `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`) {
+                  target.src = `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`;
+                }
+              }}
+            />
           ) : (
             <Disc className="w-20 h-20 text-neutral-700" />
           )}

@@ -34,6 +34,11 @@ export const usePlaybackAnalytics = () => {
     try {
       await recordPlaySession(session);
 
+      // Invalidate recommendation cache
+      import('../services/recommendationEngine').then(({ recommendationEngine }) =>
+        recommendationEngine.invalidateCache()
+      ).catch(() => {});
+
       // Update Track record stats
       const db = await import('../lib/db').then((m) => m.initDB());
       const track = await db.get('tracks', trackId);

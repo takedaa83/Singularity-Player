@@ -30,6 +30,7 @@ import {
 import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { usePlayerStore } from '../../stores/playerStore';
 import { ViewHeader } from '../ui/ViewHeader';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { useToast } from '../../hooks/useToast';
@@ -145,6 +146,7 @@ const SettingRow: React.FC<SettingRowProps> = ({
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSetting } = useSettingsStore();
+  const { streamingQuality, setStreamingQuality } = usePlayerStore();
   const {
     clearPlaybackHistory,
     clearSearchHistory,
@@ -204,7 +206,7 @@ export const SettingsPage: React.FC = () => {
         searchHistory: await db.getAll('searchHistory'),
         settings: await db.getAll('settings'),
         settingsStore: useSettingsStore.getState().settings,
-        version: '1.5.0',
+        version: '2.0.0',
         exportedAt: Date.now(),
       };
       
@@ -499,6 +501,28 @@ export const SettingsPage: React.FC = () => {
                   {preset.label}
                 </MenuItem>
               ))}
+            </Select>
+          </FormControl>
+        </SettingRow>
+
+        <SettingRow label="Streaming Quality" description="Select preferred audio stream quality">
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={streamingQuality}
+              onChange={(e) => setStreamingQuality(e.target.value as 'high' | 'medium' | 'low')}
+              sx={{
+                borderRadius: `${tokens.radius.md}px`,
+                fontSize: tokens.typography.body2.size,
+                backgroundColor: tokens.colors.surface,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: tokens.colors.surfaceBorder,
+                },
+              }}
+              inputProps={{ 'aria-label': 'Streaming Quality' }}
+            >
+              <MenuItem value="high">High (Opus 256kbps)</MenuItem>
+              <MenuItem value="medium">Medium (AAC 128kbps)</MenuItem>
+              <MenuItem value="low">Low (Saver 50-70kbps)</MenuItem>
             </Select>
           </FormControl>
         </SettingRow>

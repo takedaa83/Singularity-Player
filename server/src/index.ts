@@ -126,8 +126,38 @@ app.get('/api/proxy-image', (req, res) => {
   }
   
   // If local server cover art, serve directly or redirect
-  if (imageUrl.startsWith('/api/covers/') || imageUrl.startsWith('http://localhost') || imageUrl.startsWith('http://127.0.0.1')) {
+  if (imageUrl.startsWith('/api/covers/') || imageUrl.startsWith('/') || imageUrl.startsWith('http://localhost') || imageUrl.startsWith('http://127.0.0.1')) {
     res.redirect(imageUrl);
+    return;
+  }
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(imageUrl);
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid URL format' });
+    return;
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+  
+  // Whitelist YouTube, Google, iTunes, and Deezer CDN image domains to prevent SSRF
+  const allowedHosts = [
+    'i.ytimg.com',
+    'lh3.googleusercontent.com',
+    'play-lh.googleusercontent.com',
+    'is1-ssl.mzstatic.com',
+    'is2-ssl.mzstatic.com',
+    'is3-ssl.mzstatic.com',
+    'is4-ssl.mzstatic.com',
+    'is5-ssl.mzstatic.com',
+    'e-cdns-images.dzcdn.net',
+    'cdns-images.dzcdn.net'
+  ];
+  
+  const isAllowed = allowedHosts.some(host => hostname === host || hostname.endsWith('.' + host));
+  if (!isAllowed) {
+    res.status(403).json({ error: 'Forbidden: Domain not whitelisted for image proxying' });
     return;
   }
 

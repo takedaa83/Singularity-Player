@@ -5,6 +5,7 @@ import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Track, PlaySession } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 import { ViewHeader } from '../ui/ViewHeader';
+import { api } from '../../utils/api';
 
 export const ListeningInsightsPage: React.FC = () => {
   const { getAllTracks, recordPlaySession } = useLibraryDB();
@@ -236,8 +237,18 @@ export const ListeningInsightsPage: React.FC = () => {
                   {stats.topTracks.map((item, idx) => (
                     <Box key={item.track.id} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textTertiary, minWidth: 16 }}>{idx + 1}</Typography>
-                      {item.track.coverArtUrl && (
-                        <Box component="img" src={item.track.coverArtUrl} sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: 'cover' }} />
+                      {api.coverUrl(item.track.coverArtUrl, item.track.videoId) && (
+                        <Box 
+                          component="img" 
+                          src={api.coverUrl(item.track.coverArtUrl, item.track.videoId)!} 
+                          onError={(e: any) => {
+                            const target = e.currentTarget;
+                            if (item.track.videoId && target.src !== `https://i.ytimg.com/vi/${item.track.videoId}/hqdefault.jpg`) {
+                              target.src = `https://i.ytimg.com/vi/${item.track.videoId}/hqdefault.jpg`;
+                            }
+                          }}
+                          sx={{ width: 40, height: 40, borderRadius: 1.5, objectFit: 'cover' }} 
+                        />
                       )}
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>{item.track.title}</Typography>

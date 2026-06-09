@@ -318,6 +318,10 @@ async function performDownload(
   } catch (error: any) {
     const errMsg = error?.message || 'Download failed';
     const currentItem = get().queue.find((d) => d.id === item.id);
+    if (currentItem && currentItem.status === 'paused') {
+      // Do not retry or mark as failed if it was explicitly paused
+      return;
+    }
     if (currentItem && currentItem.retryCount < 3) {
       get().retry(item.id);
     } else {

@@ -109,6 +109,15 @@ export const useLibraryDB = () => {
     } catch (e) {
       console.error('Failed to sync favorites with player store:', e);
     }
+
+    // Invalidate recommendation cache
+    try {
+      import('../services/recommendationEngine').then(({ recommendationEngine }) =>
+        recommendationEngine.invalidateCache()
+      );
+    } catch (e) {
+      console.error('Failed to invalidate recommendation cache:', e);
+    }
     
     return isFav;
   };

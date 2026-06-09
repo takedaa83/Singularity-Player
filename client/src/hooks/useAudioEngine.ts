@@ -64,6 +64,12 @@ let prefetchedTrackId: string | null = null;
 let crossfadeTimeout: ReturnType<typeof setTimeout> | null = null;
 let playbackSpeed = 1.0;
 
+const getStreamUrlWithParams = (trackUrl: string, quality: string) => {
+  const base = trackUrl.startsWith('http') ? trackUrl : `${api.baseUrl}${trackUrl}`;
+  const separator = base.includes('?') ? '&' : '?';
+  return `${base}${separator}quality=${quality}`;
+};
+
 // Caching and robustness enhancements
 const impulseCache = new Map<string, AudioBuffer>();
 let currentCrossfadeId = 0;
@@ -270,6 +276,7 @@ const updateAudioConnections = () => {
   try { eqOutput.disconnect(); } catch (e) {}
   try { pannerNode?.disconnect(); } catch (e) {}
   try { dryGainNode?.disconnect(); } catch (e) {}
+  try { convolverNode?.disconnect(); } catch (e) {}
   try { reverbGainNode?.disconnect(); } catch (e) {}
 
   const storeState = usePlayerStore.getState();
@@ -279,12 +286,16 @@ const updateAudioConnections = () => {
     eqOutput.connect(analyserNode);
   } else {
     // Spatial routing: EQ -> Dry/Convolver -> Panner -> Analyser
+    const roomSize = storeState.spatialAudioConfig.roomSize;
     if (dryGainNode && convolverNode && reverbGainNode && pannerNode) {
       eqOutput.connect(dryGainNode);
-      eqOutput.connect(convolverNode);
-      
       dryGainNode.connect(pannerNode);
-      reverbGainNode.connect(pannerNode);
+      
+      if (roomSize !== 'none') {
+        eqOutput.connect(convolverNode);
+        convolverNode.connect(reverbGainNode);
+        reverbGainNode.connect(pannerNode);
+      }
       
       pannerNode.connect(analyserNode);
     } else {
@@ -295,7 +306,7 @@ const updateAudioConnections = () => {
 };
 
 const prefetchNextTrack = () => {
-  const { queue, activeQueueIndex, shuffle, repeat } = usePlayerStore.getState();
+  const { queue, activeQueueIndex, shuffle, repeat, streamingQuality } = usePlayerStore.getState();
 
   let nextTrackObj;
   if (repeat === 'one') {
@@ -312,9 +323,7 @@ const prefetchNextTrack = () => {
   const inactivePlayer = activePlayer === 1 ? audio2 : audio1;
   if (!inactivePlayer) return;
 
-  const targetSrc = nextTrackObj.streamUrl.startsWith('http')
-    ? nextTrackObj.streamUrl
-    : `${api.baseUrl}${nextTrackObj.streamUrl}`;
+  const targetSrc = getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
 
   inactivePlayer.src = targetSrc;
   inactivePlayer.preload = 'auto';
@@ -394,7 +403,7 @@ export const closeAudioEngine = async () => {
 };
 
 const triggerCrossfade = async () => {
-  const { queue, activeQueueIndex } = usePlayerStore.getState();
+  const { queue, activeQueueIndex, streamingQuality } = usePlayerStore.getState();
   const nextIndex = activeQueueIndex + 1;
   if (nextIndex >= queue.length) return;
 
@@ -414,9 +423,7 @@ const triggerCrossfade = async () => {
     return;
   }
 
-  const targetSrc = nextTrackObj.streamUrl.startsWith('http')
-    ? nextTrackObj.streamUrl
-    : `${api.baseUrl}${nextTrackObj.streamUrl}`;
+  const targetSrc = getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
 
   fadeInPlayer.src = targetSrc;
   fadeInPlayer.playbackRate = playbackSpeed;
@@ -499,7 +506,7 @@ const tick = () => {
   }
 
   // Song end
-  if (player.ended && !isCrossfading) {
+  if (player.ended && !isCrossfading && usePlayerStore.getState().isPlaying) {
     usePlayerStore.getState().nextTrack();
   }
 
@@ -528,6 +535,8 @@ export const useAudioEngine = () => {
   const setPlaying = usePlayerStore((s) => s.setPlaying);
   const spatialAudioEnabled = usePlayerStore((s) => s.spatialAudioEnabled);
   const spatialAudioConfig = usePlayerStore((s) => s.spatialAudioConfig);
+  const streamingQuality = usePlayerStore((s) => s.streamingQuality);
+  const setBuffering = usePlayerStore((s) => s.setBuffering);
   const { toast } = useToast();
 
   playbackSpeed = playbackSpeedStore;
@@ -641,12 +650,18 @@ export const useAudioEngine = () => {
   useEffect(() => {
     ensureAudioElements();
     const activePlayerInstance = activePlayer === 1 ? audio1 : audio2;
-    if (!activePlayerInstance || !currentTrack) return;
+    if (!activePlayerInstance) return;
+
+    if (!currentTrack) {
+      activePlayerInstance.pause();
+      activePlayerInstance.src = '';
+      stopProgressTimer();
+      setBuffering(false);
+      return;
+    }
 
     const currentSrc = activePlayerInstance.src;
-    const targetSrc = currentTrack.streamUrl.startsWith('http')
-      ? currentTrack.streamUrl
-      : `${api.baseUrl}${currentTrack.streamUrl}`;
+    const targetSrc = getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
 
     // Reset prefetch status on every track change
     prefetchedTrackId = null;
@@ -676,6 +691,7 @@ export const useAudioEngine = () => {
         console.warn('Playback failed or interrupted:', e);
         if (e.name !== 'AbortError') {
           setPlaying(false);
+          setBuffering(false);
           toast('Playback failed. Please check your network or try another track.', 'error');
         }
       });
@@ -683,6 +699,7 @@ export const useAudioEngine = () => {
     } else {
       activePlayerInstance.pause();
       stopProgressTimer();
+      setBuffering(false);
     }
 
     const onDurationChange = () => {
@@ -691,16 +708,60 @@ export const useAudioEngine = () => {
     const onLoadedMetadata = () => {
       setTimeValues(activePlayerInstance.currentTime, activePlayerInstance.duration || currentTrack.duration || 0);
     };
+    const onWaiting = () => {
+      setBuffering(true);
+    };
+    const onPlaying = () => {
+      setBuffering(false);
+    };
+    const onStalled = () => {
+      console.warn('[Audio Engine] Playback stalled...');
+      setBuffering(true);
+    };
+    const onError = async (e: Event) => {
+      const err = activePlayerInstance.error;
+      console.error('[Audio Engine] Playback error event:', err);
+      
+      if (err) {
+        toast('Playback interrupted. Recovering stream...', 'info');
+        setBuffering(true);
+        
+        try {
+          const freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
+          console.log('[Audio Engine] Attempting stream recovery from:', freshSrc);
+          activePlayerInstance.src = freshSrc;
+          activePlayerInstance.load();
+          if (isPlaying) {
+            await activePlayerInstance.play();
+          }
+        } catch (retryErr) {
+          console.error('[Audio Engine] Recovery retry failed:', retryErr);
+          setPlaying(false);
+          setBuffering(false);
+          toast('Playback failed. Please check your network or try another track.', 'error');
+        }
+      }
+    };
 
     activePlayerInstance.addEventListener('durationchange', onDurationChange);
     activePlayerInstance.addEventListener('loadedmetadata', onLoadedMetadata);
+    activePlayerInstance.addEventListener('waiting', onWaiting);
+    activePlayerInstance.addEventListener('playing', onPlaying);
+    activePlayerInstance.addEventListener('canplay', onPlaying);
+    activePlayerInstance.addEventListener('stalled', onStalled);
+    activePlayerInstance.addEventListener('error', onError);
 
     return () => {
       activePlayerInstance.removeEventListener('durationchange', onDurationChange);
       activePlayerInstance.removeEventListener('loadedmetadata', onLoadedMetadata);
+      activePlayerInstance.removeEventListener('waiting', onWaiting);
+      activePlayerInstance.removeEventListener('playing', onPlaying);
+      activePlayerInstance.removeEventListener('canplay', onPlaying);
+      activePlayerInstance.removeEventListener('stalled', onStalled);
+      activePlayerInstance.removeEventListener('error', onError);
       stopProgressTimer();
     };
-  }, [currentTrack, isPlaying, setPlaying, toast]);
+  }, [currentTrack, isPlaying, setPlaying, toast, streamingQuality]);
 
   // Unlock audio graph on user interaction (desktop + mobile gestures)
   useEffect(() => {

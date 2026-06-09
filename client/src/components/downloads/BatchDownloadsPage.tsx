@@ -195,10 +195,16 @@ export const BatchDownloadsPage: React.FC = () => {
                       justifyContent: 'center',
                     }}
                   >
-                    {track.coverArtUrl ? (
+                    {api.coverUrl(track.coverArtUrl, track.videoId) ? (
                       <img
-                        src={track.coverArtUrl}
+                        src={api.coverUrl(track.coverArtUrl, track.videoId)!}
                         alt=""
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (track.videoId && target.src !== `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`) {
+                            target.src = `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`;
+                          }
+                        }}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (

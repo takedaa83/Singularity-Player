@@ -247,7 +247,7 @@ export async function preWarmClient(): Promise<void> {
  * Extract the direct audio stream URL from YouTube using yt-dlp.
  * Returns the URL, content type, and metadata.
  */
-export async function getAudioStreamUrl(videoId: string): Promise<{
+export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medium' | 'low' = 'high', bypassCache: boolean = false): Promise<{
   url: string;
   contentType: string;
   title: string;
@@ -255,15 +255,18 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
   duration: number;
   filesize: number;
 } | null> {
-  // Check stream URL cache first
-  const cached = streamUrlCache.get(videoId);
-  if (cached && cached.expiry > Date.now()) {
-    cached.lastAccessed = Date.now();
-    return cached.data;
+  const cacheKey = `${videoId}-${quality}`;
+  // Check stream URL cache first (skip if bypassCache is true)
+  if (!bypassCache) {
+    const cached = streamUrlCache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      cached.lastAccessed = Date.now();
+      return cached.data;
+    }
   }
 
   // Check if there is an extraction already in progress for this videoId
-  let pending = pendingExtractions.get(videoId);
+  let pending = pendingExtractions.get(cacheKey);
   if (!pending) {
     pending = (async () => {
       try {
@@ -279,10 +282,18 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         // specific known-good IDs as fallbacks.  'bestaudio' alone lets
         // yt-dlp pick the highest bitrate stream YouTube offers — which
         // can be Opus @ 256 kbps when available.
+        // Quality-aware format selectors
+        const formatMap: Record<string, string> = {
+          high: 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
+          medium: '140/bestaudio[acodec=aac]/bestaudio',
+          low: '249/250/bestaudio/140',
+        };
+        const formatSelector = formatMap[quality] || formatMap.high;
+
         const { stdout } = await runYtDlpPooled([
           '--no-warnings',
           '--no-playlist',
-          '-f', 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
+          '-f', formatSelector,
           '--no-check-formats',
           '--no-check-certificate',
           '--print', '%(url)s',
@@ -324,7 +335,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         };
 
         // Cache the result
-        streamUrlCache.set(videoId, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+        streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
 
         // Prune cache if too large — evict entry with oldest expiry
         if (streamUrlCache.size > MAX_CACHE_SIZE) {
@@ -350,10 +361,10 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         });
         return null;
       } finally {
-        pendingExtractions.delete(videoId);
+        pendingExtractions.delete(cacheKey);
       }
     })();
-    pendingExtractions.set(videoId, pending);
+    pendingExtractions.set(cacheKey, pending);
   }
 
   return pending;
@@ -364,7 +375,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
  * This avoids extracting a URL and fetching it separately.
  * Returns a Readable stream that can be piped to an HTTP response.
  */
-export function spawnAudioStream(videoId: string): {
+export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | 'low' = 'high'): {
   stream: Readable;
   process: ChildProcess;
 } {
@@ -377,7 +388,7 @@ export function spawnAudioStream(videoId: string): {
   const child = spawn(YT_DLP_PATH, [
     '--no-warnings',
     '--no-playlist',
-    '-f', 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
+    '-f', quality === 'low' ? '249/250/bestaudio/140' : quality === 'medium' ? '140/bestaudio[acodec=aac]/bestaudio' : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
     '-o', '-', // Output to stdout
     ytUrl
