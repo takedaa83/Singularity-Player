@@ -55,6 +55,7 @@ let reverbGainNode: GainNode | null = null;
 let dryGainNode: GainNode | null = null;
 let analyserNode: AnalyserNode | null = null;
 let mainGainNode: GainNode | null = null;
+let limiterNode: DynamicsCompressorNode | null = null;
 
 let isCrossfading = false;
 let rafId: number | null = null;
@@ -186,8 +187,17 @@ const initAudioGraph = () => {
     mainGain.gain.value = 0.8;
     mainGainNode = mainGain;
 
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.setValueAtTime(-1.0, ctx.currentTime); // start limiting at -1dB
+    limiter.knee.setValueAtTime(0, ctx.currentTime); // hard knee (acts as limiter)
+    limiter.ratio.setValueAtTime(20.0, ctx.currentTime); // high ratio
+    limiter.attack.setValueAtTime(0.003, ctx.currentTime); // fast attack (3ms)
+    limiter.release.setValueAtTime(0.08, ctx.currentTime); // release (80ms)
+    limiterNode = limiter;
+
     analyser.connect(mainGain);
-    mainGain.connect(ctx.destination);
+    mainGain.connect(limiter);
+    limiter.connect(ctx.destination);
 
     eqFilters = filters;
     sourceNodesCreated = true;
@@ -195,10 +205,12 @@ const initAudioGraph = () => {
 
   // Sync initial parameters from player store
   const storeState = usePlayerStore.getState();
+  const maxBoost = Math.max(0, ...storeState.equalizerBands);
+  const preAmpGain = Math.pow(10, -maxBoost / 20);
   
   if (gainNode1 && gainNode2) {
-    gainNode1.gain.setValueAtTime(activePlayer === 1 ? 1.0 : 0.0, ctx.currentTime);
-    gainNode2.gain.setValueAtTime(activePlayer === 2 ? 1.0 : 0.0, ctx.currentTime);
+    gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, ctx.currentTime);
+    gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, ctx.currentTime);
   }
 
   if (mainGainNode) {
@@ -328,11 +340,14 @@ const cancelActiveCrossfade = () => {
 
   // Restore default gain values instantly
   if (audioContext && gainNode1 && gainNode2) {
+    const storeState = usePlayerStore.getState();
+    const maxBoost = Math.max(0, ...storeState.equalizerBands);
+    const preAmpGain = Math.pow(10, -maxBoost / 20);
     const now = audioContext.currentTime;
     gainNode1.gain.cancelScheduledValues(now);
     gainNode2.gain.cancelScheduledValues(now);
-    gainNode1.gain.setValueAtTime(activePlayer === 1 ? 1.0 : 0.0, now);
-    gainNode2.gain.setValueAtTime(activePlayer === 2 ? 1.0 : 0.0, now);
+    gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, now);
+    gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, now);
   }
 };
 
@@ -369,6 +384,7 @@ export const closeAudioEngine = async () => {
   dryGainNode = null;
   analyserNode = null;
   mainGainNode = null;
+  limiterNode = null;
   sourceNodesCreated = false;
   prefetchedTrackId = null;
   impulseCache.clear();
@@ -405,6 +421,9 @@ const triggerCrossfade = async () => {
 
   const now = audioContext.currentTime;
   const cfDur = usePlayerStore.getState().crossfadeDuration;
+  const storeState = usePlayerStore.getState();
+  const maxBoost = Math.max(0, ...storeState.equalizerBands);
+  const preAmpGain = Math.pow(10, -maxBoost / 20);
 
   fadeOutGain.gain.cancelScheduledValues(now);
   fadeInGain.gain.cancelScheduledValues(now);
@@ -414,8 +433,8 @@ const triggerCrossfade = async () => {
   const fadeInCurve = new Float32Array(curveLength);
   for (let i = 0; i < curveLength; i++) {
     const t = i / (curveLength - 1);
-    fadeOutCurve[i] = Math.cos(t * Math.PI / 2);
-    fadeInCurve[i] = Math.sin(t * Math.PI / 2);
+    fadeOutCurve[i] = Math.cos(t * Math.PI / 2) * preAmpGain;
+    fadeInCurve[i] = Math.sin(t * Math.PI / 2) * preAmpGain;
   }
 
   fadeOutGain.gain.setValueCurveAtTime(fadeOutCurve, now, cfDur);
@@ -547,6 +566,16 @@ export const useAudioEngine = () => {
           filter.gain.setValueAtTime(equalizerBands[idx], audioContext?.currentTime || 0);
         }
       });
+      // Adjust pre-gain to prevent clipping
+      if (audioContext && gainNode1 && gainNode2) {
+        const maxBoost = Math.max(0, ...equalizerBands);
+        const preAmpGain = Math.pow(10, -maxBoost / 20);
+        const now = audioContext.currentTime;
+        gainNode1.gain.cancelScheduledValues(now);
+        gainNode2.gain.cancelScheduledValues(now);
+        gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, now);
+        gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, now);
+      }
     }
   }, [equalizerBands]);
 

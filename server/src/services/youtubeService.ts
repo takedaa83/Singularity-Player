@@ -278,7 +278,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         const { stdout } = await runYtDlpPooled([
           '--no-warnings',
           '--no-playlist',
-          '-f', '140/251/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+          '-f', '251/140/bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
           '--no-check-formats',
           '--no-check-certificate',
           '--print', '%(url)s',
@@ -368,7 +368,7 @@ export function spawnAudioStream(videoId: string): {
   const child = spawn(YT_DLP_PATH, [
     '--no-warnings',
     '--no-playlist',
-    '-f', '140/251/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
+    '-f', '251/140/bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
     '-o', '-', // Output to stdout
     ytUrl
