@@ -85,8 +85,9 @@ Any track can be downloaded and cached as a local audio blob in the browser. The
 Singularity Player features a premium, multi-layered lyrics pipeline that fetches, parses, and caches synchronized lyrics automatically, offering a fully interactive, cinema-grade presentation:
 
 - **Interactive Lyrics-Seeking**: Click or tap on any lyric line to instantly jump the audio playback to that specific point in the track.
-- **Apple Music-Style Progressive Sweeps**: Soft, feathered letter-by-letter karaoke coloring and elastic scaling transitions that follow the vocal pace of the singer.
-- **Beat-Synced Ambient Backdrop**: Glowing, floating blurred colorful blobs that extract and morph to match the album art's dominant palette, scaling and breathing dynamically in sync with the song's bass beats.
+- **Apple Music-Style Progressive Sweeps**: Soft, feathered letter-by-letter karaoke coloring and elastic scaling transitions. We've eliminated layout shifts by removing word font-weight overrides, ensuring characters sweep and scale without shifting horizontally.
+- **GPU-Accelerated Scrolling & Scaling**: Lyric lines transition between `scale(1.12)` (active) and `scale(0.92)` (inactive) with a soft glass blur (`blur(1.2px)` inactive). The layout box heights remain constant, allowing the GPU compositor to render smooth scrolls at up to 120fps with no reflow overhead.
+- **Independent Beat-Synced Ambient Backdrop**: Nested floating wrappers isolate the slow CSS orbital float animations from real-time JS-driven scale pulses. Colorful backdrop blobs react independently to the sub-bass of the track for an organic, multi-layered breathing backdrop.
 - **Buffer-Aware Playback Sync**: Automatically freezes visual timeline progression when the track is loading or buffering, preventing desynchronization.
 - **Multi-Source Aggregation**: Fetches lyrics dynamically from Musixmatch (with Richsync support), LRCLIB, YouTube transcripts, and NetEase, caching results on disk to minimize external api calls.
 

@@ -639,8 +639,8 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         
         gsap.to(container, {
           scrollTop: Math.max(0, scrollTarget),
-          duration: 0.45,
-          ease: 'power4.out', // Custom exponential easeOut curve for weighted fluid scrolls
+          duration: 0.75,
+          ease: 'power3.out',
           overwrite: 'auto'
         });
       }
@@ -777,7 +777,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           smoothedBassRef.current = smoothedBassRef.current * 0.72 + bassPercent * 0.28;
 
           // Apply scale to container and opacity changes to backdrop
-          const scaleVal = 1.0 + smoothedBassRef.current * 0.12;
+          const scaleVal = 1.0 + smoothedBassRef.current * 0.04;
           const opacityVal = 0.65 - smoothedBassRef.current * 0.15;
 
           if (ambientContainerRef.current) {
@@ -785,11 +785,26 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           }
           if (backdropRef.current) {
             backdropRef.current.style.background = `rgba(0, 0, 0, ${opacityVal})`;
+          }
+
+          // Individual blob scaling for deep organic multi-layered parallax beat reaction
+          const scale1 = 1.0 + smoothedBassRef.current * 0.18;
+          const scale2 = 1.0 + smoothedBassRef.current * 0.12;
+          const scale3 = 1.0 + smoothedBassRef.current * 0.22;
+
+          if (blob1Ref.current) {
+            blob1Ref.current.style.transform = `scale(${scale1}) translate3d(0,0,0)`;
+          }
+          if (blob2Ref.current) {
+            blob2Ref.current.style.transform = `scale(${scale2}) translate3d(0,0,0)`;
+          }
+          if (blob3Ref.current) {
+            blob3Ref.current.style.transform = `scale(${scale3}) translate3d(0,0,0)`;
           }
         } else {
           // Reset when not playing/full screen to standard values
           smoothedBassRef.current = smoothedBassRef.current * 0.72;
-          const scaleVal = 1.0 + smoothedBassRef.current * 0.12;
+          const scaleVal = 1.0 + smoothedBassRef.current * 0.04;
           const opacityVal = 0.65 - smoothedBassRef.current * 0.15;
 
           if (ambientContainerRef.current) {
@@ -797,6 +812,16 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           }
           if (backdropRef.current) {
             backdropRef.current.style.background = `rgba(0, 0, 0, ${opacityVal})`;
+          }
+
+          if (blob1Ref.current) {
+            blob1Ref.current.style.transform = `scale(1) translate3d(0,0,0)`;
+          }
+          if (blob2Ref.current) {
+            blob2Ref.current.style.transform = `scale(1) translate3d(0,0,0)`;
+          }
+          if (blob3Ref.current) {
+            blob3Ref.current.style.transform = `scale(1) translate3d(0,0,0)`;
           }
         }
       } catch (err) {
@@ -1129,10 +1154,15 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                           data-line-index={idx}
                           className={`lyrics-line py-2.5 px-2 cursor-pointer rounded-lg transition-all duration-300 relative ${
                             isActive
-                              ? 'active active-line text-white text-base font-bold bg-white/5 shadow-sm'
-                              : 'text-neutral-400 hover:text-white text-sm font-medium opacity-60'
+                              ? 'active active-line text-white font-bold bg-white/5 shadow-sm'
+                              : 'text-neutral-400 hover:text-white font-medium opacity-60'
                           }`}
-                          style={{ fontSize: isActive ? `${fontSize}px` : `${fontSize - 2}px` }}
+                          style={{ 
+                            fontSize: `${fontSize - 2}px`,
+                            transform: isActive ? 'scale(1.05) translate3d(0, 0, 0)' : 'scale(1.0) translate3d(0, 0, 0)',
+                            transformOrigin: 'left center',
+                            filter: isActive ? 'blur(0px)' : 'blur(0.3px)'
+                          }}
                         >
                           {line.words && line.words.length > 0 && wordHighlightEnabled ? (
                             <span className="inline-block transition-all duration-300">
@@ -1253,39 +1283,51 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
               className="absolute inset-0 overflow-hidden pointer-events-none z-0"
               style={{ transformOrigin: 'center center' }}
             >
-              {/* Blob 1 */}
+              {/* Blob 1 Wrapper */}
               <div 
-                ref={blob1Ref}
-                className="absolute w-[500px] h-[500px] rounded-full filter blur-[90px] opacity-[0.38] animate-float-blob-1"
-                style={{
-                  left: '10%',
-                  top: '15%',
-                  background: ambientColors && ambientColors.length > 0 ? ambientColors[0] : 'rgba(168, 85, 247, 0.4)',
-                  transition: 'background 1.5s ease-in-out',
-                }}
-              />
-              {/* Blob 2 */}
+                className="absolute w-[500px] h-[500px] animate-float-blob-1"
+                style={{ left: '10%', top: '15%' }}
+              >
+                <div 
+                  ref={blob1Ref}
+                  className="w-full h-full rounded-full filter blur-[90px] opacity-[0.38]"
+                  style={{
+                    background: ambientColors && ambientColors.length > 0 ? ambientColors[0] : 'rgba(168, 85, 247, 0.4)',
+                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
+                    transformOrigin: 'center center',
+                  }}
+                />
+              </div>
+              {/* Blob 2 Wrapper */}
               <div 
-                ref={blob2Ref}
-                className="absolute w-[550px] h-[550px] rounded-full filter blur-[110px] opacity-[0.32] animate-float-blob-2"
-                style={{
-                  right: '12%',
-                  bottom: '10%',
-                  background: ambientColors && ambientColors.length > 1 ? ambientColors[1] : 'rgba(236, 72, 153, 0.3)',
-                  transition: 'background 1.5s ease-in-out',
-                }}
-              />
-              {/* Blob 3 */}
+                className="absolute w-[550px] h-[550px] animate-float-blob-2"
+                style={{ right: '12%', bottom: '10%' }}
+              >
+                <div 
+                  ref={blob2Ref}
+                  className="w-full h-full rounded-full filter blur-[110px] opacity-[0.32]"
+                  style={{
+                    background: ambientColors && ambientColors.length > 1 ? ambientColors[1] : 'rgba(236, 72, 153, 0.3)',
+                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
+                    transformOrigin: 'center center',
+                  }}
+                />
+              </div>
+              {/* Blob 3 Wrapper */}
               <div 
-                ref={blob3Ref}
-                className="absolute w-[450px] h-[450px] rounded-full filter blur-[80px] opacity-[0.26] animate-float-blob-3"
-                style={{
-                  left: '38%',
-                  top: '45%',
-                  background: ambientColors && ambientColors.length > 2 ? ambientColors[2] : 'rgba(59, 130, 246, 0.25)',
-                  transition: 'background 1.5s ease-in-out',
-                }}
-              />
+                className="absolute w-[450px] h-[450px] animate-float-blob-3"
+                style={{ left: '38%', top: '45%' }}
+              >
+                <div 
+                  ref={blob3Ref}
+                  className="w-full h-full rounded-full filter blur-[80px] opacity-[0.26]"
+                  style={{
+                    background: ambientColors && ambientColors.length > 2 ? ambientColors[2] : 'rgba(59, 130, 246, 0.25)',
+                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
+                    transformOrigin: 'center center',
+                  }}
+                />
+              </div>
             </div>
 
             {/* Dynamic Backdrop Blur & Dim Overlay that pulses to the beat */}
@@ -1500,10 +1542,11 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                                 isActive ? 'active active-line' : ''
                               }`}
                               style={{
-                                fontSize: isActive ? `${fontSize + 12}px` : `${fontSize + 2}px`,
+                                fontSize: `${fontSize + 6}px`,
                                 lineHeight: 1.5,
                                 opacity: isActive ? 1.0 : 0.30,
-                                transform: isActive ? 'scale(1.02)' : 'none',
+                                transform: isActive ? 'scale(1.12) translate3d(0, 0, 0)' : 'scale(0.92) translate3d(0, 0, 0)',
+                                filter: isActive ? 'blur(0px)' : 'blur(1.2px)',
                                 color: 'white',
                                 fontWeight: isActive ? 800 : 700,
                                 letterSpacing: '-0.02em'

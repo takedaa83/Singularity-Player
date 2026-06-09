@@ -390,7 +390,6 @@ input[type="range"]::-webkit-slider-runnable-track {
 .karaoke-word.active {
   transform: scale(1.06) !important;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) !important;
-  font-weight: 850 !important;
 }
 
 .karaoke-word.completed {
