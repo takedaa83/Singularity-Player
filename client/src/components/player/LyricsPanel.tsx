@@ -1107,10 +1107,9 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             const exponent = Math.max(0.25, 1.0 - energy * 1.2);
             const holdCurve = 1 - Math.pow(1 - t, exponent);
             const blend = Math.min(1, (energy - HOLD_THRESHOLD) * 5);
-            const smoothStep = t * t * (3 - 2 * t);
-            progress = smoothStep * (1 - blend) + holdCurve * blend;
+            progress = t * (1 - blend) + holdCurve * blend;
           } else {
-            progress = t * t * (3 - 2 * t);
+            progress = t;
           }
 
           progress = Math.max(0, Math.min(1, progress));

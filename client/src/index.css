@@ -395,10 +395,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 .karaoke-word.completed {
-  background: none !important;
-  -webkit-background-clip: unset !important;
-  -webkit-text-fill-color: #ffffff !important;
-  color: #ffffff !important;
+  --word-progress: 115% !important;
   filter: brightness(1) !important;
 }
 
@@ -419,10 +416,7 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 .light .karaoke-word.completed {
-  background: none !important;
-  -webkit-background-clip: unset !important;
-  -webkit-text-fill-color: #0a0a0a !important;
-  color: #0a0a0a !important;
+  --word-progress: 115% !important;
   filter: brightness(1) !important;
 }
 

@@ -30,9 +30,11 @@ export const timeStore = {
 let lastEmitTime = 0;
 const EMIT_INTERVAL = 33; // ms (~30fps)
 
-function setTimeValues(current: number, dur: number) {
-  _currentTime = current;
-  _currentTimeStampedAt = performance.now();
+function setTimeValues(current: number, dur: number, forceResetStamp = false) {
+  if (current !== _currentTime || forceResetStamp) {
+    _currentTime = current;
+    _currentTimeStampedAt = performance.now();
+  }
   _duration = dur;
   const now = performance.now();
   if (now - lastEmitTime > EMIT_INTERVAL) {
@@ -280,6 +282,9 @@ export class AudioEngine {
       this.prevIsPlaying = state.isPlaying;
       this.prevStreamingQuality = state.streamingQuality;
       this.handlePlaybackStateChange(state.currentTrack, state.isPlaying, state.streamingQuality);
+      if (isPlayingChanged) {
+        setTimeValues(timeStore.getCurrentTime(), timeStore.getDuration(), true);
+      }
     }
   }
 
@@ -923,7 +928,7 @@ export class AudioEngine {
   public seek(time: number) {
     const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
     activePlayerInstance.currentTime = time;
-    setTimeValues(time, activePlayerInstance.duration || 0);
+    setTimeValues(time, activePlayerInstance.duration || 0, true);
   }
 
   public getAnalyser(): AnalyserNode | null {
