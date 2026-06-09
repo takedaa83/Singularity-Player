@@ -43,6 +43,7 @@ export interface Track {
   isDownloaded?: boolean;
   lyrics?: string | null;       // cached plain text lyrics
   syncedLyrics?: string | null; // cached LRC format lyrics
+  replayGain?: number | null;   // ReplayGain track gain in dB
 }
 
 // ─── Playlists ────────────────────────────────────────────────────────

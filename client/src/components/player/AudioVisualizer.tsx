@@ -185,10 +185,12 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
         ctx.stroke();
 
       } else {
-        // Default: 'bars' frequency columns
+        // Default: 'bars' frequency columns downsampled to 128 bars
         analyser.getByteFrequencyData(dataArray);
 
-        const barWidth = (width / bufferLength) * 2.2;
+        const displayBars = 128;
+        const step = Math.max(1, Math.floor(bufferLength / displayBars));
+        const barWidth = (width / displayBars) * 2.2;
         let barHeight;
         let x = 0;
 
@@ -198,15 +200,22 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
         gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.6)');
         gradient.addColorStop(1, '#ffffff');
 
-        for (let i = 0; i < bufferLength; i++) {
-          barHeight = (dataArray[i] / 255) * height * 0.85;
+        for (let i = 0; i < displayBars; i++) {
+          let sum = 0;
+          const startIdx = i * step;
+          for (let j = 0; j < step; j++) {
+            sum += dataArray[startIdx + j] || 0;
+          }
+          const val = sum / step;
+
+          barHeight = (val / 255) * height * 0.85;
 
           ctx.fillStyle = gradient;
           
           // Draw rounded bars
           const rx = x;
           const ry = height - barHeight;
-          const rw = barWidth - 2;
+          const rw = Math.max(1.5, barWidth - 2);
           const rh = barHeight;
 
           if (rh > 0) {

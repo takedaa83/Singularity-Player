@@ -1,7 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
-import { useToast } from './useToast';
+import { useToastStore } from './useToast';
 import { api } from '../utils/api';
+import { Track, SpatialAudioConfig } from '../types';
 
 // ─── External time store (avoids React re-renders at 60fps) ──────────
 type TimeListener = () => void;
@@ -37,634 +38,264 @@ function setTimeValues(current: number, dur: number) {
   }
 }
 
-// ─── EQ Frequencies ──────────────────────────────────────────────────
 const EQ_FREQUENCIES = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
-// ─── Global Audio Engine Singleton Variables ──────────────────────────
-let audio1: HTMLAudioElement | null = null;
-let audio2: HTMLAudioElement | null = null;
-let activePlayer: 1 | 2 = 1;
+export class AudioEngine {
+  private audio1: HTMLAudioElement;
+  private audio2: HTMLAudioElement;
+  private activePlayer: 1 | 2 = 1;
 
-let audioContext: AudioContext | null = null;
-let gainNode1: GainNode | null = null;
-let gainNode2: GainNode | null = null;
-let eqFilters: BiquadFilterNode[] = [];
-let pannerNode: PannerNode | null = null;
-let convolverNode: ConvolverNode | null = null;
-let reverbGainNode: GainNode | null = null;
-let dryGainNode: GainNode | null = null;
-let analyserNode: AnalyserNode | null = null;
-let mainGainNode: GainNode | null = null;
-let limiterNode: DynamicsCompressorNode | null = null;
+  private audioContext: AudioContext | null = null;
+  private gainNode1: GainNode | null = null;
+  private gainNode2: GainNode | null = null;
+  private eqFilters: BiquadFilterNode[] = [];
+  private pannerNode: PannerNode | null = null;
+  private convolverNode: ConvolverNode | null = null;
+  private reverbGainNode: GainNode | null = null;
+  private dryGainNode: GainNode | null = null;
+  private analyserNode: AnalyserNode | null = null;
+  private mainGainNode: GainNode | null = null;
+  private limiterNode: DynamicsCompressorNode | null = null;
 
-let isCrossfading = false;
-let rafId: number | null = null;
-let sourceNodesCreated = false;
-let prefetchedTrackId: string | null = null;
-let crossfadeTimeout: ReturnType<typeof setTimeout> | null = null;
-let playbackSpeed = 1.0;
+  private isCrossfading = false;
+  private rafId: number | null = null;
+  private sourceNodesCreated = false;
+  private prefetchedTrackId: string | null = null;
+  private crossfadeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private playbackSpeed = 1.0;
 
-const getStreamUrlWithParams = (trackUrl: string, quality: string) => {
-  const base = trackUrl.startsWith('http') ? trackUrl : `${api.baseUrl}${trackUrl}`;
-  const separator = base.includes('?') ? '&' : '?';
-  return `${base}${separator}quality=${quality}`;
-};
+  private impulseCache = new Map<string, AudioBuffer>();
+  private currentCrossfadeId = 0;
 
-// Caching and robustness enhancements
-const impulseCache = new Map<string, AudioBuffer>();
-let currentCrossfadeId = 0;
-let activeListenersCount = 0;
-let cleanupTimeout: ReturnType<typeof setTimeout> | null = null;
+  private activeFadeOutPlayer: HTMLAudioElement | null = null;
+  private activeFadeOutEndedListener: (() => void) | null = null;
 
-const ensureAudioElements = () => {
-  if (!audio1) {
-    audio1 = new Audio();
-    audio1.preload = 'auto';
-    audio1.crossOrigin = 'anonymous';
-  }
-  if (!audio2) {
-    audio2 = new Audio();
-    audio2.preload = 'auto';
-    audio2.crossOrigin = 'anonymous';
-  }
-};
+  // Cached store state properties
+  private cachedCrossfadeDuration = 0;
+  private cachedIsPlaying = false;
+  private cachedEqualizerBands: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
-const createImpulseResponse = (ctx: AudioContext, duration: number, decay: number): AudioBuffer => {
-  const sampleRate = ctx.sampleRate;
-  const length = sampleRate * duration;
-  const impulse = ctx.createBuffer(2, length, sampleRate);
-  const left = impulse.getChannelData(0);
-  const right = impulse.getChannelData(1);
+  private cachedFadeOutCurve: Float32Array | null = null;
+  private cachedFadeInCurve: Float32Array | null = null;
 
-  for (let i = 0; i < length; i++) {
-    const pct = i / length;
-    const env = Math.pow(1 - pct, decay);
-    left[i] = (Math.random() * 2 - 1) * env;
-    right[i] = (Math.random() * 2 - 1) * env;
-  }
-  return impulse;
-};
+  // Store previous values to detect changes
+  private prevTrack: Track | null = null;
+  private prevIsPlaying = false;
+  private prevVolume = 0.7;
+  private prevEqualizerBands: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  private prevSpatialAudioEnabled = false;
+  private prevSpatialAudioConfig: SpatialAudioConfig = { stereoWidth: 100, roomSize: 'none', elevation: 0 };
+  private prevPlaybackSpeed = 1.0;
+  private prevStreamingQuality = 'high';
 
-const getCachedImpulseResponse = (ctx: AudioContext, roomSize: 'small' | 'medium' | 'large'): AudioBuffer => {
-  if (impulseCache.has(roomSize)) {
-    return impulseCache.get(roomSize)!;
-  }
-  let duration = 0.5;
-  let decay = 2.0;
-  if (roomSize === 'small') {
-    duration = 0.5;
-    decay = 2.0;
-  } else if (roomSize === 'medium') {
-    duration = 1.2;
-    decay = 1.5;
-  } else if (roomSize === 'large') {
-    duration = 2.5;
-    decay = 1.0;
-  }
-  const buffer = createImpulseResponse(ctx, duration, decay);
-  impulseCache.set(roomSize, buffer);
-  return buffer;
-};
+  constructor() {
+    this.audio1 = new Audio();
+    this.audio2 = new Audio();
 
-const initAudioGraph = () => {
-  ensureAudioElements();
-  if (audioContext) return;
+    this.audio1.preload = 'auto';
+    this.audio1.crossOrigin = 'anonymous';
+    this.audio2.preload = 'auto';
+    this.audio2.crossOrigin = 'anonymous';
 
-  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-  const ctx = new AudioContextClass({ sampleRate: 48000 });
-  audioContext = ctx;
+    // Set up event listeners once
+    this.setupAudioEventListeners(this.audio1);
+    this.setupAudioEventListeners(this.audio2);
 
-  if (!sourceNodesCreated) {
-    const source1 = ctx.createMediaElementSource(audio1!);
-    const source2 = ctx.createMediaElementSource(audio2!);
+    // Sync initial state from store
+    const initialState = usePlayerStore.getState();
+    this.prevTrack = initialState.currentTrack;
+    this.prevIsPlaying = initialState.isPlaying;
+    this.prevVolume = initialState.volume;
+    this.prevEqualizerBands = [...initialState.equalizerBands];
+    this.prevSpatialAudioEnabled = initialState.spatialAudioEnabled;
+    this.prevSpatialAudioConfig = { ...initialState.spatialAudioConfig };
+    this.prevPlaybackSpeed = initialState.playbackSpeed;
+    this.prevStreamingQuality = initialState.streamingQuality;
 
-    const gain1 = ctx.createGain();
-    const gain2 = ctx.createGain();
-    gainNode1 = gain1;
-    gainNode2 = gain2;
+    this.cachedCrossfadeDuration = initialState.crossfadeDuration;
+    this.cachedIsPlaying = initialState.isPlaying;
+    this.cachedEqualizerBands = [...initialState.equalizerBands];
+    this.playbackSpeed = initialState.playbackSpeed;
 
-    source1.connect(gain1);
-    source2.connect(gain2);
+    // Subscribe to store updates
+    usePlayerStore.subscribe((state) => this.handleStoreUpdate(state));
 
-    const filters: BiquadFilterNode[] = [];
-    EQ_FREQUENCIES.forEach((freq, idx) => {
-      const filter = ctx.createBiquadFilter();
-      if (idx === 0) filter.type = 'lowshelf';
-      else if (idx === EQ_FREQUENCIES.length - 1) filter.type = 'highshelf';
-      else filter.type = 'peaking';
-      filter.frequency.value = freq;
-      filter.Q.value = idx === 0 || idx === EQ_FREQUENCIES.length - 1 ? 0.7 : 1.4;
-      filter.gain.value = 0;
-      filters.push(filter);
-    });
-
-    gain1.connect(filters[0]);
-    gain2.connect(filters[0]);
-
-    for (let i = 0; i < filters.length - 1; i++) {
-      filters[i].connect(filters[i + 1]);
-    }
-
-    const eqOutput = filters[filters.length - 1];
-
-    const panner = ctx.createPanner();
-    panner.panningModel = 'HRTF';
-    panner.distanceModel = 'inverse';
-    pannerNode = panner;
-
-    const convolver = ctx.createConvolver();
-    convolverNode = convolver;
-
-    const reverbGain = ctx.createGain();
-    reverbGain.gain.value = 0;
-    reverbGainNode = reverbGain;
-
-    const dryGain = ctx.createGain();
-    dryGain.gain.value = 1;
-    dryGainNode = dryGain;
-
-    convolver.connect(reverbGain);
-
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    analyserNode = analyser;
-
-    const mainGain = ctx.createGain();
-    mainGain.gain.value = 1.0;
-    mainGainNode = mainGain;
-
-    // Transparent safety limiter — only catches true peaks without coloring the signal.
-    // The previous -1dB hard-knee 20:1 ratio was crushing all dynamics and causing
-    // grainy/blasty sound. This gentle config is inaudible on normal material.
-    const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.setValueAtTime(-3.0, ctx.currentTime); // catch only peaks above -3dBFS
-    limiter.knee.setValueAtTime(6.0, ctx.currentTime); // soft knee for transparent onset
-    limiter.ratio.setValueAtTime(4.0, ctx.currentTime); // gentle ratio — preserves dynamics
-    limiter.attack.setValueAtTime(0.001, ctx.currentTime); // 1ms attack — catches transients without pumping
-    limiter.release.setValueAtTime(0.15, ctx.currentTime); // 150ms release — smooth recovery
-    limiterNode = limiter;
-
-    analyser.connect(mainGain);
-    mainGain.connect(limiter);
-    limiter.connect(ctx.destination);
-
-    eqFilters = filters;
-    sourceNodesCreated = true;
+    // Interaction unlock
+    this.setupUnlockListeners();
   }
 
-  // Sync initial parameters from player store
-  const storeState = usePlayerStore.getState();
-  const maxBoost = Math.max(0, ...storeState.equalizerBands);
-  const preAmpGain = Math.pow(10, -maxBoost / 20);
-  
-  if (gainNode1 && gainNode2) {
-    gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, ctx.currentTime);
-    gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, ctx.currentTime);
-  }
-
-  if (mainGainNode) {
-    mainGainNode.gain.setValueAtTime(storeState.volume, ctx.currentTime);
-  }
-
-  if (eqFilters.length > 0) {
-    eqFilters.forEach((filter, idx) => {
-      if (storeState.equalizerBands[idx] !== undefined) {
-        filter.gain.setValueAtTime(storeState.equalizerBands[idx], ctx.currentTime);
+  private setupAudioEventListeners(audio: HTMLAudioElement) {
+    audio.addEventListener('durationchange', () => {
+      if (this.isActivePlayer(audio)) {
+        setTimeValues(audio.currentTime, audio.duration || this.getCurrentTrackDuration());
       }
     });
-  }
-
-  if (pannerNode && convolverNode && reverbGainNode) {
-    if (!storeState.spatialAudioEnabled) {
-      pannerNode.positionX.setValueAtTime(0, ctx.currentTime);
-      pannerNode.positionY.setValueAtTime(0, ctx.currentTime);
-      pannerNode.positionZ.setValueAtTime(1, ctx.currentTime);
-      reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
-    } else {
-      const elevationRad = (storeState.spatialAudioConfig.elevation * Math.PI) / 180;
-      const xPos = (storeState.spatialAudioConfig.stereoWidth - 100) / 100;
-      pannerNode.positionX.setValueAtTime(xPos * 2, ctx.currentTime);
-      pannerNode.positionY.setValueAtTime(Math.sin(elevationRad) * 2, ctx.currentTime);
-      pannerNode.positionZ.setValueAtTime(Math.cos(elevationRad) * 2, ctx.currentTime);
-
-      const roomSize = storeState.spatialAudioConfig.roomSize;
-      if (roomSize === 'none') {
-        reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
-      } else {
-        let wetVolume = 0.15;
-        if (roomSize === 'small') wetVolume = 0.12;
-        else if (roomSize === 'medium') wetVolume = 0.2;
-        else if (roomSize === 'large') wetVolume = 0.3;
-
-        const buffer = getCachedImpulseResponse(ctx, roomSize);
-        convolverNode.buffer = buffer;
-        reverbGainNode.gain.setValueAtTime(wetVolume, ctx.currentTime);
+    audio.addEventListener('loadedmetadata', () => {
+      if (this.isActivePlayer(audio)) {
+        setTimeValues(audio.currentTime, audio.duration || this.getCurrentTrackDuration());
       }
-    }
-  }
-
-  // Update dynamic connections based on spatial state
-  updateAudioConnections();
-};
-
-const updateAudioConnections = () => {
-  if (eqFilters.length === 0 || !analyserNode) return;
-  
-  const eqOutput = eqFilters[eqFilters.length - 1];
-  
-  // Disconnect eqOutput and all spatial nodes to reset routing
-  try { eqOutput.disconnect(); } catch (e) {}
-  try { pannerNode?.disconnect(); } catch (e) {}
-  try { dryGainNode?.disconnect(); } catch (e) {}
-  try { convolverNode?.disconnect(); } catch (e) {}
-  try { reverbGainNode?.disconnect(); } catch (e) {}
-
-  const storeState = usePlayerStore.getState();
-  
-  if (!storeState.spatialAudioEnabled) {
-    // Direct bypass: EQ -> Analyser
-    eqOutput.connect(analyserNode);
-  } else {
-    // Spatial routing: EQ -> Dry/Convolver -> Panner -> Analyser
-    const roomSize = storeState.spatialAudioConfig.roomSize;
-    if (dryGainNode && convolverNode && reverbGainNode && pannerNode) {
-      eqOutput.connect(dryGainNode);
-      dryGainNode.connect(pannerNode);
-      
-      if (roomSize !== 'none') {
-        eqOutput.connect(convolverNode);
-        convolverNode.connect(reverbGainNode);
-        reverbGainNode.connect(pannerNode);
-      }
-      
-      pannerNode.connect(analyserNode);
-    } else {
-      // Fallback
-      eqOutput.connect(analyserNode);
-    }
-  }
-};
-
-const prefetchNextTrack = () => {
-  const { queue, activeQueueIndex, shuffle, repeat, streamingQuality } = usePlayerStore.getState();
-
-  let nextTrackObj;
-  if (repeat === 'one') {
-    return;
-  } else {
-    const nextIndex = activeQueueIndex + 1;
-    if (nextIndex >= queue.length) return;
-    nextTrackObj = queue[nextIndex];
-  }
-
-  if (!nextTrackObj || prefetchedTrackId === nextTrackObj.id) return;
-
-  ensureAudioElements();
-  const inactivePlayer = activePlayer === 1 ? audio2 : audio1;
-  if (!inactivePlayer) return;
-
-  const targetSrc = getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
-
-  inactivePlayer.src = targetSrc;
-  inactivePlayer.preload = 'auto';
-  inactivePlayer.load();
-  prefetchedTrackId = nextTrackObj.id;
-};
-
-const cancelActiveCrossfade = () => {
-  currentCrossfadeId++;
-  if (crossfadeTimeout) {
-    clearTimeout(crossfadeTimeout);
-    crossfadeTimeout = null;
-  }
-  isCrossfading = false;
-
-  // Pause and clear the inactive player to prevent ghost audio and release decoder resources
-  const inactivePlayer = activePlayer === 1 ? audio2 : audio1;
-  if (inactivePlayer) {
-    try {
-      inactivePlayer.pause();
-      inactivePlayer.src = '';
-    } catch (e) {
-      console.warn('Error clearing inactive player during crossfade cancel:', e);
-    }
-  }
-
-  // Restore default gain values instantly
-  if (audioContext && gainNode1 && gainNode2) {
-    const storeState = usePlayerStore.getState();
-    const maxBoost = Math.max(0, ...storeState.equalizerBands);
-    const preAmpGain = Math.pow(10, -maxBoost / 20);
-    const now = audioContext.currentTime;
-    gainNode1.gain.cancelScheduledValues(now);
-    gainNode2.gain.cancelScheduledValues(now);
-    gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, now);
-    gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, now);
-  }
-};
-
-export const closeAudioEngine = async () => {
-  stopProgressTimer();
-  cancelActiveCrossfade();
-  
-  if (audioContext) {
-    try {
-      await audioContext.close();
-    } catch (e) {
-      console.warn('Error closing AudioContext:', e);
-    }
-    audioContext = null;
-  }
-  
-  if (audio1) {
-    audio1.pause();
-    audio1.src = '';
-    audio1 = null;
-  }
-  if (audio2) {
-    audio2.pause();
-    audio2.src = '';
-    audio2 = null;
-  }
-  
-  gainNode1 = null;
-  gainNode2 = null;
-  eqFilters = [];
-  pannerNode = null;
-  convolverNode = null;
-  reverbGainNode = null;
-  dryGainNode = null;
-  analyserNode = null;
-  mainGainNode = null;
-  limiterNode = null;
-  sourceNodesCreated = false;
-  prefetchedTrackId = null;
-  impulseCache.clear();
-};
-
-const triggerCrossfade = async () => {
-  const { queue, activeQueueIndex, streamingQuality } = usePlayerStore.getState();
-  const nextIndex = activeQueueIndex + 1;
-  if (nextIndex >= queue.length) return;
-
-  const nextTrackObj = queue[nextIndex];
-  isCrossfading = true;
-  currentCrossfadeId++;
-  const activeCfId = currentCrossfadeId;
-
-  ensureAudioElements();
-  const fadeOutPlayer = activePlayer === 1 ? audio1 : audio2;
-  const fadeInPlayer = activePlayer === 1 ? audio2 : audio1;
-  const fadeOutGain = activePlayer === 1 ? gainNode1 : gainNode2;
-  const fadeInGain = activePlayer === 1 ? gainNode2 : gainNode1;
-
-  if (!fadeOutPlayer || !fadeInPlayer || !fadeOutGain || !fadeInGain || !audioContext) {
-    isCrossfading = false;
-    return;
-  }
-
-  const targetSrc = getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
-
-  fadeInPlayer.src = targetSrc;
-  fadeInPlayer.playbackRate = playbackSpeed;
-  fadeInPlayer.load();
-
-  const now = audioContext.currentTime;
-  const cfDur = usePlayerStore.getState().crossfadeDuration;
-  const storeState = usePlayerStore.getState();
-  const maxBoost = Math.max(0, ...storeState.equalizerBands);
-  const preAmpGain = Math.pow(10, -maxBoost / 20);
-
-  fadeOutGain.gain.cancelScheduledValues(now);
-  fadeInGain.gain.cancelScheduledValues(now);
-
-  const curveLength = 40;
-  const fadeOutCurve = new Float32Array(curveLength);
-  const fadeInCurve = new Float32Array(curveLength);
-  for (let i = 0; i < curveLength; i++) {
-    const t = i / (curveLength - 1);
-    fadeOutCurve[i] = Math.cos(t * Math.PI / 2) * preAmpGain;
-    fadeInCurve[i] = Math.sin(t * Math.PI / 2) * preAmpGain;
-  }
-
-  fadeOutGain.gain.setValueCurveAtTime(fadeOutCurve, now, cfDur);
-  fadeInGain.gain.setValueCurveAtTime(fadeInCurve, now, cfDur);
-
-  try {
-    await fadeInPlayer.play();
-  } catch (e) {
-    console.error('Failed to play crossfaded track:', e);
-  }
-
-  if (activeCfId !== currentCrossfadeId) return;
-
-  activePlayer = activePlayer === 1 ? 2 : 1;
-
-  if (crossfadeTimeout) clearTimeout(crossfadeTimeout);
-
-  crossfadeTimeout = setTimeout(() => {
-    if (activeCfId !== currentCrossfadeId) return;
-
-    fadeOutPlayer.pause();
-    fadeOutPlayer.src = '';
-
-    usePlayerStore.setState({
-      currentTrack: nextTrackObj,
-      activeQueueIndex: nextIndex,
     });
-
-    isCrossfading = false;
-    crossfadeTimeout = null;
-  }, cfDur * 1000);
-};
-
-const tick = () => {
-  const player = activePlayer === 1 ? audio1 : audio2;
-  if (!player) {
-    rafId = requestAnimationFrame(tick);
-    return;
-  }
-
-  const current = player.currentTime;
-  const total = player.duration || 0;
-  setTimeValues(current, total);
-
-  // Crossfade check
-  const cfDur = usePlayerStore.getState().crossfadeDuration;
-  if (
-    total > 0 &&
-    cfDur > 0 &&
-    current >= total - cfDur &&
-    !isCrossfading
-  ) {
-    triggerCrossfade();
-  }
-
-  // Prefetch at 60%
-  if (total > 0 && current >= total * 0.6 && !prefetchedTrackId) {
-    prefetchNextTrack();
-  }
-
-  // Song end
-  if (player.ended && !isCrossfading && usePlayerStore.getState().isPlaying) {
-    usePlayerStore.getState().nextTrack();
-  }
-
-  rafId = requestAnimationFrame(tick);
-};
-
-const startProgressTimer = () => {
-  if (rafId) cancelAnimationFrame(rafId);
-  rafId = requestAnimationFrame(tick);
-};
-
-const stopProgressTimer = () => {
-  if (rafId) {
-    cancelAnimationFrame(rafId);
-    rafId = null;
-  }
-};
-
-// ─── Hook ─────────────────────────────────────────────────────────────
-export const useAudioEngine = () => {
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const volume = usePlayerStore((s) => s.volume);
-  const playbackSpeedStore = usePlayerStore((s) => s.playbackSpeed);
-  const equalizerBands = usePlayerStore((s) => s.equalizerBands);
-  const setPlaying = usePlayerStore((s) => s.setPlaying);
-  const spatialAudioEnabled = usePlayerStore((s) => s.spatialAudioEnabled);
-  const spatialAudioConfig = usePlayerStore((s) => s.spatialAudioConfig);
-  const streamingQuality = usePlayerStore((s) => s.streamingQuality);
-  const setBuffering = usePlayerStore((s) => s.setBuffering);
-  const { toast } = useToast();
-
-  playbackSpeed = playbackSpeedStore;
-
-  // HMR Cleanup & Lifecycle reference tracking
-  useEffect(() => {
-    if (cleanupTimeout) {
-      clearTimeout(cleanupTimeout);
-      cleanupTimeout = null;
-    }
-    activeListenersCount++;
-    return () => {
-      activeListenersCount--;
-      if (activeListenersCount === 0) {
-        cleanupTimeout = setTimeout(() => {
-          if (activeListenersCount === 0) {
-            closeAudioEngine();
-          }
-        }, 100);
+    audio.addEventListener('waiting', () => {
+      if (this.isActivePlayer(audio)) {
+        usePlayerStore.getState().setBuffering(true);
       }
-    };
-  }, []);
-
-  // Sync volume with smooth linear ramping to prevent clicks/pops
-  useEffect(() => {
-    if (mainGainNode && audioContext) {
-      const now = audioContext.currentTime;
-      mainGainNode.gain.cancelScheduledValues(now);
-      mainGainNode.gain.setValueAtTime(mainGainNode.gain.value, now);
-      mainGainNode.gain.linearRampToValueAtTime(volume, now + 0.05);
-    }
-  }, [volume]);
-
-  // Sync EQ Bands
-  useEffect(() => {
-    if (eqFilters.length > 0) {
-      eqFilters.forEach((filter, idx) => {
-        if (equalizerBands[idx] !== undefined) {
-          filter.gain.setValueAtTime(equalizerBands[idx], audioContext?.currentTime || 0);
+    });
+    audio.addEventListener('playing', () => {
+      if (this.isActivePlayer(audio)) {
+        usePlayerStore.getState().setBuffering(false);
+      }
+    });
+    audio.addEventListener('canplay', () => {
+      if (this.isActivePlayer(audio)) {
+        usePlayerStore.getState().setBuffering(false);
+      }
+    });
+    audio.addEventListener('seeked', () => {
+      if (this.isActivePlayer(audio)) {
+        usePlayerStore.getState().setBuffering(false);
+      }
+    });
+    audio.addEventListener('stalled', () => {
+      if (this.isActivePlayer(audio)) {
+        console.warn('[Audio Engine] Playback stalled...');
+        usePlayerStore.getState().setBuffering(true);
+      }
+    });
+    audio.addEventListener('ended', () => {
+      if (this.isActivePlayer(audio)) {
+        if (!this.isCrossfading && usePlayerStore.getState().isPlaying) {
+          usePlayerStore.getState().nextTrack();
         }
-      });
-      // Adjust pre-gain to prevent clipping
-      if (audioContext && gainNode1 && gainNode2) {
-        const maxBoost = Math.max(0, ...equalizerBands);
-        const preAmpGain = Math.pow(10, -maxBoost / 20);
-        const now = audioContext.currentTime;
-        gainNode1.gain.cancelScheduledValues(now);
-        gainNode2.gain.cancelScheduledValues(now);
-        gainNode1.gain.setValueAtTime(activePlayer === 1 ? preAmpGain : 0.0, now);
-        gainNode2.gain.setValueAtTime(activePlayer === 2 ? preAmpGain : 0.0, now);
+      }
+    });
+    audio.addEventListener('error', () => {
+      if (this.isActivePlayer(audio)) {
+        this.handlePlaybackError(audio);
+      }
+    });
+  }
+
+  private isActivePlayer(audio: HTMLAudioElement): boolean {
+    const activeAudio = this.activePlayer === 1 ? this.audio1 : this.audio2;
+    return audio === activeAudio;
+  }
+
+  private getCurrentTrackDuration(): number {
+    const track = usePlayerStore.getState().currentTrack;
+    return track ? track.duration : 0;
+  }
+
+  private getPreAmpGain(): number {
+    const maxBoost = Math.max(0, ...this.cachedEqualizerBands);
+    return Math.pow(10, -maxBoost / 20);
+  }
+
+  private getLoudnessMultiplier(track: Track | null): number {
+    if (!track || track.replayGain == null) return 1.0;
+    return Math.pow(10, track.replayGain / 20);
+  }
+
+  private syncPreAmpGain() {
+    if (!this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const preAmp = this.getPreAmpGain();
+    const currentTrack = usePlayerStore.getState().currentTrack;
+
+    if (this.isCrossfading) return;
+
+    const currentMultiplier = this.getLoudnessMultiplier(currentTrack);
+    const targetGain = preAmp * currentMultiplier;
+
+    if (this.gainNode1) {
+      this.gainNode1.gain.cancelScheduledValues(now);
+      this.gainNode1.gain.setValueAtTime(this.activePlayer === 1 ? targetGain : 0.0, now);
+    }
+    if (this.gainNode2) {
+      this.gainNode2.gain.cancelScheduledValues(now);
+      this.gainNode2.gain.setValueAtTime(this.activePlayer === 2 ? targetGain : 0.0, now);
+    }
+  }
+
+  private handleStoreUpdate(state: any) {
+    const volumeChanged = state.volume !== this.prevVolume;
+    const eqBandsChanged = state.equalizerBands.some(
+      (val: number, idx: number) => val !== this.prevEqualizerBands[idx]
+    );
+    const spatialChanged = 
+      state.spatialAudioEnabled !== this.prevSpatialAudioEnabled ||
+      state.spatialAudioConfig.stereoWidth !== this.prevSpatialAudioConfig.stereoWidth ||
+      state.spatialAudioConfig.roomSize !== this.prevSpatialAudioConfig.roomSize ||
+      state.spatialAudioConfig.elevation !== this.prevSpatialAudioConfig.elevation;
+    const speedChanged = state.playbackSpeed !== this.prevPlaybackSpeed;
+    const trackChanged = state.currentTrack?.id !== this.prevTrack?.id;
+    const isPlayingChanged = state.isPlaying !== this.prevIsPlaying;
+    const qualityChanged = state.streamingQuality !== this.prevStreamingQuality;
+
+    this.cachedCrossfadeDuration = state.crossfadeDuration;
+    this.cachedIsPlaying = state.isPlaying;
+    this.cachedEqualizerBands = [...state.equalizerBands];
+
+    if (volumeChanged) {
+      this.prevVolume = state.volume;
+      if (this.mainGainNode && this.audioContext) {
+        const now = this.audioContext.currentTime;
+        this.mainGainNode.gain.cancelScheduledValues(now);
+        this.mainGainNode.gain.setValueAtTime(this.mainGainNode.gain.value, now);
+        this.mainGainNode.gain.linearRampToValueAtTime(state.volume, now + 0.05);
       }
     }
-  }, [equalizerBands]);
 
-  // Sync Spatial Audio Parameters
-  useEffect(() => {
-    if (!audioContext) return;
-    const ctx = audioContext;
-    const panner = pannerNode;
-    const convolver = convolverNode;
-    const reverbGain = reverbGainNode;
-
-    if (!panner || !convolver || !reverbGain) return;
-
-    // Apply routing connections dynamically based on current state
-    updateAudioConnections();
-
-    if (!spatialAudioEnabled) {
-      panner.positionX.setValueAtTime(0, ctx.currentTime);
-      panner.positionY.setValueAtTime(0, ctx.currentTime);
-      panner.positionZ.setValueAtTime(1, ctx.currentTime);
-      reverbGain.gain.setValueAtTime(0, ctx.currentTime);
-      return;
-    }
-
-    const elevationRad = (spatialAudioConfig.elevation * Math.PI) / 180;
-    const xPos = (spatialAudioConfig.stereoWidth - 100) / 100;
-
-    panner.positionX.setValueAtTime(xPos * 2, ctx.currentTime);
-    panner.positionY.setValueAtTime(Math.sin(elevationRad) * 2, ctx.currentTime);
-    panner.positionZ.setValueAtTime(Math.cos(elevationRad) * 2, ctx.currentTime);
-
-    const roomSize = spatialAudioConfig.roomSize;
-    if (roomSize === 'none') {
-      reverbGain.gain.setValueAtTime(0, ctx.currentTime);
-    } else {
-      let wetVolume = 0.15;
-
-      if (roomSize === 'small') {
-        wetVolume = 0.12;
-      } else if (roomSize === 'medium') {
-        wetVolume = 0.2;
-      } else if (roomSize === 'large') {
-        wetVolume = 0.3;
+    if (eqBandsChanged) {
+      this.prevEqualizerBands = [...state.equalizerBands];
+      this.invalidateCrossfadeCurves();
+      if (this.eqFilters.length > 0) {
+        const now = this.audioContext?.currentTime || 0;
+        this.eqFilters.forEach((filter, idx) => {
+          if (state.equalizerBands[idx] !== undefined) {
+            filter.gain.setValueAtTime(state.equalizerBands[idx], now);
+          }
+        });
       }
-
-      const buffer = getCachedImpulseResponse(ctx, roomSize);
-      convolver.buffer = buffer;
-      reverbGain.gain.setValueAtTime(wetVolume, ctx.currentTime);
+      this.syncPreAmpGain();
     }
-  }, [spatialAudioEnabled, spatialAudioConfig]);
 
-  // Sync Playback Speed
-  useEffect(() => {
-    ensureAudioElements();
-    if (audio1) audio1.playbackRate = playbackSpeedStore;
-    if (audio2) audio2.playbackRate = playbackSpeedStore;
-  }, [playbackSpeedStore]);
+    if (spatialChanged) {
+      this.prevSpatialAudioEnabled = state.spatialAudioEnabled;
+      this.prevSpatialAudioConfig = { ...state.spatialAudioConfig };
+      this.applySpatialParams(state.spatialAudioEnabled, state.spatialAudioConfig);
+    }
 
-  // Handle Play/Pause and Song Changes
-  useEffect(() => {
-    ensureAudioElements();
-    const activePlayerInstance = activePlayer === 1 ? audio1 : audio2;
-    if (!activePlayerInstance) return;
+    if (speedChanged) {
+      this.prevPlaybackSpeed = state.playbackSpeed;
+      this.playbackSpeed = state.playbackSpeed;
+      this.audio1.playbackRate = state.playbackSpeed;
+      this.audio2.playbackRate = state.playbackSpeed;
+    }
+
+    if (trackChanged || isPlayingChanged || qualityChanged) {
+      this.prevTrack = state.currentTrack;
+      this.prevIsPlaying = state.isPlaying;
+      this.prevStreamingQuality = state.streamingQuality;
+      this.handlePlaybackStateChange(state.currentTrack, state.isPlaying, state.streamingQuality);
+    }
+  }
+
+  private handlePlaybackStateChange(currentTrack: Track | null, isPlaying: boolean, streamingQuality: string) {
+    const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
 
     if (!currentTrack) {
       activePlayerInstance.pause();
       activePlayerInstance.src = '';
-      stopProgressTimer();
-      setBuffering(false);
+      this.stopProgressTimer();
+      usePlayerStore.getState().setBuffering(false);
+      this.updateMediaSession(null, false);
       return;
     }
 
     const currentSrc = activePlayerInstance.src;
-    const targetSrc = getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
+    const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
 
-    // Reset prefetch status on every track change
-    prefetchedTrackId = null;
+    this.prefetchedTrackId = null;
 
     const decodeUrl = (url: string) => {
       try {
@@ -675,127 +306,646 @@ export const useAudioEngine = () => {
     };
 
     if (decodeUrl(currentSrc) !== decodeUrl(targetSrc)) {
-      if (isCrossfading) {
-        cancelActiveCrossfade();
+      if (this.isCrossfading) {
+        this.cancelActiveCrossfade();
       }
       activePlayerInstance.src = targetSrc;
       activePlayerInstance.load();
     }
 
     if (isPlaying) {
-      initAudioGraph();
-      if (audioContext?.state === 'suspended') {
-        audioContext.resume();
+      this.initAudioGraph();
+      if (this.audioContext?.state === 'suspended') {
+        this.audioContext.resume();
       }
+      
+      this.updateMediaSession(currentTrack, true);
+      this.syncPreAmpGain();
+
       activePlayerInstance.play().catch((e) => {
         console.warn('Playback failed or interrupted:', e);
         if (e.name !== 'AbortError') {
-          setPlaying(false);
-          setBuffering(false);
-          toast('Playback failed. Please check your network or try another track.', 'error');
+          usePlayerStore.getState().setPlaying(false);
+          usePlayerStore.getState().setBuffering(false);
+          this.showToast('Playback failed. Please check your network or try another track.', 'error');
         }
       });
-      startProgressTimer();
+      this.startProgressTimer();
     } else {
       activePlayerInstance.pause();
-      stopProgressTimer();
-      setBuffering(false);
+      this.stopProgressTimer();
+      usePlayerStore.getState().setBuffering(false);
+      this.updateMediaSession(currentTrack, false);
     }
+  }
 
-    const onDurationChange = () => {
-      setTimeValues(activePlayerInstance.currentTime, activePlayerInstance.duration || currentTrack.duration || 0);
-    };
-    const onLoadedMetadata = () => {
-      setTimeValues(activePlayerInstance.currentTime, activePlayerInstance.duration || currentTrack.duration || 0);
-    };
-    const onWaiting = () => {
-      setBuffering(true);
-    };
-    const onPlaying = () => {
-      setBuffering(false);
-    };
-    const onStalled = () => {
-      console.warn('[Audio Engine] Playback stalled...');
-      setBuffering(true);
-    };
-    const onError = async (e: Event) => {
-      const err = activePlayerInstance.error;
-      console.error('[Audio Engine] Playback error event:', err);
-      
-      if (err) {
-        toast('Playback interrupted. Recovering stream...', 'info');
-        setBuffering(true);
-        
-        try {
-          const freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
-          console.log('[Audio Engine] Attempting stream recovery from:', freshSrc);
-          activePlayerInstance.src = freshSrc;
-          activePlayerInstance.load();
-          if (isPlaying) {
-            await activePlayerInstance.play();
-          }
-        } catch (retryErr) {
-          console.error('[Audio Engine] Recovery retry failed:', retryErr);
-          setPlaying(false);
-          setBuffering(false);
-          toast('Playback failed. Please check your network or try another track.', 'error');
-        }
-      }
-    };
+  private getStreamUrlWithParams(trackUrl: string, quality: string) {
+    const base = trackUrl.startsWith('http') ? trackUrl : `${api.baseUrl}${trackUrl}`;
+    const separator = base.includes('?') ? '&' : '?';
+    return `${base}${separator}quality=${quality}`;
+  }
 
-    activePlayerInstance.addEventListener('durationchange', onDurationChange);
-    activePlayerInstance.addEventListener('loadedmetadata', onLoadedMetadata);
-    activePlayerInstance.addEventListener('waiting', onWaiting);
-    activePlayerInstance.addEventListener('playing', onPlaying);
-    activePlayerInstance.addEventListener('canplay', onPlaying);
-    activePlayerInstance.addEventListener('stalled', onStalled);
-    activePlayerInstance.addEventListener('error', onError);
-
-    return () => {
-      activePlayerInstance.removeEventListener('durationchange', onDurationChange);
-      activePlayerInstance.removeEventListener('loadedmetadata', onLoadedMetadata);
-      activePlayerInstance.removeEventListener('waiting', onWaiting);
-      activePlayerInstance.removeEventListener('playing', onPlaying);
-      activePlayerInstance.removeEventListener('canplay', onPlaying);
-      activePlayerInstance.removeEventListener('stalled', onStalled);
-      activePlayerInstance.removeEventListener('error', onError);
-      stopProgressTimer();
-    };
-  }, [currentTrack, isPlaying, setPlaying, toast, streamingQuality]);
-
-  // Unlock audio graph on user interaction (desktop + mobile gestures)
-  useEffect(() => {
+  private setupUnlockListeners() {
     const unlock = () => {
-      initAudioGraph();
+      this.initAudioGraph();
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
       window.removeEventListener('click', unlock);
       window.removeEventListener('keydown', unlock);
       window.removeEventListener('touchstart', unlock);
       window.removeEventListener('pointerdown', unlock);
     };
-    window.addEventListener('click', unlock);
-    window.addEventListener('keydown', unlock);
-    window.addEventListener('touchstart', unlock);
-    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true });
+    window.addEventListener('pointerdown', unlock, { once: true });
+  }
 
-    return () => {
-      window.removeEventListener('click', unlock);
-      window.removeEventListener('keydown', unlock);
-      window.removeEventListener('touchstart', unlock);
-      window.removeEventListener('pointerdown', unlock);
-    };
-  }, []);
+  public initAudioGraph() {
+    if (this.audioContext) return;
 
-  const seek = useCallback((time: number) => {
-    ensureAudioElements();
-    const activePlayerInstance = activePlayer === 1 ? audio1 : audio2;
-    if (activePlayerInstance) {
-      activePlayerInstance.currentTime = time;
-      setTimeValues(time, activePlayerInstance.duration || 0);
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const ctx = new AudioContextClass({ sampleRate: 48000 });
+    this.audioContext = ctx;
+
+    if (!this.sourceNodesCreated) {
+      const source1 = ctx.createMediaElementSource(this.audio1);
+      const source2 = ctx.createMediaElementSource(this.audio2);
+
+      const gain1 = ctx.createGain();
+      const gain2 = ctx.createGain();
+      this.gainNode1 = gain1;
+      this.gainNode2 = gain2;
+
+      source1.connect(gain1);
+      source2.connect(gain2);
+
+      const filters: BiquadFilterNode[] = [];
+      EQ_FREQUENCIES.forEach((freq, idx) => {
+        const filter = ctx.createBiquadFilter();
+        if (idx === 0) filter.type = 'lowshelf';
+        else if (idx === EQ_FREQUENCIES.length - 1) filter.type = 'highshelf';
+        else filter.type = 'peaking';
+        filter.frequency.value = freq;
+        filter.Q.value = idx === 0 || idx === EQ_FREQUENCIES.length - 1 ? 0.7 : 1.4;
+        filter.gain.value = 0;
+        filters.push(filter);
+      });
+
+      gain1.connect(filters[0]);
+      gain2.connect(filters[0]);
+
+      for (let i = 0; i < filters.length - 1; i++) {
+        filters[i].connect(filters[i + 1]);
+      }
+
+      this.eqFilters = filters;
+
+      this.pannerNode = ctx.createPanner();
+      this.pannerNode.panningModel = 'HRTF';
+      this.pannerNode.distanceModel = 'inverse';
+
+      this.convolverNode = ctx.createConvolver();
+
+      this.reverbGainNode = ctx.createGain();
+      this.reverbGainNode.gain.value = 0;
+
+      this.dryGainNode = ctx.createGain();
+      this.dryGainNode.gain.value = 1;
+
+      this.convolverNode.connect(this.reverbGainNode);
+
+      this.analyserNode = ctx.createAnalyser();
+      this.analyserNode.fftSize = 2048;
+
+      this.mainGainNode = ctx.createGain();
+      this.mainGainNode.gain.value = 1.0;
+
+      this.limiterNode = ctx.createDynamicsCompressor();
+      this.limiterNode.threshold.setValueAtTime(-3.0, ctx.currentTime);
+      this.limiterNode.knee.setValueAtTime(6.0, ctx.currentTime);
+      this.limiterNode.ratio.setValueAtTime(4.0, ctx.currentTime);
+      this.limiterNode.attack.setValueAtTime(0.001, ctx.currentTime);
+      this.limiterNode.release.setValueAtTime(0.15, ctx.currentTime);
+
+      this.analyserNode.connect(this.mainGainNode);
+      this.mainGainNode.connect(this.limiterNode);
+      this.limiterNode.connect(ctx.destination);
+
+      this.sourceNodesCreated = true;
     }
+
+    const storeState = usePlayerStore.getState();
+    const preAmp = this.getPreAmpGain();
+    const currentMultiplier = this.getLoudnessMultiplier(storeState.currentTrack);
+    const targetGain = preAmp * currentMultiplier;
+
+    if (this.gainNode1 && this.gainNode2) {
+      this.gainNode1.gain.setValueAtTime(this.activePlayer === 1 ? targetGain : 0.0, ctx.currentTime);
+      this.gainNode2.gain.setValueAtTime(this.activePlayer === 2 ? targetGain : 0.0, ctx.currentTime);
+    }
+
+    if (this.mainGainNode) {
+      this.mainGainNode.gain.setValueAtTime(storeState.volume, ctx.currentTime);
+    }
+
+    if (this.eqFilters.length > 0) {
+      this.eqFilters.forEach((filter, idx) => {
+        if (storeState.equalizerBands[idx] !== undefined) {
+          filter.gain.setValueAtTime(storeState.equalizerBands[idx], ctx.currentTime);
+        }
+      });
+    }
+
+    this.applySpatialParams(storeState.spatialAudioEnabled, storeState.spatialAudioConfig);
+  }
+
+  private updateAudioConnections() {
+    if (this.eqFilters.length === 0 || !this.analyserNode) return;
+    
+    const eqOutput = this.eqFilters[this.eqFilters.length - 1];
+    
+    if (this.analyserNode) {
+      try { eqOutput.disconnect(this.analyserNode); } catch (e) {}
+    }
+    if (this.dryGainNode) {
+      try { eqOutput.disconnect(this.dryGainNode); } catch (e) {}
+      try { this.dryGainNode.disconnect(this.pannerNode!); } catch (e) {}
+    }
+    if (this.convolverNode) {
+      try { eqOutput.disconnect(this.convolverNode); } catch (e) {}
+      try { this.convolverNode.disconnect(this.reverbGainNode!); } catch (e) {}
+    }
+    if (this.reverbGainNode) {
+      try { this.reverbGainNode.disconnect(this.pannerNode!); } catch (e) {}
+    }
+    if (this.pannerNode) {
+      try { this.pannerNode.disconnect(this.analyserNode); } catch (e) {}
+    }
+
+    const storeState = usePlayerStore.getState();
+    
+    if (!storeState.spatialAudioEnabled) {
+      eqOutput.connect(this.analyserNode);
+    } else {
+      const roomSize = storeState.spatialAudioConfig.roomSize;
+      if (this.dryGainNode && this.convolverNode && this.reverbGainNode && this.pannerNode) {
+        eqOutput.connect(this.dryGainNode);
+        this.dryGainNode.connect(this.pannerNode);
+        
+        if (roomSize !== 'none') {
+          eqOutput.connect(this.convolverNode);
+          this.convolverNode.connect(this.reverbGainNode);
+          this.reverbGainNode.connect(this.pannerNode);
+        }
+        
+        this.pannerNode.connect(this.analyserNode);
+      } else {
+        eqOutput.connect(this.analyserNode);
+      }
+    }
+  }
+
+  private applySpatialParams(enabled: boolean, config: SpatialAudioConfig) {
+    if (!this.audioContext || !this.pannerNode || !this.convolverNode || !this.reverbGainNode) return;
+    const ctx = this.audioContext;
+    
+    this.updateAudioConnections();
+
+    if (!enabled) {
+      this.pannerNode.positionX.setValueAtTime(0, ctx.currentTime);
+      this.pannerNode.positionY.setValueAtTime(0, ctx.currentTime);
+      this.pannerNode.positionZ.setValueAtTime(1, ctx.currentTime);
+      this.reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
+      return;
+    }
+
+    const elevationRad = (config.elevation * Math.PI) / 180;
+    const xPos = (config.stereoWidth - 100) / 100;
+
+    this.pannerNode.positionX.setValueAtTime(xPos * 2, ctx.currentTime);
+    this.pannerNode.positionY.setValueAtTime(Math.sin(elevationRad) * 2, ctx.currentTime);
+    this.pannerNode.positionZ.setValueAtTime(Math.cos(elevationRad) * 2, ctx.currentTime);
+
+    const roomSize = config.roomSize;
+    if (roomSize === 'none') {
+      this.reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
+    } else {
+      let wetVolume = 0.15;
+      if (roomSize === 'small') wetVolume = 0.12;
+      else if (roomSize === 'medium') wetVolume = 0.2;
+      else if (roomSize === 'large') wetVolume = 0.3;
+
+      const buffer = this.getCachedImpulseResponse(ctx, roomSize);
+      
+      if (this.convolverNode.buffer !== buffer) {
+        this.swapConvolverBuffer(buffer, wetVolume);
+      } else {
+        this.reverbGainNode.gain.setValueAtTime(wetVolume, ctx.currentTime);
+      }
+    }
+  }
+
+  private swapConvolverBuffer(buffer: AudioBuffer, targetWetGain: number) {
+    if (!this.audioContext || !this.convolverNode || !this.reverbGainNode) return;
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+    
+    this.reverbGainNode.gain.linearRampToValueAtTime(0, now + 0.05);
+    
+    ctx.suspend().then(() => {
+      if (this.convolverNode) {
+        this.convolverNode.buffer = buffer;
+      }
+      ctx.resume().then(() => {
+        if (this.reverbGainNode) {
+          this.reverbGainNode.gain.linearRampToValueAtTime(targetWetGain, ctx.currentTime + 0.05);
+        }
+      });
+    });
+  }
+
+  private prefetchNextTrack() {
+    const { queue, activeQueueIndex, repeat, streamingQuality } = usePlayerStore.getState();
+
+    if (repeat === 'one') return;
+
+    const nextIndex = activeQueueIndex + 1;
+    if (nextIndex >= queue.length) return;
+    const nextTrackObj = queue[nextIndex];
+
+    if (!nextTrackObj || this.prefetchedTrackId === nextTrackObj.id) return;
+
+    const inactivePlayer = this.activePlayer === 1 ? this.audio2 : this.audio1;
+    const targetSrc = this.getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
+
+    inactivePlayer.src = targetSrc;
+    inactivePlayer.preload = 'auto';
+    inactivePlayer.load();
+    this.prefetchedTrackId = nextTrackObj.id;
+  }
+
+  private cancelActiveCrossfade() {
+    this.currentCrossfadeId++;
+    if (this.crossfadeTimeout) {
+      clearTimeout(this.crossfadeTimeout);
+      this.crossfadeTimeout = null;
+    }
+    this.isCrossfading = false;
+
+    if (this.activeFadeOutPlayer && this.activeFadeOutEndedListener) {
+      this.activeFadeOutPlayer.removeEventListener('ended', this.activeFadeOutEndedListener);
+      this.activeFadeOutPlayer = null;
+      this.activeFadeOutEndedListener = null;
+    }
+
+    const inactivePlayer = this.activePlayer === 1 ? this.audio2 : this.audio1;
+    try {
+      inactivePlayer.pause();
+      inactivePlayer.src = '';
+    } catch (e) {
+      console.warn('Error clearing inactive player during crossfade cancel:', e);
+    }
+
+    if (this.audioContext) {
+      const now = this.audioContext.currentTime;
+      const preAmp = this.getPreAmpGain();
+      const currentTrack = usePlayerStore.getState().currentTrack;
+      const targetGain = preAmp * this.getLoudnessMultiplier(currentTrack);
+
+      if (this.gainNode1 && this.gainNode2) {
+        this.gainNode1.gain.cancelScheduledValues(now);
+        this.gainNode2.gain.cancelScheduledValues(now);
+        this.gainNode1.gain.setValueAtTime(this.activePlayer === 1 ? targetGain : 0.0, now);
+        this.gainNode2.gain.setValueAtTime(this.activePlayer === 2 ? targetGain : 0.0, now);
+      }
+    }
+  }
+
+  private async triggerCrossfade() {
+    const { queue, activeQueueIndex, streamingQuality } = usePlayerStore.getState();
+    const nextIndex = activeQueueIndex + 1;
+    if (nextIndex >= queue.length) return;
+
+    const nextTrackObj = queue[nextIndex];
+    this.isCrossfading = true;
+    this.currentCrossfadeId++;
+    const activeCfId = this.currentCrossfadeId;
+
+    const fadeOutPlayer = this.activePlayer === 1 ? this.audio1 : this.audio2;
+    const fadeInPlayer = this.activePlayer === 1 ? this.audio2 : this.audio1;
+    const fadeOutGain = this.activePlayer === 1 ? this.gainNode1 : this.gainNode2;
+    const fadeInGain = this.activePlayer === 1 ? this.gainNode2 : this.gainNode1;
+
+    if (!fadeOutPlayer || !fadeInPlayer || !fadeOutGain || !fadeInGain || !this.audioContext) {
+      this.isCrossfading = false;
+      return;
+    }
+
+    const targetSrc = this.getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
+
+    fadeInPlayer.src = targetSrc;
+    fadeInPlayer.playbackRate = this.playbackSpeed;
+    fadeInPlayer.load();
+
+    const now = this.audioContext.currentTime;
+    const cfDur = this.cachedCrossfadeDuration;
+    
+    const preAmp = this.getPreAmpGain();
+    const fadeOutMultiplier = this.getLoudnessMultiplier(usePlayerStore.getState().currentTrack);
+    const fadeInMultiplier = this.getLoudnessMultiplier(nextTrackObj);
+    
+    const fadeOutTarget = preAmp * fadeOutMultiplier;
+    const fadeInTarget = preAmp * fadeInMultiplier;
+
+    fadeOutGain.gain.cancelScheduledValues(now);
+    fadeInGain.gain.cancelScheduledValues(now);
+
+    const { fadeOutCurve: baseFadeOut, fadeInCurve: baseFadeIn } = this.getCrossfadeCurves();
+    const fadeOutCurve = new Float32Array(baseFadeOut.length);
+    const fadeInCurve = new Float32Array(baseFadeIn.length);
+    for (let i = 0; i < baseFadeOut.length; i++) {
+      fadeOutCurve[i] = baseFadeOut[i] * fadeOutTarget;
+      fadeInCurve[i] = baseFadeIn[i] * fadeInTarget;
+    }
+
+    fadeOutGain.gain.setValueCurveAtTime(fadeOutCurve, now, cfDur);
+    fadeInGain.gain.setValueCurveAtTime(fadeInCurve, now, cfDur);
+
+    try {
+      await fadeInPlayer.play();
+    } catch (e) {
+      console.error('Failed to play crossfaded track:', e);
+    }
+
+    if (activeCfId !== this.currentCrossfadeId) return;
+
+    this.activePlayer = this.activePlayer === 1 ? 2 : 1;
+
+    const onFadeOutEnded = () => {
+      fadeOutPlayer.removeEventListener('ended', onFadeOutEnded);
+      if (this.activeFadeOutPlayer === fadeOutPlayer && this.activeFadeOutEndedListener === onFadeOutEnded) {
+        this.activeFadeOutPlayer = null;
+        this.activeFadeOutEndedListener = null;
+      }
+      
+      if (activeCfId !== this.currentCrossfadeId) return;
+
+      fadeOutPlayer.pause();
+      fadeOutPlayer.src = '';
+
+      usePlayerStore.setState({
+        currentTrack: nextTrackObj,
+        activeQueueIndex: nextIndex,
+      });
+
+      this.isCrossfading = false;
+      if (this.crossfadeTimeout) {
+        clearTimeout(this.crossfadeTimeout);
+        this.crossfadeTimeout = null;
+      }
+
+      this.updateMediaSession(nextTrackObj, true);
+    };
+
+    this.activeFadeOutPlayer = fadeOutPlayer;
+    this.activeFadeOutEndedListener = onFadeOutEnded;
+    fadeOutPlayer.addEventListener('ended', onFadeOutEnded);
+
+    if (this.crossfadeTimeout) clearTimeout(this.crossfadeTimeout);
+    this.crossfadeTimeout = setTimeout(() => {
+      onFadeOutEnded();
+    }, (cfDur + 1.0) * 1000);
+  }
+
+  private getCrossfadeCurves() {
+    if (this.cachedFadeOutCurve && this.cachedFadeInCurve) {
+      return { fadeOutCurve: this.cachedFadeOutCurve, fadeInCurve: this.cachedFadeInCurve };
+    }
+    
+    const curveLength = 40;
+    const fadeOutCurve = new Float32Array(curveLength);
+    const fadeInCurve = new Float32Array(curveLength);
+    for (let i = 0; i < curveLength; i++) {
+      const t = i / (curveLength - 1);
+      fadeOutCurve[i] = Math.cos(t * Math.PI / 2);
+      fadeInCurve[i] = Math.sin(t * Math.PI / 2);
+    }
+    this.cachedFadeOutCurve = fadeOutCurve;
+    this.cachedFadeInCurve = fadeInCurve;
+    return { fadeOutCurve, fadeInCurve };
+  }
+
+  private invalidateCrossfadeCurves() {
+    this.cachedFadeOutCurve = null;
+    this.cachedFadeInCurve = null;
+  }
+
+  private tick = () => {
+    const player = this.activePlayer === 1 ? this.audio1 : this.audio2;
+    const current = player.currentTime;
+    const total = player.duration || 0;
+    setTimeValues(current, total);
+
+    const cfDur = this.cachedCrossfadeDuration;
+    if (
+      total > 0 &&
+      cfDur > 0 &&
+      current >= total - cfDur &&
+      !this.isCrossfading
+    ) {
+      this.triggerCrossfade();
+    }
+
+    if (total > 0 && current >= total * 0.6 && !this.prefetchedTrackId) {
+      this.prefetchNextTrack();
+    }
+
+    this.rafId = requestAnimationFrame(this.tick);
+  };
+
+  private startProgressTimer() {
+    if (this.rafId) cancelAnimationFrame(this.rafId);
+    this.rafId = requestAnimationFrame(this.tick);
+  }
+
+  private stopProgressTimer() {
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+  }
+
+  private getCachedImpulseResponse(ctx: AudioContext, roomSize: 'small' | 'medium' | 'large'): AudioBuffer {
+    if (this.impulseCache.has(roomSize)) {
+      return this.impulseCache.get(roomSize)!;
+    }
+    let duration = 0.5;
+    let decay = 2.0;
+    if (roomSize === 'small') {
+      duration = 0.5;
+      decay = 2.0;
+    } else if (roomSize === 'medium') {
+      duration = 1.2;
+      decay = 1.5;
+    } else if (roomSize === 'large') {
+      duration = 2.5;
+      decay = 1.0;
+    }
+    const buffer = this.createImpulseResponse(ctx, duration, decay);
+    this.impulseCache.set(roomSize, buffer);
+    return buffer;
+  }
+
+  private createImpulseResponse(ctx: AudioContext, duration: number, decay: number): AudioBuffer {
+    const sampleRate = ctx.sampleRate;
+    const length = sampleRate * duration;
+    const impulse = ctx.createBuffer(2, length, sampleRate);
+    const left = impulse.getChannelData(0);
+    const right = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const pct = i / length;
+      const env = Math.pow(1 - pct, decay);
+      left[i] = (Math.random() * 2 - 1) * env;
+      right[i] = (Math.random() * 2 - 1) * env;
+    }
+    return impulse;
+  }
+
+  private updateMediaSession(track: Track | null, isPlaying: boolean) {
+    if (!('mediaSession' in navigator)) return;
+
+    if (!track) {
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = 'none';
+      return;
+    }
+
+    const coverUrl = api.coverUrl(track.coverArtUrl, track.videoId) || '';
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: track.title,
+      artist: track.artist,
+      album: track.album || '',
+      artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+    });
+
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+    navigator.mediaSession.setActionHandler('play', () => usePlayerStore.getState().setPlaying(true));
+    navigator.mediaSession.setActionHandler('pause', () => usePlayerStore.getState().setPlaying(false));
+    navigator.mediaSession.setActionHandler('previoustrack', () => usePlayerStore.getState().prevTrack());
+    navigator.mediaSession.setActionHandler('nexttrack', () => usePlayerStore.getState().nextTrack());
+    navigator.mediaSession.setActionHandler('seekto', (e) => {
+      if (e.seekTime != null) {
+        this.seek(e.seekTime);
+      }
+    });
+  }
+
+  private showToast(message: string, type: 'success' | 'error' | 'info' = 'success') {
+    useToastStore.getState().addToast(message, type);
+  }
+
+  private async handlePlaybackError(audio: HTMLAudioElement) {
+    const err = audio.error;
+    console.error('[Audio Engine] Playback error event:', err);
+    
+    if (err) {
+      this.showToast('Playback interrupted. Recovering stream...', 'info');
+      usePlayerStore.getState().setBuffering(true);
+      
+      const currentTrack = usePlayerStore.getState().currentTrack;
+      if (!currentTrack) return;
+      
+      const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, usePlayerStore.getState().streamingQuality);
+      try {
+        const freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
+        console.log('[Audio Engine] Attempting stream recovery from:', freshSrc);
+        audio.src = freshSrc;
+        audio.load();
+        if (usePlayerStore.getState().isPlaying) {
+          await audio.play();
+        }
+      } catch (retryErr) {
+        console.error('[Audio Engine] Recovery retry failed:', retryErr);
+        usePlayerStore.getState().setPlaying(false);
+        usePlayerStore.getState().setBuffering(false);
+        this.showToast('Playback failed. Please check your network or try another track.', 'error');
+      }
+    }
+  }
+
+  public async destroy() {
+    this.stopProgressTimer();
+    this.cancelActiveCrossfade();
+    
+    if (this.audioContext) {
+      try {
+        await this.audioContext.close();
+      } catch (e) {
+        console.warn('Error closing AudioContext:', e);
+      }
+      this.audioContext = null;
+    }
+    
+    this.audio1.pause();
+    this.audio1.src = '';
+    
+    this.audio2.pause();
+    this.audio2.src = '';
+    
+    this.gainNode1 = null;
+    this.gainNode2 = null;
+    this.eqFilters = [];
+    this.pannerNode = null;
+    this.convolverNode = null;
+    this.reverbGainNode = null;
+    this.dryGainNode = null;
+    this.analyserNode = null;
+    this.mainGainNode = null;
+    this.limiterNode = null;
+    this.sourceNodesCreated = false;
+    this.prefetchedTrackId = null;
+    this.impulseCache.clear();
+  }
+
+  public seek(time: number) {
+    const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
+    activePlayerInstance.currentTime = time;
+    setTimeValues(time, activePlayerInstance.duration || 0);
+  }
+
+  public getAnalyser(): AnalyserNode | null {
+    return this.analyserNode;
+  }
+}
+
+// HMR Cleanup: destroy previous instance if it exists
+if ((window as any).__audioEngineInstance__) {
+  try {
+    (window as any).__audioEngineInstance__.destroy();
+  } catch (e) {
+    console.warn('Error destroying old audioEngine instance during HMR:', e);
+  }
+}
+
+export const audioEngine = new AudioEngine();
+(window as any).__audioEngineInstance__ = audioEngine;
+
+export const closeAudioEngine = async () => {
+  await audioEngine.destroy();
+};
+
+export const useAudioEngine = () => {
+  const seek = useCallback((time: number) => {
+    audioEngine.seek(time);
   }, []);
 
   const getAnalyser = useCallback((): AnalyserNode | null => {
-    return analyserNode;
+    return audioEngine.getAnalyser();
   }, []);
 
   return { seek, getAnalyser };

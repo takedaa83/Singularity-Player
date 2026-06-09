@@ -1006,8 +1006,12 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           const dataArray = new Uint8Array(bufferLength);
           analyser.getByteFrequencyData(dataArray);
 
-          // Sub-bass and Bass bins (Bins 0 to 4 covers ~0Hz to ~750Hz with 256 fftSize/48kHz sampleRate)
-          const averageBass = (dataArray[0] * 1.0 + dataArray[1] * 0.85 + dataArray[2] * 0.6 + dataArray[3] * 0.35) / 2.8;
+          // Sub-bass and Bass bins (Bins 1 to 10 covers ~23Hz to ~234Hz with 2048 fftSize/48kHz sampleRate)
+          let sumBass = 0;
+          for (let i = 1; i <= 10; i++) {
+            sumBass += dataArray[i] || 0;
+          }
+          const averageBass = sumBass / 10;
           const bassPercent = averageBass / 255.0;
 
           // Smooth using linear interpolation (exponential decay) for clean/soothing easing
