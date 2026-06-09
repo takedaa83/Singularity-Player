@@ -8,12 +8,14 @@ import { Track, SpatialAudioConfig } from '../types';
 type TimeListener = () => void;
 const timeListeners = new Set<TimeListener>();
 let _currentTime = 0;
+let _currentTimeStampedAt = 0; // performance.now() when _currentTime was last set
 let _duration = 0;
 let _snapshot = { currentTime: 0, duration: 0 };
 
 export const timeStore = {
   getSnapshot: () => _snapshot,
   getCurrentTime: () => _currentTime,
+  getStampedAt: () => _currentTimeStampedAt, // expose it
   getDuration: () => _duration,
   subscribe: (listener: TimeListener) => {
     timeListeners.add(listener);
@@ -30,6 +32,7 @@ const EMIT_INTERVAL = 33; // ms (~30fps)
 
 function setTimeValues(current: number, dur: number) {
   _currentTime = current;
+  _currentTimeStampedAt = performance.now();
   _duration = dur;
   const now = performance.now();
   if (now - lastEmitTime > EMIT_INTERVAL) {
@@ -368,6 +371,11 @@ export class AudioEngine {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     const ctx = new AudioContextClass({ sampleRate: 48000 });
     this.audioContext = ctx;
+
+    const measuredLatency = Math.round(
+      ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * 1000
+    );
+    usePlayerStore.setState({ measuredAudioLatency: measuredLatency });
 
     if (!this.sourceNodesCreated) {
       const source1 = ctx.createMediaElementSource(this.audio1);

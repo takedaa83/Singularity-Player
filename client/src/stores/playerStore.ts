@@ -45,6 +45,7 @@ interface PlayerState {
   favorites: string[]; // Track IDs of favorited tracks
   isBuffering: boolean;
   streamingQuality: 'high' | 'medium' | 'low';
+  measuredAudioLatency: number;
   
   // Actions
   setPlaying: (playing: boolean) => void;
@@ -104,6 +105,7 @@ export const usePlayerStore = create<PlayerState>()(
       favorites: [],
       isBuffering: false,
       streamingQuality: 'high',
+      measuredAudioLatency: 0,
 
       setPlaying: (playing) => set({ isPlaying: playing }),
       setBuffering: (buffering) => set({ isBuffering: buffering }),

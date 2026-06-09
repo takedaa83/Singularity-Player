@@ -58,6 +58,13 @@ interface SyncLine {
   time: number | null;
 }
 
+interface WordCache {
+  el: HTMLElement;
+  start: number;
+  end: number;
+  state: 'pending' | 'active' | 'completed';
+}
+
 function extractColorsFromImage(url: string): Promise<string[]> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -357,7 +364,11 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
           charWeight = 60;
         }
         
-        const wordWeights = wordsArray.map(w => baseWeight + w.length * charWeight);
+        const wordWeights = wordsArray.map(w => {
+          const vowelCount = (w.match(/[aeiouáéíóúàèìòùâêîôûäëïöü]/gi) || []).length;
+          const consonantClusters = (w.match(/[^aeiouáéíóúàèìòùâêîôûäëïöü\s]{2,}/gi) || []).length;
+          return baseWeight + vowelCount * 70 + w.length * charWeight - consonantClusters * 15;
+        });
         const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0) || 1;
         
         let runningTime = curr.lineTime;
@@ -677,16 +688,27 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
 
   const [rawLrcText, setRawLrcText] = useState('');
   const [syncOffset, setSyncOffset] = useState(() => {
-    const val = localStorage.getItem('lyrics_sync_offset');
-    return val ? parseInt(val, 10) : 80; // default to 80ms
+    const stored = localStorage.getItem('lyrics_sync_offset');
+    if (stored) return parseInt(stored, 10);
+    const measured = usePlayerStore.getState().measuredAudioLatency;
+    return measured > 0 ? measured : 80;
   });
   const [estimateWordSync, setEstimateWordSync] = useState(() => {
     return localStorage.getItem('lyrics_estimate_word_sync') === 'true'; // default to false (line-by-line is 100% accurate for standard LRC)
   });
 
+  const measuredAudioLatency = usePlayerStore(state => state.measuredAudioLatency);
+
   useEffect(() => {
     localStorage.setItem('lyrics_sync_offset', syncOffset.toString());
   }, [syncOffset]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('lyrics_sync_offset');
+    if (!stored && measuredAudioLatency > 0) {
+      setSyncOffset(measuredAudioLatency);
+    }
+  }, [measuredAudioLatency]);
 
   useEffect(() => {
     localStorage.setItem('lyrics_estimate_word_sync', estimateWordSync.toString());
@@ -801,7 +823,8 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const activeFullLineRef = useRef<HTMLDivElement>(null);
   const syncActiveLineRef = useRef<HTMLDivElement>(null);
   
-  const activeWordsRef = useRef<HTMLElement[]>([]);
+  const wordCacheRef = useRef<WordCache[]>([]);
+  const analyserBufferRef = useRef<Uint8Array | null>(null);
   
   const lastTrackIdRef = useRef<string | null>(null);
 
@@ -887,8 +910,6 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   // Word highlighting and active line calculation loop driven by requestAnimationFrame
   useEffect(() => {
     let rafId: number;
-    let lastTimeVal = timeStore.getCurrentTime();
-    let lastPerfVal = performance.now();
 
     const tick = () => {
       // Skip expensive DOM work when tab is hidden — saves significant CPU in background
@@ -898,17 +919,14 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       }
 
       const rawTime = timeStore.getCurrentTime();
-      const now = performance.now();
-      
-      if (rawTime !== lastTimeVal || isBuffering) {
-        lastTimeVal = rawTime;
-        lastPerfVal = now;
-      }
-      
-      const elapsed = (isPlaying && !isBuffering) ? (now - lastPerfVal) / 1000 : 0;
-      const smoothTime = rawTime + elapsed * playbackSpeed;
-      // Add visual anticipation offset from user settings (aligns visual wipe with physical hardware latency)
-      const timeMs = smoothTime * 1000 + syncOffset;
+      const stampedAt = timeStore.getStampedAt();
+      const msSinceRead = performance.now() - stampedAt;
+
+      // Interpolate forward from the exact moment currentTime was sampled
+      const timeMs =
+        rawTime * 1000
+        + (isPlaying && !isBuffering ? msSinceRead * playbackSpeed : 0)
+        + syncOffset;
 
       // 1. Update active line index
       let newActiveIdx = -1;
@@ -952,59 +970,71 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           }
         });
 
-        // Cache the active line's words to avoid O(N) queries on every frame
-        const activeLineEl = document.querySelector('.lyrics-line.active-line') || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
-        if (activeLineEl) {
-          activeWordsRef.current = Array.from(activeLineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+        // Pre-cache word timing data from React state instead of querySelector
+        const newActiveLine = syncedLines[newActiveIdx];
+        const lineEl = document.querySelector(`.lyrics-line.active-line`) || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
+        if (lineEl && newActiveLine?.words) {
+          const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+          wordCacheRef.current = newActiveLine.words.map((w, i) => ({
+            el: wordEls[i],
+            start: w.start,
+            end: w.end,
+            state: 'pending' as const,
+          }));
         } else {
-          activeWordsRef.current = [];
+          wordCacheRef.current = [];
         }
       }
 
       // 2. Animate the active line's words only (frame-perfect progressive highlights without O(N) DOM search overhead)
-      if (activeWordsRef.current.length === 0 && newActiveIdx !== -1) {
-        const activeLineEl = document.querySelector('.lyrics-line.active-line');
-        if (activeLineEl) {
-          activeWordsRef.current = Array.from(activeLineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+      if (wordCacheRef.current.length === 0 && newActiveIdx !== -1) {
+        const newActiveLine = syncedLines[newActiveIdx];
+        const lineEl = document.querySelector(`.lyrics-line.active-line`) || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
+        if (lineEl && newActiveLine?.words) {
+          const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+          wordCacheRef.current = newActiveLine.words.map((w, i) => ({
+            el: wordEls[i],
+            start: w.start,
+            end: w.end,
+            state: 'pending' as const,
+          }));
         }
       }
 
-      activeWordsRef.current.forEach(wordEl => {
-        const start = parseFloat(wordEl.getAttribute('data-start') || '0');
-        const end = parseFloat(wordEl.getAttribute('data-end') || '0');
-        const htmlEl = wordEl as HTMLElement;
-        
-        if (timeMs >= start && timeMs <= end) {
-          const progress = Math.min(100, Math.max(0, ((timeMs - start) / (end - start)) * 100));
+      for (const word of wordCacheRef.current) {
+        if (!word.el) continue;
+        if (timeMs >= word.start && timeMs <= word.end) {
+          const progress = Math.min(100, Math.max(0, ((timeMs - word.start) / (word.end - word.start)) * 100));
           const progressStr = `${progress.toFixed(1)}%`;
-          if (htmlEl.style.getPropertyValue('--word-progress') !== progressStr) {
-            htmlEl.style.setProperty('--word-progress', progressStr);
+          if (word.el.style.getPropertyValue('--word-progress') !== progressStr) {
+            word.el.style.setProperty('--word-progress', progressStr);
           }
-          if (!wordEl.classList.contains('active')) {
-            wordEl.classList.add('active');
-            wordEl.classList.remove('completed');
+          if (word.state !== 'active') {
+            word.el.classList.replace('completed', 'active') || word.el.classList.add('active');
+            word.state = 'active';
           }
-        } else if (timeMs > end) {
-          if (!wordEl.classList.contains('completed')) {
-            htmlEl.style.setProperty('--word-progress', '100%');
-            wordEl.classList.add('completed');
-            wordEl.classList.remove('active');
+        } else if (timeMs > word.end) {
+          if (word.state !== 'completed') {
+            word.el.style.setProperty('--word-progress', '100%');
+            word.el.classList.replace('active', 'completed') || word.el.classList.add('completed');
+            word.state = 'completed';
           }
-        } else {
-          if (wordEl.classList.contains('active') || wordEl.classList.contains('completed')) {
-            htmlEl.style.setProperty('--word-progress', '0%');
-            wordEl.classList.remove('active', 'completed');
-          }
+        } else if (word.state !== 'pending') {
+          word.el.style.setProperty('--word-progress', '0%');
+          word.el.classList.remove('active', 'completed');
+          word.state = 'pending';
         }
-      });
+      }
 
       // 3. Audio analysis & ambient pulsing animation
       try {
         const analyser = getAnalyser();
         if (analyser && isPlaying && isFullscreen) {
-          const bufferLength = analyser.frequencyBinCount;
-          const dataArray = new Uint8Array(bufferLength);
-          analyser.getByteFrequencyData(dataArray);
+          if (!analyserBufferRef.current || analyserBufferRef.current.length !== analyser.frequencyBinCount) {
+            analyserBufferRef.current = new Uint8Array(analyser.frequencyBinCount);
+          }
+          const dataArray = analyserBufferRef.current;
+          analyser.getByteFrequencyData(dataArray as any);
 
           // Sub-bass and Bass bins (Bins 1 to 10 covers ~23Hz to ~234Hz with 2048 fftSize/48kHz sampleRate)
           let sumBass = 0;
@@ -1656,7 +1686,6 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                                         className="karaoke-word inline-block"
                                         data-start={wordInfo.start}
                                         data-end={wordInfo.end}
-                                        style={{ transition: 'color 0.25s ease' }}
                                       >
                                         {wordInfo.word}
                                       </span>
