@@ -11,6 +11,7 @@ let pendingCalculation: {
   resolve: (value: { sections: RecommendationSection[]; smartRecs: Track[] }) => void;
   reject: (reason: any) => void;
 } | null = null;
+let activeCalculationPromise: Promise<{ sections: RecommendationSection[]; smartRecs: Track[] }> | null = null;
 
 const getWorker = (): Worker | null => {
   if (typeof window !== 'undefined' && !workerInstance) {
@@ -66,42 +67,54 @@ const runWorkerCalculation = (payload: {
 };
 
 const calculateAll = async (): Promise<{ sections: RecommendationSection[]; smartRecs: Track[] }> => {
-  const db = await initDB();
-
-  // 1. Fetch tracks metadata (metadata array is small, required for full similarity matrix)
-  const tracks = await db.getAll('tracks');
-  
-  // 2. Fetch favorites list
-  const favorites = await db.getAll('favorites');
-
-  // 3. Fetch only the most recent 100 history entries using reverse cursor
-  const historyTx = db.transaction('history', 'readonly');
-  const historyIndex = historyTx.store.index('playedAt');
-  let historyCursor = await historyIndex.openCursor(null, 'prev');
-  const history: HistoryEntry[] = [];
-  while (historyCursor && history.length < 100) {
-    history.push(historyCursor.value);
-    historyCursor = await historyCursor.continue();
+  if (activeCalculationPromise) {
+    return activeCalculationPromise;
   }
 
-  // 4. Fetch only the most recent 100 play sessions using reverse cursor
-  const sessionsTx = db.transaction('playSessions', 'readonly');
-  const sessionsIndex = sessionsTx.store.index('startTime');
-  let sessionsCursor = await sessionsIndex.openCursor(null, 'prev');
-  const sessions: PlaySession[] = [];
-  while (sessionsCursor && sessions.length < 100) {
-    sessions.push(sessionsCursor.value);
-    sessionsCursor = await sessionsCursor.continue();
-  }
+  activeCalculationPromise = (async () => {
+    try {
+      const db = await initDB();
 
-  const payload = {
-    tracks,
-    favorites: favorites.map((f) => f.trackId),
-    history,
-    sessions,
-  };
+      // 1. Fetch tracks metadata (metadata array is small, required for full similarity matrix)
+      const tracks = await db.getAll('tracks');
+      
+      // 2. Fetch favorites list
+      const favorites = await db.getAll('favorites');
 
-  return runWorkerCalculation(payload);
+      // 3. Fetch only the most recent 100 history entries using reverse cursor
+      const historyTx = db.transaction('history', 'readonly');
+      const historyIndex = historyTx.store.index('playedAt');
+      let historyCursor = await historyIndex.openCursor(null, 'prev');
+      const history: HistoryEntry[] = [];
+      while (historyCursor && history.length < 100) {
+        history.push(historyCursor.value);
+        historyCursor = await historyCursor.continue();
+      }
+
+      // 4. Fetch only the most recent 100 play sessions using reverse cursor
+      const sessionsTx = db.transaction('playSessions', 'readonly');
+      const sessionsIndex = sessionsTx.store.index('startTime');
+      let sessionsCursor = await sessionsIndex.openCursor(null, 'prev');
+      const sessions: PlaySession[] = [];
+      while (sessionsCursor && sessions.length < 100) {
+        sessions.push(sessionsCursor.value);
+        sessionsCursor = await sessionsCursor.continue();
+      }
+
+      const payload = {
+        tracks,
+        favorites: favorites.map((f) => f.trackId),
+        history,
+        sessions,
+      };
+
+      return await runWorkerCalculation(payload);
+    } finally {
+      activeCalculationPromise = null;
+    }
+  })();
+
+  return activeCalculationPromise;
 };
 
 export const recommendationEngine = {
@@ -149,5 +162,6 @@ export const recommendationEngine = {
   invalidateCache: (): void => {
     cachedSections = null;
     cachedSmartRecs = null;
+    activeCalculationPromise = null;
   },
 };
