@@ -109,10 +109,18 @@ When a track starts playing, the backend automatically fetches synchronized lyri
 - **Shuffle & Repeat** — Shuffle mode, repeat-one, and repeat-all
 - **Keyboard Shortcuts** — Full keyboard control (see table below)
 
-### 📝 Lyrics
-- **Auto-Fetched Lyrics** — Automatically retrieves lyrics when a song starts
-- **Synced & Plain Text** — Supports both LRC time-synced and static lyrics display
-- **Slide-Out Panel** — Lyrics panel slides in from the right without interrupting playback
+### 📝 Lyrics & Visualizer
+- **Native Word-Level Syncing** — Support for Enhanced LRC formats with character-by-character coloring/sweeps matching the song pace
+- **Custom Sync Offset** — Slider controls (`-400ms` to `+400ms` in `10ms` increments) to adjust visual anticipation for audio latency (persists in `localStorage`)
+- **Smart Word Sync Toggle** — Switch between tempo-estimated word sync and clean **Line-by-Line Highlight** (Apple Music style) on standard LRC files
+- **Kinetic Lyric Centering** — Smooth GSAP-driven scrolling that centers active lyrics in both sidebar and fullscreen overlays
+- **Ambient Blurred Backdrop** — Rotating and floating circular blobs that morph and change color to match the dominant and accent shades of the active album cover art
+- **Large Scale Typography** — Adjustable font sizes up to `40px` base scale for enhanced visibility
+
+### 🧠 Smart Queue & Recommendations
+- **Smart Queue Service** — Queries YouTube Music dynamically at queue exhaustion to inject recommended related radio tracks
+- **Dynamic Playlist Generator** — Automatically builds customized playlists by matching tempo, mood, and listening metadata
+- **Playback Analytics Dashboard** — Full visual report of total play counts, top artists, genres, skip ratios, and peak hour trends
 
 ### 💾 Library & Offline
 - **Local Library** — All tracks stored in IndexedDB, fully offline-capable
@@ -122,11 +130,6 @@ When a track starts playing, the backend automatically fetches synchronized lyri
 - **Play History** — Full chronological record of everything you've listened to
 - **File Uploads** — Drag-and-drop upload of `.mp3`, `.m4a`, and `.wav` files
 - **Batch Packager** — Queue and download multiple tracks for offline playback
-
-### 📊 Listening Insights
-- **Dashboard** — Visual stats: total tracks, favorites, playlists, and hours listened
-- **Play Session Analytics** — Tracks completion rates, skip rates, and total listen duration
-- **Recommendations** — Personalized suggestions based on your listening patterns
 
 ### ⚙️ Settings & Customization
 - **Dark & Light Theme** — Full theme toggle with system preference detection
