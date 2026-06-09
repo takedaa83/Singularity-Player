@@ -18,17 +18,17 @@ export const useGsapFadeIn = (
       const elements = document.querySelectorAll(selector);
       if (elements.length === 0) return;
 
-      // Reset initial styles to avoid flash of unstyled content (FOUC)
-      gsap.set(elements, { opacity: 0, y: 15 });
-
-      gsap.to(elements, {
-        opacity: 1,
-        y: 0,
-        duration: 0.5,
-        stagger: staggerDelay,
-        ease: 'power3.out',
-        clearProps: 'transform,opacity', // clear styles after animation completes to let css hover styles work
-      });
+      gsap.fromTo(elements, 
+        { opacity: 0, y: 15 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          stagger: staggerDelay,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity', // clear styles after animation completes
+        }
+      );
     });
 
     return () => ctx.revert();

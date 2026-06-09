@@ -119,7 +119,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       ) : (
         <div className="flex flex-col gap-3">
           {tracks.map((track) => (
-            <div key={track.id} className="playlist-track-item opacity-0 relative group/pl-card">
+            <div key={track.id} className="playlist-track-item relative group/pl-card">
               <TrackCard 
                 track={track} 
                 refreshTrigger={triggerRefresh}

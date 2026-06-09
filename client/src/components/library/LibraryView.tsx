@@ -184,7 +184,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       ) : (
         <div className="flex flex-col gap-3">
           {tracks.map(track => (
-            <div key={track.id} className="library-track-item opacity-0">
+            <div key={track.id} className="library-track-item">
               <TrackCard 
                 track={track}
                 isMultiSelectMode={isMultiSelectMode}

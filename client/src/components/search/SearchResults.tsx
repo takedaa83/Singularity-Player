@@ -177,7 +177,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ query, refreshTrig
                 style={{ height: '100%' }}
                 data={processedTracks}
                 itemContent={(index, track) => (
-                  <Box className="search-result-item" sx={{ pb: 1, opacity: 0 }}>
+                  <Box className="search-result-item" sx={{ pb: 1 }}>
                     <TrackCard
                       track={track}
                       refreshTrigger={refreshTrigger}

@@ -115,7 +115,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ refreshTrigger, trigge
       ) : (
         <div className="flex flex-col gap-2">
           {entries.map((entry, idx) => (
-            <div key={`${entry.track.id}-${entry.playedAt}-${idx}`} className="history-track-item opacity-0 relative group">
+            <div key={`${entry.track.id}-${entry.playedAt}-${idx}`} className="history-track-item relative group">
               <TrackCard 
                 track={entry.track} 
                 refreshTrigger={triggerRefresh}

@@ -75,7 +75,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ refreshTrigger, tr
       ) : (
         <div className="flex flex-col gap-3">
           {favoriteTracks.map(track => (
-            <div key={track.id} className="favorite-track-item opacity-0">
+            <div key={track.id} className="favorite-track-item">
               <TrackCard 
                 track={track} 
                 refreshTrigger={triggerRefresh}
