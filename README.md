@@ -80,9 +80,15 @@ Every track you play, favorite, or upload is stored in an **IndexedDB database**
 
 Any track can be downloaded and cached as a local audio blob in the browser. The **Batch Packager** lets you queue up dozens of tracks, download them all with staggered pacing, and play them offline without any network connection. Your settings, volume, equalizer bands, and theme are all persisted across sessions via `localStorage`.
 
-### Lyrics
+### 📝 Advanced Lyrics Engine
 
-When a track starts playing, the backend automatically fetches synchronized lyrics (LRC format) and plain-text lyrics from external lyric APIs. The lyrics panel displays them in real time, synced to the current playback position.
+Singularity Player features a multi-layered lyrics pipeline that fetches, parses, and caches synchronized lyrics automatically. It leverages the following prioritized sources:
+1. **Musixmatch Desktop Client Scraper (Primary)**: Connects to Musixmatch's desktop API to retrieve standard LRC and word-level `richsync` karaoke coordinates. Richsync data is parsed and formatted into Enhanced LRC (`<mm:ss.xx>`) format, allowing character-by-character coloring and sweeps.
+2. **LRCLIB (Secondary)**: Fallback search to fetch verified synchronized lyrics from the public LRCLIB database.
+3. **YouTube Captions/Transcripts (Tertiary)**: Extract captions and transcripts dynamically from the streaming video using YouTube's InnerTube API.
+4. **NetEase Music (Quaternary)**: Fallback search using NetEase's public API to locate synchronized and translation lyrics.
+
+All successfully resolved lyrics are cached both in-memory and on the server's local disk (`/uploads/lyrics`) to guarantee sub-millisecond retrieval speeds and strictly respect external API rate limits.
 
 ---
 
