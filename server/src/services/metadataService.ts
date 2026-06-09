@@ -47,7 +47,7 @@ export class MetadataService {
       let coverArtUrl: string | null = null;
       if (common.picture && common.picture.length > 0) {
         const pic = common.picture[0];
-        coverArtUrl = this.saveCoverArt(pic.data, pic.format);
+        coverArtUrl = await this.saveCoverArt(pic.data, pic.format);
       }
 
       return {
@@ -85,7 +85,7 @@ export class MetadataService {
   /**
    * Helper to write raw cover art buffer to uploads/covers folder with a hash name
    */
-  private static saveCoverArt(buffer: Buffer, format: string): string | null {
+  private static async saveCoverArt(buffer: Buffer, format: string): Promise<string | null> {
     try {
       const hash = crypto.createHash('md5').update(buffer).digest('hex');
       
@@ -99,12 +99,12 @@ export class MetadataService {
       const outputDir = path.join(__dirname, '..', '..', 'uploads', 'covers');
       
       if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+        await fs.promises.mkdir(outputDir, { recursive: true });
       }
 
       const fullPath = path.join(outputDir, fileName);
       if (!fs.existsSync(fullPath)) {
-        fs.writeFileSync(fullPath, buffer);
+        await fs.promises.writeFile(fullPath, buffer);
       }
 
       // The frontend will access this image via /api/covers/:filename

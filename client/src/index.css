@@ -299,3 +299,118 @@ input[type="range"]::-webkit-slider-runnable-track {
   background-size: 200% 200%;
   animation: gradient-shift 8s ease infinite;
 }
+
+/* ── Premium Ambient Animations ── */
+@keyframes rotate-ambient {
+  0% { transform: scale(1.1) rotate(0deg); }
+  50% { transform: scale(1.3) rotate(180deg); }
+  100% { transform: scale(1.1) rotate(360deg); }
+}
+
+@keyframes pulse-ambient {
+  0%, 100% { opacity: 0.22; }
+  50% { opacity: 0.38; }
+}
+
+.animate-rotate-ambient {
+  animation: rotate-ambient 45s linear infinite;
+}
+
+.animate-pulse-ambient {
+  animation: pulse-ambient 12s ease-in-out infinite;
+}
+
+.mask-fade-gradient {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+/* ── Dreamy Animated Blobs ── */
+@keyframes float-blob-1 {
+  0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
+  50% { transform: translate(60px, 50px) scale(1.15) rotate(45deg); }
+  100% { transform: translate(-30px, -60px) scale(0.9) rotate(90deg); }
+}
+
+@keyframes float-blob-2 {
+  0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
+  50% { transform: translate(-70px, -40px) scale(0.9) rotate(-90deg); }
+  100% { transform: translate(40px, 60px) scale(1.2) rotate(-180deg); }
+}
+
+@keyframes float-blob-3 {
+  0% { transform: translate(0px, 0px) scale(1.1) rotate(0deg); }
+  50% { transform: translate(50px, -60px) scale(0.85) rotate(120deg); }
+  100% { transform: translate(-50px, 40px) scale(1.05) rotate(240deg); }
+}
+
+/* ── Apple Music-style Progressive Word Highlight ── */
+.karaoke-word {
+  position: relative;
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
+  transform: scale(1.0);
+  transform-origin: center;
+  will-change: transform, filter;
+  /* Margin to separate words naturally (breathing room for scale) */
+  margin-right: 0.05em;
+  
+  /* Text gradient wipe with soft feathering */
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffffff var(--word-progress, 0%),
+    rgba(255, 255, 255, 0.28) var(--word-progress, 0%),
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  will-change: background;
+}
+
+.karaoke-word.active {
+  transform: scale(1.06) !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) !important;
+  font-weight: 850 !important;
+}
+
+.karaoke-word.completed {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.lyrics-line {
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              font-size 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity, filter, font-size;
+}
+
+/* ── Floating Blob Animations ── */
+.animate-float-blob-1 {
+  animation: float-blob-1 25s infinite alternate ease-in-out;
+}
+
+.animate-float-blob-2 {
+  animation: float-blob-2 30s infinite alternate ease-in-out;
+}
+
+.animate-float-blob-3 {
+  animation: float-blob-3 20s infinite alternate ease-in-out;
+}
+
+/* ── Hide scrollbars while keeping functionality ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+

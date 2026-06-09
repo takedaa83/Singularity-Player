@@ -17,9 +17,12 @@ export const useLibraryDB = () => {
     // Auto populate demo content on first launch
     const demoLoaded = await db.get('settings', 'demo_loaded');
     if (!demoLoaded) {
+      const tx = db.transaction('tracks', 'readwrite');
+      const store = tx.objectStore('tracks');
       for (const track of DEMO_TRACKS) {
-        await db.put('tracks', track);
+        await store.put(track);
       }
+      await tx.done;
       await db.put('settings', { key: 'demo_loaded', value: { key: 'demo_loaded', value: true } });
     }
 
@@ -235,6 +238,42 @@ export const useLibraryDB = () => {
     await db.put('settings', { key: 'user_settings', value: settings });
   };
 
+  const getOnRepeatTracks = async (limit = 20): Promise<Track[]> => {
+    const db = await initDB();
+    const tracks = await db.getAll('tracks');
+    return tracks
+      .filter(t => (t.playCount || 0) > 2)
+      .sort((a, b) => {
+        const scoreA = (a.playCount || 0) / ((a.skipCount || 0) + 1);
+        const scoreB = (b.playCount || 0) / ((b.skipCount || 0) + 1);
+        return scoreB - scoreA;
+      })
+      .slice(0, limit);
+  };
+
+  const getForgottenGems = async (limit = 20): Promise<Track[]> => {
+    const db = await initDB();
+    const favorites = await db.getAll('favorites');
+    const favIds = new Set(favorites.map(f => f.trackId));
+    const tracks = await db.getAll('tracks');
+    
+    // Filters tracks that are favorites, played before 30 days ago, or never played
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return tracks
+      .filter(t => favIds.has(t.id) && (!t.lastPlayedAt || t.lastPlayedAt < thirtyDaysAgo))
+      .sort((a, b) => (a.lastPlayedAt || 0) - (b.lastPlayedAt || 0))
+      .slice(0, limit);
+  };
+
+  const getHeavyRotationTracks = async (limit = 20): Promise<Track[]> => {
+    const db = await initDB();
+    const tracks = await db.getAll('tracks');
+    return tracks
+      .filter(t => (t.totalListenDuration || 0) > 0)
+      .sort((a, b) => (b.totalListenDuration || 0) - (a.totalListenDuration || 0))
+      .slice(0, limit);
+  };
+
   const getUserSettings = async (): Promise<UserSettings | null> => {
     const db = await initDB();
     const entry = await db.get('settings', 'user_settings');
@@ -267,6 +306,10 @@ export const useLibraryDB = () => {
     getPlaySessionsForTrack,
     getTotalListeningTime,
     getTopTracks,
+    // Smart Playlists
+    getOnRepeatTracks,
+    getForgottenGems,
+    getHeavyRotationTracks,
     // Search History
     addSearchHistoryEntry,
     getSearchHistory,

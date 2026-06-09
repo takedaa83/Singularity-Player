@@ -1,5 +1,5 @@
 import React, { useState, useCallback, lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import { Routes, Route, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
@@ -16,7 +16,7 @@ import { useLibraryDB } from './hooks/useLibraryDB';
 import { X } from 'lucide-react';
 import { LoadingSkeleton } from './components/ui/LoadingSkeleton';
 import { MobileNav } from './components/layout/MobileNav';
-import { usePlaybackAnalytics } from './hooks/usePlaybackAnalytics';
+import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyticsTracker';
 import { useSettingsStore } from './stores/settingsStore';
 
 // Lazy-load heavy pages for code splitting
@@ -35,9 +35,25 @@ const BatchDownloadsPage = lazy(() => import('./components/downloads/BatchDownlo
 
 // Page transition variants
 const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } }
+  initial: { opacity: 0, scale: 0.98, y: 12 },
+  animate: { 
+    opacity: 1, 
+    scale: 1,
+    y: 0, 
+    transition: { 
+      duration: 0.4, 
+      ease: [0.16, 1, 0.3, 1] 
+    } 
+  },
+  exit: { 
+    opacity: 0, 
+    scale: 0.98,
+    y: -12, 
+    transition: { 
+      duration: 0.3, 
+      ease: [0.16, 1, 0.3, 1] 
+    } 
+  }
 };
 
 const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -51,6 +67,7 @@ const LazyFallback = () => (
 export const App: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const [showQueue, setShowQueue] = useState(false);
   const [showLyrics, setShowLyrics] = useState(false);
@@ -84,7 +101,7 @@ export const App: React.FC = () => {
   useKeyboardShortcuts(seek);
 
   // Playback session analytics tracking
-  usePlaybackAnalytics();
+  // handled via <PlaybackAnalyticsTracker /> in render
 
   // Load favorites into player store on mount
   useEffect(() => {
@@ -138,9 +155,12 @@ export const App: React.FC = () => {
   }, [navigate]);
 
   const searchQuery = searchParams.get('q') || '';
+  const playlistMatch = location.pathname.match(/\/playlist\/([^/]+)/);
+  const selectedPlaylistId = playlistMatch ? playlistMatch[1] : null;
 
   return (
     <div className="w-screen h-screen flex flex-col bg-black overflow-hidden font-sans relative">
+      <PlaybackAnalyticsTracker />
       {/* Main Layout Container */}
       <div className="flex-1 flex overflow-hidden relative z-10">
 
@@ -166,7 +186,7 @@ export const App: React.FC = () => {
           <Sidebar
             activeView={location.pathname}
             setActiveView={handleNavigate}
-            selectedPlaylistId={null}
+            selectedPlaylistId={selectedPlaylistId}
             setSelectedPlaylistId={handlePlaylistNavigate}
             showEqualizer={showEqualizer}
             setShowEqualizer={setShowEqualizer}
@@ -187,7 +207,7 @@ export const App: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 relative">
             <Suspense fallback={<LazyFallback />}>
               <AnimatePresence mode="wait">
-                <Routes>
+                <Routes location={location} key={location.pathname}>
                   <Route path="/" element={
                     <PageWrapper>
                       <HomePage

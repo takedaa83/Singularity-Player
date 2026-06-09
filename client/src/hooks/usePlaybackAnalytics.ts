@@ -14,6 +14,7 @@ export const usePlaybackAnalytics = () => {
   const startTimeRef = useRef<number>(0);
   const accumulatedTimeRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
+  const hasTriggeredAutoQueueRef = useRef<string | null>(null);
 
   // Write session to database
   const saveSession = async (trackId: string, durationSec: number, totalDuration: number) => {
@@ -75,8 +76,20 @@ export const usePlaybackAnalytics = () => {
         accumulatedTimeRef.current += delta;
       }
       lastTimeRef.current = currentTime;
+
+      // Smart Play Auto-Queue Trigger: < 2 tracks remaining in queue and current track is >= 80% complete
+      if (duration > 0 && currentTime >= duration * 0.8) {
+        const playerState = usePlayerStore.getState();
+        const remainingInQueue = playerState.queue.length - playerState.activeQueueIndex;
+        if (remainingInQueue < 2 && hasTriggeredAutoQueueRef.current !== currentTrack.id) {
+          hasTriggeredAutoQueueRef.current = currentTrack.id;
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(currentTrack);
+          });
+        }
+      }
     }
-  }, [currentTime, isPlaying, currentTrack]);
+  }, [currentTime, isPlaying, currentTrack, duration]);
 
   // Handle page unloading / unmounting
   useEffect(() => {

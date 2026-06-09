@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { Play, Pause, Heart, Plus, Download, Trash2, Music } from 'lucide-react';
+import { Play, Pause, Heart, Plus, Download, Trash2, Music, Radio } from 'lucide-react';
 import { Track } from '../../types';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -10,6 +10,7 @@ import { TrackContextMenu } from '../ui/TrackContextMenu';
 import { useBatchStore } from '../../stores/batchStore';
 import { api } from '../../utils/api';
 import { formatDuration } from '../../utils/formatDuration';
+import { PlaylistGenerator } from '../../services/playlistGenerator';
 
 interface TrackCardProps {
   track: Track;
@@ -28,8 +29,8 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   onDeleteSuccess,
   refreshTrigger
 }) => {
-  const { currentTrack, isPlaying, playTrack, addToQueue, favorites } = usePlayerStore();
-  const { toggleFavorite, deleteTrack } = useLibraryDB();
+  const { currentTrack, isPlaying, playTrack, addToQueue, favorites, setQueue } = usePlayerStore();
+  const { toggleFavorite, deleteTrack, getAllTracks } = useLibraryDB();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
@@ -65,6 +66,24 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
       console.error('Failed to toggle favorite:', err);
     }
     if (refreshTrigger) refreshTrigger();
+  };
+
+  const handleCreateSimilarPlaylist = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      toast(`Generating song radio for "${track.title}"...`, 'info');
+      const similarTracks = await PlaylistGenerator.generateSimilarTracks(track);
+      
+      if (similarTracks && similarTracks.length > 0) {
+        setQueue(similarTracks, 0);
+        toast(`Playing "${track.title}" Radio! (${similarTracks.length} tracks)`, 'success');
+      } else {
+        toast('Could not find similar tracks.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to generate similar queue:', err);
+      toast('Failed to generate similar queue', 'error');
+    }
   };
 
   const handleDownloadClick = async (e: React.MouseEvent) => {
@@ -245,6 +264,15 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
             <Plus className="w-4 h-4" />
           </button>
 
+          {/* Start Song Radio */}
+          <button
+            onClick={handleCreateSimilarPlaylist}
+            className="p-1.5 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors active:scale-90"
+            title="Start Song Radio (Similar Tracks Mix)"
+          >
+            <Radio className="w-4 h-4" />
+          </button>
+
           {/* Favorite toggle */}
           <button
             onClick={handleFavoriteClick}
@@ -300,6 +328,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
         onGoToArtist={() => navigate(`/artist/${encodeURIComponent(track.artist)}`)}
         onGoToAlbum={() => navigate(`/album/${encodeURIComponent(track.album)}?artist=${encodeURIComponent(track.artist)}`)}
         isFavorite={liked}
+        onCreateSimilarPlaylist={handleCreateSimilarPlaylist}
       />
     </div>
   );

@@ -323,14 +323,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       key={pl.id}
                       onClick={() => {
                         setSelectedPlaylistId(pl.id);
-                        setActiveView('playlist');
                       }}
                       className="w-full group flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
                       style={{
-                        backgroundColor: activeView === 'playlist' && selectedPlaylistId === pl.id
+                        backgroundColor: selectedPlaylistId === pl.id
                           ? `${tokens.colors.primary}12`
                           : 'transparent',
-                        color: activeView === 'playlist' && selectedPlaylistId === pl.id
+                        color: selectedPlaylistId === pl.id
                           ? tokens.colors.textPrimary
                           : tokens.colors.textSecondary,
                       }}

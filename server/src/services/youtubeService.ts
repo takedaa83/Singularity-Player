@@ -4,8 +4,54 @@ import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import { Readable } from 'stream';
+import { ytdlpPool } from './processPool';
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Executes yt-dlp through the process pool to restrict concurrency
+ * and prevent unbounded child processes.
+ */
+function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: string; stderr: string }> {
+  return new Promise(async (resolve, reject) => {
+    let poolHandle;
+    try {
+      poolHandle = await ytdlpPool.acquire();
+    } catch (err) {
+      return reject(err);
+    }
+
+    let finished = false;
+    const release = () => {
+      if (!finished) {
+        finished = true;
+        poolHandle.release();
+      }
+    };
+
+    const child = execFile(YT_DLP_PATH, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      release();
+      if (error) {
+        reject(Object.assign(error, { stdout, stderr }));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+
+    poolHandle.registerProcess(child);
+
+    if (timeoutMs > 0) {
+      const timeout = setTimeout(() => {
+        if (!finished && child.exitCode === null) {
+          child.kill('SIGKILL');
+          reject(new Error('Process timed out'));
+        }
+      }, timeoutMs);
+
+      child.on('exit', () => clearTimeout(timeout));
+    }
+  });
+}
 
 // Strict YouTube video ID validation: exactly 11 alphanumeric / dash / underscore chars
 const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
@@ -56,12 +102,58 @@ function resolveYtDlpPath(): string {
   return 'yt-dlp';
 }
 
-const YT_DLP_PATH = resolveYtDlpPath();
+export let YT_DLP_PATH = resolveYtDlpPath();
+
+export async function ensureYtDlpBinary(): Promise<string> {
+  const binDir = path.resolve(__dirname, '..', '..', 'bin');
+  if (!fs.existsSync(binDir)) {
+    fs.mkdirSync(binDir, { recursive: true });
+  }
+
+  const isWindows = process.platform === 'win32';
+  const isMac = process.platform === 'darwin';
+  const filename = isWindows ? 'yt-dlp.exe' : (isMac ? 'yt-dlp_macos' : 'yt-dlp');
+  const localPath = path.join(binDir, filename);
+
+  if (fs.existsSync(localPath)) {
+    YT_DLP_PATH = localPath;
+    return localPath;
+  }
+
+  console.log(`[youtubeService] yt-dlp binary not found. Downloading for ${process.platform}...`);
+  const downloadUrl = isWindows
+    ? 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
+    : (isMac
+      ? 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos'
+      : 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp');
+
+  try {
+    const res = await fetch(downloadUrl);
+    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+    const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    fs.writeFileSync(localPath, buffer);
+    
+    if (!isWindows) {
+      // Set executable permission on Unix-like systems
+      fs.chmodSync(localPath, 0o755);
+    }
+    console.log(`[youtubeService] yt-dlp binary downloaded successfully to ${localPath}`);
+    YT_DLP_PATH = localPath;
+    return localPath;
+  } catch (error) {
+    console.error('[youtubeService] Failed to download yt-dlp:', error);
+    // Fallback to system-wide command
+    console.log('[youtubeService] Falling back to system-wide "yt-dlp" command from PATH.');
+    YT_DLP_PATH = 'yt-dlp';
+    return 'yt-dlp';
+  }
+}
 
 /**
- * Get or create a singleton Innertube client (for search only).
+ * Get or create a singleton Innertube client.
  */
-async function getClient(): Promise<Innertube> {
+export async function getClient(): Promise<Innertube> {
   if (!innertubeClient) {
     innertubeClient = await Innertube.create({
       lang: 'en',
@@ -183,7 +275,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
         // Use optimized yt-dlp flags: print only required fields to avoid huge JSON generation overhead
-        const { stdout } = await execFileAsync(YT_DLP_PATH, [
+        const { stdout } = await runYtDlpPooled([
           '--no-warnings',
           '--no-playlist',
           '-f', '140/251/bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio',
@@ -198,7 +290,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
           '--print', '%(duration)s',
           '--skip-download',
           ytUrl
-        ], { timeout: 20000, maxBuffer: 10 * 1024 * 1024 });
+        ], 20000);
 
         const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
         const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr] = lines;
@@ -321,7 +413,7 @@ export async function getVideoInfo(videoId: string): Promise<{
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
     
     // Print only the necessary fields to skip JSON formatting overhead and check certificate/formats speedups
-    const { stdout } = await execFileAsync(YT_DLP_PATH, [
+    const { stdout } = await runYtDlpPooled([
       '--no-warnings',
       '--no-playlist',
       '--no-check-formats',
@@ -333,7 +425,7 @@ export async function getVideoInfo(videoId: string): Promise<{
       '--print', '%(thumbnail)s',
       '--skip-download',
       ytUrl
-    ], { timeout: 15000, maxBuffer: 10 * 1024 * 1024 });
+    ], 15000);
 
     const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
     const [title, artist, album, durationStr, coverArtUrl] = lines;

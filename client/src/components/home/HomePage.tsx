@@ -29,6 +29,11 @@ import {
   AccessTime as AccessTimeIcon,
   Explore as ExploreIcon,
   PlayCircle as PlayCircleIcon,
+  FitnessCenter as FitnessCenterIcon,
+  SelfImprovement as SelfImprovementIcon,
+  Spa as SpaIcon,
+  Celebration as CelebrationIcon,
+  NightsStay as NightsStayIcon,
 } from '@mui/icons-material';
 import { tokens } from '../../theme/muiTheme';
 import { formatDuration } from '../../utils/formatDuration';
@@ -36,6 +41,8 @@ import { usePlayerStore } from '../../stores/playerStore';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { useRecommendationStore } from '../../stores/recommendationStore';
 import { Track } from '../../types';
+import { useToast } from '../../hooks/useToast';
+import { PlaylistGenerator, VibeType, VIBE_CONFIGS } from '../../services/playlistGenerator';
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -353,16 +360,30 @@ export const HomePage: React.FC<HomePageProps> = ({
   const playTrack = usePlayerStore((s) => s.playTrack);
   const nextTrack = usePlayerStore((s) => s.nextTrack);
   const prevTrack = usePlayerStore((s) => s.prevTrack);
+  const setQueue = usePlayerStore((s) => s.setQueue);
+
+  const { toast } = useToast();
 
   // ── Recommendations ───────────────────────────────────────────────
   const recSections = useRecommendationStore((s) => s.sections);
   const fetchRecommendations = useRecommendationStore((s) => s.fetchRecommendations);
 
   // ── Library data ──────────────────────────────────────────────────
-  const { getAllTracks, getAllFavorites, getAllPlaylists, getPlaybackHistory } = useLibraryDB();
+  const { 
+    getAllTracks, 
+    getAllFavorites, 
+    getAllPlaylists, 
+    getPlaybackHistory,
+    getOnRepeatTracks,
+    getHeavyRotationTracks,
+    getForgottenGems
+  } = useLibraryDB();
 
   const [recentTracks, setRecentTracks] = useState<Track[]>([]);
   const [favoriteTracks, setFavoriteTracks] = useState<Track[]>([]);
+  const [onRepeatTracks, setOnRepeatTracks] = useState<Track[]>([]);
+  const [heavyRotationTracks, setHeavyRotationTracks] = useState<Track[]>([]);
+  const [forgottenGemsTracks, setForgottenGemsTracks] = useState<Track[]>([]);
   const [totalTracks, setTotalTracks] = useState(0);
   const [totalFavorites, setTotalFavorites] = useState(0);
   const [totalPlaylists, setTotalPlaylists] = useState(0);
@@ -371,16 +392,22 @@ export const HomePage: React.FC<HomePageProps> = ({
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [tracks, favIds, playlists, history] = await Promise.all([
+        const [tracks, favIds, playlists, history, onRepeat, heavyRotation, forgottenGems] = await Promise.all([
           getAllTracks(),
           getAllFavorites(),
           getAllPlaylists(),
           getPlaybackHistory(),
+          getOnRepeatTracks(12),
+          getHeavyRotationTracks(12),
+          getForgottenGems(12),
         ]);
 
         setTotalTracks(tracks.length);
         setTotalPlaylists(playlists.length);
         setTotalFavorites(favIds.length);
+        setOnRepeatTracks(onRepeat);
+        setHeavyRotationTracks(heavyRotation);
+        setForgottenGemsTracks(forgottenGems);
 
         // Compute hours listened from track durations in history
         let totalSeconds = 0;
@@ -443,6 +470,32 @@ export const HomePage: React.FC<HomePageProps> = ({
     },
     [onSearch, onSearchFocus],
   );
+
+  const handleGenerateVibe = useCallback(async (vibe: VibeType) => {
+    toast(`Curating a "${vibe}" vibe mix online...`, 'info');
+    try {
+      const playlist = await PlaylistGenerator.generateVibePlaylist(vibe);
+      if (!playlist || playlist.trackIds.length === 0) {
+        toast(`No tracks matching the "${vibe}" vibe (Energy/BPM profile) could be found online at the moment!`, 'error');
+        return;
+      }
+      
+      const allTracks = await getAllTracks();
+      const playlistTracks = playlist.trackIds
+        .map(id => allTracks.find(t => t.id === id))
+        .filter((t): t is Track => !!t);
+
+      if (playlistTracks.length > 0) {
+        setQueue(playlistTracks, 0);
+        toast(`Vibe Curated: Playing your ${vibe} Mix! (${playlistTracks.length} tracks sequenced by energy)`, 'success');
+      } else {
+        toast(`No tracks matching the "${vibe}" vibe could be loaded.`, 'error');
+      }
+    } catch (err) {
+      console.error('Failed to generate vibe playlist:', err);
+      toast('Failed to generate vibe playlist', 'error');
+    }
+  }, [getAllTracks, setQueue, toast]);
 
   // ── Stat cards data ───────────────────────────────────────────────
   const stats = useMemo(
@@ -521,6 +574,39 @@ export const HomePage: React.FC<HomePageProps> = ({
     ],
     [onNavigate, onSearchFocus, onUploadClick, onShowEqualizer],
   );
+
+  const vibeCards = useMemo(() => [
+    {
+      vibe: 'Workout' as VibeType,
+      icon: <FitnessCenterIcon sx={{ fontSize: 32 }} />,
+      gradient: VIBE_CONFIGS.Workout.color,
+      description: VIBE_CONFIGS.Workout.description,
+    },
+    {
+      vibe: 'Focus' as VibeType,
+      icon: <SelfImprovementIcon sx={{ fontSize: 32 }} />,
+      gradient: VIBE_CONFIGS.Focus.color,
+      description: VIBE_CONFIGS.Focus.description,
+    },
+    {
+      vibe: 'Chill' as VibeType,
+      icon: <SpaIcon sx={{ fontSize: 32 }} />,
+      gradient: VIBE_CONFIGS.Chill.color,
+      description: VIBE_CONFIGS.Chill.description,
+    },
+    {
+      vibe: 'Party' as VibeType,
+      icon: <CelebrationIcon sx={{ fontSize: 32 }} />,
+      gradient: VIBE_CONFIGS.Party.color,
+      description: VIBE_CONFIGS.Party.description,
+    },
+    {
+      vibe: 'Late Night' as VibeType,
+      icon: <NightsStayIcon sx={{ fontSize: 32 }} />,
+      gradient: VIBE_CONFIGS['Late Night'].color,
+      description: VIBE_CONFIGS['Late Night'].description,
+    },
+  ], []);
 
   // ═══════════════════════════════════════════════════════════════════
   // ─── Render ─────────────────────────────────────────────────────────
@@ -918,6 +1004,208 @@ export const HomePage: React.FC<HomePageProps> = ({
             />
           </motion.div>
         )}
+
+        {/* ───────────────────────────────────────────────────────────
+            Section 4.1: Smart Playlists (On Repeat, Heavy Rotation, Forgotten Gems)
+            ─────────────────────────────────────────────────────────── */}
+        {onRepeatTracks.length > 0 && (
+          <motion.div variants={fadeUpVariants}>
+            <SectionHeader
+              title="On Repeat"
+              subtitle="Your absolute favorites right now"
+              icon={<PlayCircleIcon sx={{ fontSize: 20, color: tokens.colors.primary }} />}
+            />
+            <TrackScrollRow
+              tracks={onRepeatTracks}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onPlay={handlePlayTrack}
+            />
+          </motion.div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {heavyRotationTracks.length > 0 && (
+          <motion.div variants={fadeUpVariants}>
+            <SectionHeader
+              title="Heavy Rotation"
+              subtitle="Tracks you've spent the most time with"
+              icon={<QueueMusicIcon sx={{ fontSize: 20, color: tokens.colors.accent.amber }} />}
+            />
+            <TrackScrollRow
+              tracks={heavyRotationTracks}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onPlay={handlePlayTrack}
+            />
+          </motion.div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {forgottenGemsTracks.length > 0 && (
+          <motion.div variants={fadeUpVariants}>
+            <SectionHeader
+              title="Forgotten Gems"
+              subtitle="Favorites you haven't played in a while"
+              icon={<ExploreIcon sx={{ fontSize: 20, color: tokens.colors.accent.cyan }} />}
+            />
+            <TrackScrollRow
+              tracks={forgottenGemsTracks}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onPlay={handlePlayTrack}
+            />
+          </motion.div>
+        )}
+
+        {/* ───────────────────────────────────────────────────────────
+            Section 4.3: Curated Vibe Mixes
+            ─────────────────────────────────────────────────────────── */}
+        <motion.div variants={fadeUpVariants}>
+          <SectionHeader
+            title="Curate a Vibe Mix"
+            subtitle="Choose a mood to generate a custom-sequenced playlist from your library"
+            icon={<ExploreIcon sx={{ fontSize: 20, color: tokens.colors.primary }} />}
+          />
+          <Box
+            sx={{
+              display: 'flex',
+              gap: `${tokens.spacing.md}px`,
+              overflowX: 'auto',
+              pb: 1.5,
+              mx: -0.5,
+              px: 0.5,
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
+            {vibeCards.map((card, idx) => (
+              <motion.div
+                key={card.vibe}
+                custom={idx}
+                variants={trackCardVariants}
+                initial="hidden"
+                animate="show"
+              >
+                <Box
+                  component="button"
+                  onClick={() => handleGenerateVibe(card.vibe)}
+                  sx={{
+                    flexShrink: 0,
+                    width: 220,
+                    height: 180,
+                    p: `${tokens.spacing.lg}px`,
+                    borderRadius: `${tokens.radius.xl}px`,
+                    background: card.gradient,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    color: '#fff',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+                    transition: tokens.transitions.normal,
+                    '&:hover': {
+                      transform: 'scale(1.04) translateY(-4px)',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.4)',
+                      '& .vibe-play-btn': { opacity: 1, transform: 'scale(1)' },
+                    },
+                    '&:active': {
+                      transform: 'scale(0.98)',
+                    },
+                  }}
+                >
+                  {/* Background overlay/glowing element */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -20,
+                      right: -20,
+                      opacity: 0.15,
+                      transform: 'rotate(15deg)',
+                      color: '#fff',
+                    }}
+                  >
+                    {React.cloneElement(card.icon, { sx: { fontSize: 80 } })}
+                  </Box>
+
+                  {/* Top Row: Icon */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 44,
+                      height: 44,
+                      borderRadius: '12px',
+                      bgcolor: 'rgba(255, 255, 255, 0.18)',
+                      backdropFilter: 'blur(4px)',
+                    }}
+                  >
+                    {card.icon}
+                  </Box>
+
+                  {/* Bottom Row: Text & Play button */}
+                  <Box sx={{ width: '100%' }}>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 800,
+                        lineHeight: 1.2,
+                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                      }}
+                    >
+                      {card.vibe} Mix
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'rgba(255, 255, 255, 0.75)',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        mt: 0.5,
+                        lineHeight: 1.3,
+                        fontSize: 10.5,
+                      }}
+                    >
+                      {card.description}
+                    </Typography>
+                  </Box>
+
+                  {/* Play Button Overlay */}
+                  <Box
+                    className="vibe-play-btn"
+                    sx={{
+                      position: 'absolute',
+                      bottom: `${tokens.spacing.lg}px`,
+                      right: `${tokens.spacing.lg}px`,
+                      width: 36,
+                      height: 36,
+                      borderRadius: '50%',
+                      bgcolor: '#fff',
+                      color: '#000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: 0,
+                      transform: 'scale(0.8)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                      transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                    }}
+                  >
+                    <PlayArrowIcon sx={{ fontSize: 22, ml: 0.25 }} />
+                  </Box>
+                </Box>
+              </motion.div>
+            ))}
+          </Box>
+        </motion.div>
 
         {/* ───────────────────────────────────────────────────────────
             Section 4.5: Recommendation Sections

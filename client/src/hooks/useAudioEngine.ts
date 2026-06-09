@@ -406,10 +406,20 @@ const triggerCrossfade = async () => {
   const now = audioContext.currentTime;
   const cfDur = usePlayerStore.getState().crossfadeDuration;
 
-  fadeOutGain.gain.setValueAtTime(1.0, now);
-  fadeInGain.gain.setValueAtTime(0.0, now);
-  fadeOutGain.gain.linearRampToValueAtTime(0.0, now + cfDur);
-  fadeInGain.gain.linearRampToValueAtTime(1.0, now + cfDur);
+  fadeOutGain.gain.cancelScheduledValues(now);
+  fadeInGain.gain.cancelScheduledValues(now);
+
+  const curveLength = 40;
+  const fadeOutCurve = new Float32Array(curveLength);
+  const fadeInCurve = new Float32Array(curveLength);
+  for (let i = 0; i < curveLength; i++) {
+    const t = i / (curveLength - 1);
+    fadeOutCurve[i] = Math.cos(t * Math.PI / 2);
+    fadeInCurve[i] = Math.sin(t * Math.PI / 2);
+  }
+
+  fadeOutGain.gain.setValueCurveAtTime(fadeOutCurve, now, cfDur);
+  fadeInGain.gain.setValueCurveAtTime(fadeInCurve, now, cfDur);
 
   try {
     await fadeInPlayer.play();
@@ -609,7 +619,15 @@ export const useAudioEngine = () => {
     // Reset prefetch status on every track change
     prefetchedTrackId = null;
 
-    if (currentSrc !== targetSrc) {
+    const decodeUrl = (url: string) => {
+      try {
+        return decodeURIComponent(url);
+      } catch (e) {
+        return url;
+      }
+    };
+
+    if (decodeUrl(currentSrc) !== decodeUrl(targetSrc)) {
       if (isCrossfading) {
         cancelActiveCrossfade();
       }

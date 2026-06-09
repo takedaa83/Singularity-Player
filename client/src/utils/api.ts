@@ -99,6 +99,15 @@ export const api = {
     );
   },
 
+  /** Get YouTube radio recommendations (related tracks) */
+  ytRadio(videoId?: string, title?: string, artist?: string, signal?: AbortSignal) {
+    const params = new URLSearchParams();
+    if (videoId) params.set('videoId', videoId);
+    if (title) params.set('title', title);
+    if (artist) params.set('artist', artist);
+    return fetchJSON<any[]>(`/api/yt/radio?${params.toString()}`, { signal });
+  },
+
   /** Get the streaming URL (constructs a proxy URL, does not fetch) */
   streamUrl(videoId: string): string {
     return `${API_BASE}/api/yt/stream/${videoId}`;

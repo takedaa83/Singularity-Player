@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
-import { Play, ListPlus, Heart, Download, Trash2, User, Disc, Package } from 'lucide-react';
+import { Play, ListPlus, Heart, Download, Trash2, User, Disc, Package, Radio } from 'lucide-react';
 import { Track } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 
@@ -17,6 +17,7 @@ interface TrackContextMenuProps {
   onGoToArtist?: () => void;
   onGoToAlbum?: () => void;
   isFavorite?: boolean;
+  onCreateSimilarPlaylist?: () => void;
 }
 
 export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
@@ -32,6 +33,7 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
   onGoToArtist,
   onGoToAlbum,
   isFavorite,
+  onCreateSimilarPlaylist,
 }) => {
   if (!track) return null;
 
@@ -57,6 +59,14 @@ export const TrackContextMenu: React.FC<TrackContextMenuProps> = ({
             <ListPlus size={16} color={tokens.colors.textSecondary} />
           </ListItemIcon>
           <ListItemText>Add to Queue</ListItemText>
+        </MenuItem>
+      )}
+      {onCreateSimilarPlaylist && (
+        <MenuItem onClick={() => { onCreateSimilarPlaylist(); onClose(); }}>
+          <ListItemIcon>
+            <Radio size={16} color={tokens.colors.textSecondary} />
+          </ListItemIcon>
+          <ListItemText>Start Song Radio</ListItemText>
         </MenuItem>
       )}
 

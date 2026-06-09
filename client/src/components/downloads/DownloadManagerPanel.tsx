@@ -23,6 +23,7 @@ import {
   selectCompletedDownloads,
   selectFailedDownloads,
 } from '../../stores/downloadStore';
+import { shallow } from 'zustand/shallow';
 import { DownloadQueueItem } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 import { formatDuration } from '../../utils/formatDuration';
@@ -239,10 +240,10 @@ const DownloadSection: React.FC<{
 // ─── Download Manager Panel ──────────────────────────────────────────
 
 export const DownloadManagerPanel: React.FC = () => {
-  const activeDownloads = useDownloadStore(selectActiveDownloads);
-  const queuedDownloads = useDownloadStore(selectQueuedDownloads);
-  const completedDownloads = useDownloadStore(selectCompletedDownloads);
-  const failedDownloads = useDownloadStore(selectFailedDownloads);
+  const activeDownloads = useDownloadStore(selectActiveDownloads, shallow);
+  const queuedDownloads = useDownloadStore(selectQueuedDownloads, shallow);
+  const completedDownloads = useDownloadStore(selectCompletedDownloads, shallow);
+  const failedDownloads = useDownloadStore(selectFailedDownloads, shallow);
   const clearCompleted = useDownloadStore((s) => s.clearCompleted);
 
   const allItems = useDownloadStore((s) => s.queue);

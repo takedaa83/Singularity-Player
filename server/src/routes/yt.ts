@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId } from '../services/youtubeService';
+import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getClient } from '../services/youtubeService';
+import { ytdlpPool } from '../services/processPool';
 import https from 'https';
 
 const router = Router();
@@ -133,9 +134,28 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
 /**
  * Fallback streaming: pipe yt-dlp stdout directly to HTTP response.
  */
-function streamViaPipe(videoId: string, res: Response, req: Request) {
+async function streamViaPipe(videoId: string, res: Response, req: Request) {
+  let poolHandle;
+  try {
+    poolHandle = await ytdlpPool.acquire();
+  } catch (err: any) {
+    if (!res.headersSent) {
+      res.status(503).json({ error: 'Server is busy, queue full. Please try again later.' });
+    }
+    return;
+  }
+
+  let released = false;
+  const release = () => {
+    if (!released) {
+      released = true;
+      poolHandle.release();
+    }
+  };
+
   try {
     const { stream, process: child } = spawnAudioStream(videoId);
+    poolHandle.registerProcess(child);
 
     res.setHeader('Content-Type', 'audio/mp4');
     res.setHeader('Cache-Control', 'public, max-age=1800');
@@ -146,6 +166,7 @@ function streamViaPipe(videoId: string, res: Response, req: Request) {
     stream.on('error', (err) => {
       console.error('[YT Route] Pipe stream error:', err);
       if (!res.writableEnded) res.end();
+      release();
     });
 
     child.on('exit', (code) => {
@@ -153,16 +174,19 @@ function streamViaPipe(videoId: string, res: Response, req: Request) {
         console.warn(`[YT Route] yt-dlp exited with code ${code}`);
       }
       if (!res.writableEnded) res.end();
+      release();
     });
 
     req.on('close', () => {
       child.kill('SIGTERM');
+      release();
     });
   } catch (error: any) {
     console.error('[YT Route] Pipe fallback error:', error?.message || error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Stream failed' });
     }
+    release();
   }
 }
 
@@ -179,12 +203,29 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
+  let poolHandle;
+  try {
+    poolHandle = await ytdlpPool.acquire();
+  } catch (err: any) {
+    res.status(503).json({ error: 'Server busy. Try again later.' });
+    return;
+  }
+
+  let released = false;
+  const release = () => {
+    if (!released) {
+      released = true;
+      poolHandle.release();
+    }
+  };
+
   try {
     const safeName = downloadName.replace(/[<>:"/\\|?*]/g, '_');
     const fileName = `${safeName}.m4a`;
 
     // Pipe yt-dlp output directly — most reliable approach
     const { stream, process: child } = spawnAudioStream(videoId);
+    poolHandle.registerProcess(child);
 
     let hasData = false;
 
@@ -203,6 +244,7 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
 
     stream.on('end', () => {
       if (!res.writableEnded) res.end();
+      release();
     });
 
     stream.on('error', (err) => {
@@ -212,6 +254,7 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
       } else if (!res.writableEnded) {
         res.end();
       }
+      release();
     });
 
     child.on('exit', (code) => {
@@ -221,16 +264,19 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
       } else if (!res.writableEnded) {
         res.end();
       }
+      release();
     });
 
     req.on('close', () => {
       child.kill('SIGTERM');
+      release();
     });
   } catch (error: any) {
     console.error('[YT Route] Download error:', error?.message || error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Download failed' });
     }
+    release();
   }
 });
 
@@ -255,6 +301,95 @@ router.get('/info/:videoId', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[YT Route] Info error:', error);
     res.status(500).json({ error: 'Failed to get video info' });
+  }
+});
+
+/**
+ * GET /api/yt/radio
+ * Fetch recommended tracks for a song from YouTube Music.
+ */
+router.get('/radio', async (req: Request, res: Response) => {
+  let videoId = req.query.videoId as string;
+  const title = req.query.title as string;
+  const artist = req.query.artist as string;
+
+  try {
+    const yt = await getClient();
+
+    if (!videoId && title && artist) {
+      console.log(`[YT Route] Resolving videoId for similar mix: ${artist} - ${title}`);
+      const searchResults = await searchYouTube(`${artist} ${title}`);
+      if (searchResults && searchResults.length > 0) {
+        videoId = searchResults[0].videoId;
+      }
+    }
+
+    if (!videoId || !isValidVideoId(videoId)) {
+      console.log(`[YT Route] No videoId resolved, falling back to search for radio: ${artist} - ${title}`);
+      const searchResults = await searchYouTube(`${artist} ${title}`);
+      res.json(searchResults.map(item => ({
+        id: `yt-${item.videoId}`,
+        title: item.title,
+        artist: item.artist,
+        album: item.album || 'Single',
+        duration: item.duration,
+        coverArtUrl: item.coverArtUrl,
+        source: 'youtube',
+        streamUrl: `/api/yt/stream/${item.videoId}`,
+        videoId: item.videoId,
+        addedAt: Date.now()
+      })));
+      return;
+    }
+
+    console.log(`[YT Route] Fetching radio recommendations for videoId: ${videoId}`);
+    const related = await (yt.music as any).getRelated(videoId);
+    const tracks: any[] = [];
+
+    if (related && Array.isArray(related.contents)) {
+      for (const shelf of related.contents) {
+        if (shelf.type === 'MusicCarouselShelf' && Array.isArray(shelf.contents)) {
+          for (const item of shelf.contents) {
+            if (item.type === 'MusicResponsiveListItem' && item.id && item.title) {
+              const itemTitle = item.title;
+              let itemArtist = 'Unknown Artist';
+              if (item.artists && Array.isArray(item.artists)) {
+                itemArtist = item.artists.map((a: any) => a.name).join(', ');
+              } else if (item.author && item.author.name) {
+                itemArtist = item.author.name;
+              }
+              
+              let coverUrl = null;
+              if (item.thumbnails && Array.isArray(item.thumbnails) && item.thumbnails.length > 0) {
+                // Try to get a high-quality thumbnail if possible, or fallback to first one
+                coverUrl = item.thumbnails[0].url || null;
+              }
+
+              if (!tracks.some(t => t.videoId === item.id)) {
+                tracks.push({
+                  id: `yt-${item.id}`,
+                  title: itemTitle,
+                  artist: itemArtist,
+                  album: item.album?.name || 'Single',
+                  duration: item.duration?.seconds || 0,
+                  coverArtUrl: coverUrl,
+                  source: 'youtube',
+                  streamUrl: `/api/yt/stream/${item.id}`,
+                  videoId: item.id,
+                  addedAt: Date.now()
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`[YT Route] Found ${tracks.length} radio recommendations for videoId: ${videoId}`);
+    res.json(tracks);
+  } catch (error: any) {
+    console.error('[YT Route] Radio recommendations error:', error?.message || error);
+    res.status(500).json({ error: 'Failed to retrieve radio recommendations' });
   }
 });
 

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { fetchLyrics } from '../services/lyricsService';
+import { fetchLyrics, saveLyrics } from '../services/lyricsService';
 
 const router = Router();
 
@@ -25,6 +25,32 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[Lyrics Route] Error:', error);
     res.status(500).json({ error: 'Failed to fetch lyrics' });
+  }
+});
+
+// POST /api/lyrics/save
+router.post('/save', async (req: Request, res: Response) => {
+  const { track, artist, syncedLyrics, plainLyrics, albumName, duration } = req.body;
+
+  if (!track || !artist) {
+    res.status(400).json({ error: 'track and artist are required' });
+    return;
+  }
+
+  try {
+    const data = {
+      syncedLyrics: syncedLyrics || null,
+      plainLyrics: plainLyrics || null,
+      trackName: track,
+      artistName: artist,
+      albumName: albumName || '',
+      duration: duration || 0
+    };
+    await saveLyrics(track, artist, data);
+    res.json({ success: true, message: 'Lyrics saved successfully' });
+  } catch (error) {
+    console.error('[Lyrics Route] Save error:', error);
+    res.status(500).json({ error: 'Failed to save lyrics' });
   }
 });
 
