@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { fetchLyrics, saveLyrics } from '../services/lyricsService';
+import { fetchLyrics, saveLyrics, clearLyricsCache } from '../services/lyricsService';
+import { SearchService } from '../services/searchService';
 
 const router = Router();
 
@@ -51,6 +52,18 @@ router.post('/save', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[Lyrics Route] Save error:', error);
     res.status(500).json({ error: 'Failed to save lyrics' });
+  }
+});
+
+// POST /api/lyrics/clear
+router.post('/clear', async (req: Request, res: Response) => {
+  try {
+    await clearLyricsCache();
+    SearchService.clearSearchCache();
+    res.json({ success: true, message: 'Server-side lyrics and search caches cleared successfully' });
+  } catch (error) {
+    console.error('[Lyrics Route] Clear cache error:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
 

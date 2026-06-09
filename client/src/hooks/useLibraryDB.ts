@@ -160,6 +160,11 @@ export const useLibraryDB = () => {
     await db.clear('history');
   };
 
+  const clearPlaySessions = async (): Promise<void> => {
+    const db = await initDB();
+    await db.clear('playSessions');
+  };
+
   // --- PLAY SESSION METHODS (Analytics) ---
 
   const recordPlaySession = async (session: Omit<PlaySession, 'id'>): Promise<void> => {
@@ -306,6 +311,7 @@ export const useLibraryDB = () => {
     getPlaySessionsForTrack,
     getTotalListeningTime,
     getTopTracks,
+    clearPlaySessions,
     // Smart Playlists
     getOnRepeatTracks,
     getForgottenGems,

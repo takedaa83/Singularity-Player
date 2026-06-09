@@ -545,6 +545,12 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
     let lastPerfVal = performance.now();
 
     const tick = () => {
+      // Skip expensive DOM work when tab is hidden — saves significant CPU in background
+      if (document.hidden) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+
       const rawTime = timeStore.getCurrentTime();
       const now = performance.now();
       

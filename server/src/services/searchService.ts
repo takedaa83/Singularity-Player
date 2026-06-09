@@ -22,6 +22,11 @@ export class SearchService {
   private static CACHE_TTL = 15 * 60 * 1000; // 15 minutes
   private static CACHE_MAX_SIZE = 200; // Maximum cached queries
 
+  public static clearSearchCache(): void {
+    this.cache.clear();
+    this.suggestionsCache.clear();
+  }
+
   private static normalizeString(str: string): string {
     return str
       .toLowerCase()

@@ -31,6 +31,10 @@ import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { ViewHeader } from '../ui/ViewHeader';
+import { useLibraryDB } from '../../hooks/useLibraryDB';
+import { useToast } from '../../hooks/useToast';
+import { api } from '../../utils/api';
+import { initDB } from '../../lib/db';
 
 // ─── Accent Color Palette ────────────────────────────────────────────
 
@@ -141,6 +145,12 @@ const SettingRow: React.FC<SettingRowProps> = ({
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSetting } = useSettingsStore();
+  const {
+    clearPlaybackHistory,
+    clearSearchHistory,
+    clearPlaySessions
+  } = useLibraryDB();
+  const { toast } = useToast();
 
   const handleThemeChange = useCallback(
     (theme: UserSettings['theme']) => updateSetting('theme', theme),
@@ -157,6 +167,171 @@ export const SettingsPage: React.FC = () => {
     },
     [updateSetting]
   );
+
+  const handleClearHistory = useCallback(async () => {
+    if (window.confirm('Are you sure you want to clear your playback history, search history, and listening stats? This action cannot be undone.')) {
+      try {
+        await clearPlaybackHistory();
+        await clearSearchHistory();
+        await clearPlaySessions();
+        toast('History and analytics cleared successfully', 'success');
+      } catch (err) {
+        toast('Failed to clear history: ' + (err as Error).message, 'error');
+      }
+    }
+  }, [clearPlaybackHistory, clearSearchHistory, clearPlaySessions, toast]);
+
+  const handleClearCache = useCallback(async () => {
+    if (window.confirm('Are you sure you want to clear all server-side lyrics, metadata, and search result caches?')) {
+      try {
+        await api.post('/api/lyrics/clear');
+        toast('Caches cleared successfully', 'success');
+      } catch (err) {
+        toast('Failed to clear caches: ' + (err as Error).message, 'error');
+      }
+    }
+  }, [toast]);
+
+  const handleExportLibrary = useCallback(async () => {
+    try {
+      const db = await initDB();
+      const exportData = {
+        tracks: await db.getAll('tracks'),
+        playlists: await db.getAll('playlists'),
+        favorites: await db.getAll('favorites'),
+        history: await db.getAll('history'),
+        playSessions: await db.getAll('playSessions'),
+        searchHistory: await db.getAll('searchHistory'),
+        settings: await db.getAll('settings'),
+        settingsStore: useSettingsStore.getState().settings,
+        version: '1.5.0',
+        exportedAt: Date.now(),
+      };
+      
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `singularity_library_export_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast('Library exported successfully', 'success');
+    } catch (err) {
+      toast('Failed to export library: ' + (err as Error).message, 'error');
+    }
+  }, [toast]);
+
+  const handleImportLibrary = useCallback(async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid backup file');
+        }
+
+        const db = await initDB();
+
+        // Transaction to restore data
+        const tx = db.transaction(
+          ['tracks', 'playlists', 'favorites', 'history', 'playSessions', 'searchHistory', 'settings'],
+          'readwrite'
+        );
+
+        if (Array.isArray(data.tracks)) {
+          const store = tx.objectStore('tracks');
+          for (const track of data.tracks) {
+            await store.put(track);
+          }
+        }
+
+        if (Array.isArray(data.playlists)) {
+          const store = tx.objectStore('playlists');
+          for (const pl of data.playlists) {
+            await store.put(pl);
+          }
+        }
+
+        if (Array.isArray(data.favorites)) {
+          const store = tx.objectStore('favorites');
+          for (const fav of data.favorites) {
+            await store.put(fav);
+          }
+        }
+
+        if (Array.isArray(data.history)) {
+          const store = tx.objectStore('history');
+          for (const hist of data.history) {
+            await store.put(hist);
+          }
+        }
+
+        if (Array.isArray(data.playSessions)) {
+          const store = tx.objectStore('playSessions');
+          for (const sess of data.playSessions) {
+            await store.put(sess);
+          }
+        }
+
+        if (Array.isArray(data.searchHistory)) {
+          const store = tx.objectStore('searchHistory');
+          for (const sh of data.searchHistory) {
+            await store.put(sh);
+          }
+        }
+
+        if (Array.isArray(data.settings)) {
+          const store = tx.objectStore('settings');
+          for (const set of data.settings) {
+            await store.put(set);
+          }
+        }
+
+        await tx.done;
+
+        // Restore Zustand settings store
+        if (data.settingsStore) {
+          const store = useSettingsStore.getState();
+          Object.entries(data.settingsStore).forEach(([key, val]) => {
+            store.updateSetting(key as any, val);
+          });
+        }
+
+        toast('Library imported successfully! Refreshing...', 'success');
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        toast('Failed to import library: ' + (err as Error).message, 'error');
+      }
+    };
+    input.click();
+  }, [toast]);
+
+  const handleResetSettings = useCallback(async () => {
+    if (window.confirm('Are you sure you want to reset all user settings to default?')) {
+      try {
+        useSettingsStore.getState().resetSettings();
+        
+        // Also clear IndexedDB settings store
+        const db = await initDB();
+        await db.clear('settings');
+        
+        toast('Settings reset to default', 'success');
+      } catch (err) {
+        toast('Failed to reset settings: ' + (err as Error).message, 'error');
+      }
+    }
+  }, [toast]);
 
   return (
     <Box sx={{ maxWidth: 720, mx: 'auto' }}>
@@ -389,6 +564,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<Trash2 size={16} />}
+            onClick={handleClearHistory}
             sx={{
               borderColor: tokens.colors.surfaceBorder,
               color: tokens.colors.textSecondary,
@@ -407,6 +583,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<Database size={16} />}
+            onClick={handleClearCache}
             sx={{
               borderColor: tokens.colors.surfaceBorder,
               color: tokens.colors.textSecondary,
@@ -425,6 +602,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<Upload size={16} />}
+            onClick={handleExportLibrary}
             sx={{
               borderColor: tokens.colors.surfaceBorder,
               color: tokens.colors.textSecondary,
@@ -443,6 +621,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<FolderDown size={16} />}
+            onClick={handleImportLibrary}
             sx={{
               borderColor: tokens.colors.surfaceBorder,
               color: tokens.colors.textSecondary,
@@ -494,7 +673,7 @@ export const SettingsPage: React.FC = () => {
           <Button
             size="small"
             startIcon={<RotateCcw size={14} />}
-            onClick={() => useSettingsStore.getState().resetSettings()}
+            onClick={handleResetSettings}
             sx={{
               color: tokens.colors.textTertiary,
               '&:hover': { color: tokens.colors.warning },

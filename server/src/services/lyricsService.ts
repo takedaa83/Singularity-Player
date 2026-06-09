@@ -82,6 +82,10 @@ class LyricsCache {
     const key = this.makeKey(track, artist);
     this.cache.set(key, { data, expiry: Date.now() + this.TTL });
   }
+
+  clear(): void {
+    this.cache.clear();
+  }
 }
 
 const lyricsCache = new LyricsCache();
@@ -558,4 +562,19 @@ export async function fetchLyrics(
 export async function saveLyrics(track: string, artist: string, data: LyricsResult): Promise<void> {
   lyricsCache.set(track, artist, data);
   await saveLyricsToDisk(track, artist, data);
+}
+
+export async function clearLyricsCache(): Promise<void> {
+  lyricsCache.clear();
+  try {
+    ensureLyricsDir();
+    const files = await fs.promises.readdir(LYRICS_DIR);
+    for (const file of files) {
+      if (file.endsWith('.json')) {
+        await fs.promises.unlink(path.join(LYRICS_DIR, file));
+      }
+    }
+  } catch (e) {
+    console.error('[LyricsService] Error clearing lyrics disk cache:', e);
+  }
 }

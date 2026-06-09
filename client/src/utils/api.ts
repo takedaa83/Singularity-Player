@@ -150,4 +150,13 @@ export const api = {
     if (path.startsWith('http')) return path;
     return `${API_BASE}${path}`;
   },
+
+  /** Generic POST helper */
+  post<T = any>(url: string, body?: object, signal?: AbortSignal): Promise<T> {
+    return fetchJSON<T>(url, {
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+      signal,
+    });
+  },
 };
