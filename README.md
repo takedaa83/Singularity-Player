@@ -432,5 +432,5 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 <p align="center">
-  Built with ♪ by <a href="https://github.com/yourusername">yourusername</a>
+  Built with ♪ by <a href="https://github.com/yourusername">takedaa</a>
 </p>
