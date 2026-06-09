@@ -24,7 +24,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
   const { getAllPlaylists, getAllTracks, removeTrackFromPlaylist } = useLibraryDB();
-  const { setQueue } = usePlayerStore();
+  const setQueue = usePlayerStore(state => state.setQueue);
 
   useEffect(() => {
     const loadPlaylistData = async () => {

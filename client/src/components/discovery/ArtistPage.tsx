@@ -18,7 +18,8 @@ export const ArtistPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const { playTrack, setQueue } = usePlayerStore();
+  const playTrack = usePlayerStore(state => state.playTrack);
+  const setQueue = usePlayerStore(state => state.setQueue);
   const { getAllTracks } = useLibraryDB();
   
   const [libraryTracks, setLibraryTracks] = useState<Track[]>([]);

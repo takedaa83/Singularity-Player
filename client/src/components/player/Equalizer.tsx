@@ -12,7 +12,8 @@ const PRESETS: Record<string, number[]> = {
 };
 
 export const Equalizer: React.FC = () => {
-  const { equalizerBands, setEqualizerBands } = usePlayerStore();
+  const equalizerBands = usePlayerStore(state => state.equalizerBands);
+  const setEqualizerBands = usePlayerStore(state => state.setEqualizerBands);
   const [activePreset, setActivePreset] = React.useState('Flat');
 
   const EQ_LABELS = ['32', '64', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'];

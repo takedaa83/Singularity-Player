@@ -146,7 +146,8 @@ const SettingRow: React.FC<SettingRowProps> = ({
 
 export const SettingsPage: React.FC = () => {
   const { settings, updateSetting } = useSettingsStore();
-  const { streamingQuality, setStreamingQuality } = usePlayerStore();
+  const streamingQuality = usePlayerStore(state => state.streamingQuality);
+  const setStreamingQuality = usePlayerStore(state => state.setStreamingQuality);
   const {
     clearPlaybackHistory,
     clearSearchHistory,
@@ -691,7 +692,7 @@ export const SettingsPage: React.FC = () => {
               Singularity Player
             </Typography>
             <Typography variant="caption" sx={{ color: tokens.colors.textTertiary }}>
-              Version 2.0.0 • Music Platform
+              Version 1.5.0 • Music Platform
             </Typography>
           </Box>
           <Button

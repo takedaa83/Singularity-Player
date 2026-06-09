@@ -30,7 +30,14 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   onDeleteSuccess,
   refreshTrigger
 }) => {
-  const { currentTrack, isPlaying, playTrack, addToQueue, playNext, favorites, setQueue, isBuffering } = usePlayerStore();
+  const currentTrack = usePlayerStore(state => state.currentTrack);
+  const isPlaying = usePlayerStore(state => state.isPlaying);
+  const playTrack = usePlayerStore(state => state.playTrack);
+  const addToQueue = usePlayerStore(state => state.addToQueue);
+  const playNext = usePlayerStore(state => state.playNext);
+  const favorites = usePlayerStore(state => state.favorites);
+  const setQueue = usePlayerStore(state => state.setQueue);
+  const isBuffering = usePlayerStore(state => state.isBuffering);
   const { toggleFavorite, deleteTrack, getAllTracks } = useLibraryDB();
   const { toast } = useToast();
   const navigate = useNavigate();

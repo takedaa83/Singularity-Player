@@ -432,14 +432,20 @@ input[type="range"]::-webkit-slider-runnable-track {
 /* ── Floating Blob Animations ── */
 .animate-float-blob-1 {
   animation: float-blob-1 12s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .animate-float-blob-2 {
   animation: float-blob-2 15s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .animate-float-blob-3 {
   animation: float-blob-3 10s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* ── Hide scrollbars while keeping functionality ── */

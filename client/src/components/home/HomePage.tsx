@@ -156,7 +156,9 @@ export const TrackScrollRowItem: React.FC<{
   onPlay: (track: Track) => void;
 }> = React.memo(({ track, idx, currentTrack, isPlaying, onPlay }) => {
   const navigate = useNavigate();
-  const { addToQueue, playNext, favorites } = usePlayerStore();
+  const addToQueue = usePlayerStore(state => state.addToQueue);
+  const playNext = usePlayerStore(state => state.playNext);
+  const favorites = usePlayerStore(state => state.favorites);
   const { toggleFavorite } = useLibraryDB();
   const { toast } = useToast();
   const [contextMenuPosition, setContextMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
@@ -373,7 +375,9 @@ export const QuickPlayGridItem: React.FC<{
   handlePlayQuickItem: (item: any) => void;
 }> = React.memo(({ item, idx, handlePlayQuickItem }) => {
   const navigate = useNavigate();
-  const { addToQueue, playNext, favorites } = usePlayerStore();
+  const addToQueue = usePlayerStore(state => state.addToQueue);
+  const playNext = usePlayerStore(state => state.playNext);
+  const favorites = usePlayerStore(state => state.favorites);
   const { toggleFavorite } = useLibraryDB();
   const { toast } = useToast();
   const [contextMenuPosition, setContextMenuPosition] = React.useState<{ top: number; left: number } | null>(null);

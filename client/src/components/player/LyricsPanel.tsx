@@ -414,6 +414,236 @@ async function fetchiTunesCover(title: string, artist: string): Promise<string |
   return null;
 }
 
+interface LyricsPlayerControlsProps {
+  currentTrack: any;
+  isPlaying: boolean;
+  setPlaying: (p: boolean) => void;
+  favorites: string[];
+  handleFavToggle: () => void;
+  handleStartEdit: () => void;
+  shuffle: boolean;
+  toggleShuffle: () => void;
+  prevTrack: () => void;
+  nextTrack: (f?: boolean) => void;
+  repeat: 'off' | 'all' | 'one';
+  handleRepeatClick: () => void;
+  volume: number;
+  setVolume: (v: number) => void;
+  isMuted: boolean;
+  toggleMute: () => void;
+  wordHighlightEnabled: boolean;
+  setWordHighlightEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  seek: (t: number) => void;
+}
+
+const LyricsPlayerControls: React.FC<LyricsPlayerControlsProps> = ({
+  currentTrack,
+  isPlaying,
+  setPlaying,
+  favorites,
+  handleFavToggle,
+  handleStartEdit,
+  shuffle,
+  toggleShuffle,
+  prevTrack,
+  nextTrack,
+  repeat,
+  handleRepeatClick,
+  volume,
+  setVolume,
+  isMuted,
+  toggleMute,
+  wordHighlightEnabled,
+  setWordHighlightEnabled,
+  seek
+}) => {
+  const { currentTime, duration: liveDuration } = usePlaybackTime();
+  const duration = currentTrack?.duration || liveDuration || 0;
+  const remainingTime = duration - currentTime;
+  const isFav = currentTrack ? favorites.includes(currentTrack.id) : false;
+
+  const formatRemainingTime = (time: number) => {
+    if (isNaN(time) || time < 0) return '-0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `-${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatCurrentTime = (time: number) => {
+    if (isNaN(time) || time < 0) return '0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="w-full max-w-[360px] flex flex-col gap-6">
+      {/* Album Cover Art */}
+      {currentTrack?.coverArtUrl ? (
+        <img
+          src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) || ''}
+          alt={currentTrack.title}
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {
+              target.src = `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`;
+            }
+          }}
+          className="w-full aspect-square rounded-2xl object-cover shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10"
+        />
+      ) : (
+        <div className="w-full aspect-square rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+          <Music className="w-20 h-20 text-neutral-700" />
+        </div>
+      )}
+
+      {/* Metadata Row */}
+      <div className="flex justify-between items-center mt-2 w-full">
+        <div className="flex flex-col min-w-0 pr-4">
+          <h2 className="text-xl font-bold tracking-tight truncate text-white">
+            {currentTrack?.title}
+          </h2>
+          <p className="text-sm text-neutral-400 truncate mt-1">
+            {currentTrack?.artist} {currentTrack?.album ? `— ${currentTrack.album}` : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleFavToggle}
+            className={`p-2 rounded-full transition-all active:scale-90 ${
+              isFav ? 'text-primary' : 'text-neutral-400 hover:text-white'
+            }`}
+            title={isFav ? "Remove from Favorites" : "Add to Favorites"}
+          >
+            <Star className="w-5 h-5" fill={isFav ? "currentColor" : "none"} />
+          </button>
+          <button
+            onClick={handleStartEdit}
+            className="p-2 rounded-full text-neutral-400 hover:text-white transition-all active:scale-90"
+            title="Edit Lyrics"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Progress Slider */}
+      <div className="flex flex-col gap-2 w-full">
+        <div className="relative group flex items-center h-4 w-full">
+          <input
+            type="range"
+            min="0"
+            max={duration || 100}
+            value={currentTime}
+            onChange={(e) => seek(parseFloat(e.target.value))}
+            className="w-full h-1 rounded-full cursor-pointer appearance-none focus:outline-none"
+            style={{
+              background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${
+                duration > 0 ? (currentTime / duration) * 100 : 0
+              }%, rgba(255,255,255,0.15) ${
+                duration > 0 ? (currentTime / duration) * 100 : 0
+              }%, rgba(255,255,255,0.15) 100%)`
+            }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] text-neutral-400 font-mono select-none px-0.5">
+          <span>{formatCurrentTime(currentTime)}</span>
+          <span>{formatRemainingTime(remainingTime)}</span>
+        </div>
+      </div>
+
+      {/* Playback Control Deck */}
+      <div className="flex items-center justify-between px-2 w-full">
+        <button
+          onClick={toggleShuffle}
+          className={`p-2 transition-colors active:scale-90 ${
+            shuffle ? 'text-primary' : 'text-neutral-400 hover:text-white'
+          }`}
+          aria-label="Toggle Shuffle"
+        >
+          <Shuffle className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={prevTrack}
+          className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
+          aria-label="Previous Track"
+        >
+          <SkipBack className="w-6 h-6 fill-current" />
+        </button>
+
+        <button
+          onClick={() => setPlaying(!isPlaying)}
+          className="p-4 rounded-full bg-white text-black active:scale-90 transition-all shadow-lg flex items-center justify-center hover:bg-neutral-100"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+        >
+          {isPlaying ? (
+            <Pause className="w-6 h-6 fill-black text-black" />
+          ) : (
+            <Play className="w-6 h-6 fill-black text-black ml-0.5" />
+          )}
+        </button>
+
+        <button
+          onClick={() => nextTrack(true)}
+          className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
+          aria-label="Next Track"
+        >
+          <SkipForward className="w-6 h-6 fill-current" />
+        </button>
+
+        <button
+          onClick={handleRepeatClick}
+          className={`p-2 transition-colors active:scale-90 ${
+            repeat !== 'off' ? 'text-primary' : 'text-neutral-400 hover:text-white'
+          }`}
+          aria-label={`Toggle Repeat, currently ${repeat}`}
+        >
+          {repeat === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Volume Slider */}
+      <div className="flex items-center gap-3 px-1 w-full mt-2">
+        <button
+          onClick={toggleMute}
+          className="text-neutral-400 hover:text-white transition-colors"
+          aria-label={isMuted ? 'Unmute' : 'Mute'}
+        >
+          {isMuted || volume === 0 ? (
+            <VolumeX className="w-4 h-4" />
+          ) : (
+            <Volume2 className="w-4 h-4" />
+          )}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={volume}
+          onChange={(e) => setVolume(parseFloat(e.target.value))}
+          className="flex-1 h-1 rounded-full cursor-pointer appearance-none"
+          style={{
+            background: `linear-gradient(to right, #fff 0%, #fff ${volume * 100}%, rgba(255,255,255,0.15) ${volume * 100}%, rgba(255,255,255,0.15) 100%)`
+          }}
+        />
+      </div>
+
+      {/* Highlight Mode Toggle Switcher */}
+      <div className="flex justify-center mt-6 w-full">
+        <button
+          onClick={() => setWordHighlightEnabled(prev => !prev)}
+          className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-all active:scale-95 shadow-md"
+          title="Toggle between word-by-word and line-by-line highlights"
+        >
+          {wordHighlightEnabled ? 'Highlighting: Word-by-Word' : 'Highlighting: Line-by-Line'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const currentTrack = usePlayerStore(state => state.currentTrack);
   const isPlaying = usePlayerStore(state => state.isPlaying);
@@ -435,9 +665,6 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
 
   const { saveTrack, toggleFavorite } = useLibraryDB();
   const { seek, getAnalyser } = useAudioEngine();
-  const { currentTime, duration: liveDuration } = usePlaybackTime();
-
-  const duration = currentTrack?.duration || liveDuration || 0;
 
   const [rawLrcText, setRawLrcText] = useState('');
   const [syncOffset, setSyncOffset] = useState(() => {
@@ -539,24 +766,6 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
     }
   }, [currentTrack?.coverArtUrl]);
 
-  const remainingTime = duration - currentTime;
-  
-  const formatRemainingTime = (time: number) => {
-    if (isNaN(time) || time < 0) return '-0:00';
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `-${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatCurrentTime = (time: number) => {
-    if (isNaN(time) || time < 0) return '0:00';
-    const mins = Math.floor(time / 60);
-    const secs = Math.floor(time % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const isFav = currentTrack ? favorites.includes(currentTrack.id) : false;
-
   const handleFavToggle = async () => {
     if (currentTrack) {
       await toggleFavorite(currentTrack.id);
@@ -582,6 +791,8 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const activeLineRef = useRef<HTMLDivElement>(null);
   const activeFullLineRef = useRef<HTMLDivElement>(null);
   const syncActiveLineRef = useRef<HTMLDivElement>(null);
+  
+  const activeWordsRef = useRef<HTMLElement[]>([]);
   
   const lastTrackIdRef = useRef<string | null>(null);
 
@@ -731,11 +942,25 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             el.classList.remove('completed');
           }
         });
+
+        // Cache the active line's words to avoid O(N) queries on every frame
+        const activeLineEl = document.querySelector('.lyrics-line.active-line') || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
+        if (activeLineEl) {
+          activeWordsRef.current = Array.from(activeLineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+        } else {
+          activeWordsRef.current = [];
+        }
       }
 
       // 2. Animate the active line's words only (frame-perfect progressive highlights without O(N) DOM search overhead)
-      const activeWords = document.querySelectorAll('.lyrics-line.active-line .karaoke-word');
-      activeWords.forEach(wordEl => {
+      if (activeWordsRef.current.length === 0 && newActiveIdx !== -1) {
+        const activeLineEl = document.querySelector('.lyrics-line.active-line');
+        if (activeLineEl) {
+          activeWordsRef.current = Array.from(activeLineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+        }
+      }
+
+      activeWordsRef.current.forEach(wordEl => {
         const start = parseFloat(wordEl.getAttribute('data-start') || '0');
         const end = parseFloat(wordEl.getAttribute('data-end') || '0');
         const htmlEl = wordEl as HTMLElement;
@@ -1353,172 +1578,27 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
               <div className="relative z-10 flex-1 flex flex-col md:flex-row h-full w-full overflow-hidden">
                 {/* Left Side: Large Album Cover & Playback Controls */}
                 <div className="w-full md:w-[45%] flex flex-col justify-center items-center px-8 md:px-16 py-8 md:py-16 select-none h-full bg-transparent">
-                  <div className="w-full max-w-[360px] flex flex-col gap-6">
-                    
-                    {/* Album Cover Art */}
-                    {currentTrack?.coverArtUrl ? (
-                      <img
-                        src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) || ''}
-                        alt={currentTrack.title}
-                        onError={(e) => {
-                          const target = e.currentTarget;
-                          if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {
-                            target.src = `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`;
-                          }
-                        }}
-                        className="w-full aspect-square rounded-2xl object-cover shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-white/10"
-                      />
-                    ) : (
-                      <div className="w-full aspect-square rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-                        <Music className="w-20 h-20 text-neutral-700" />
-                      </div>
-                    )}
-
-                    {/* Metadata Row */}
-                    <div className="flex justify-between items-center mt-2 w-full">
-                      <div className="flex flex-col min-w-0 pr-4">
-                        <h2 className="text-xl font-bold tracking-tight truncate text-white">
-                          {currentTrack?.title}
-                        </h2>
-                        <p className="text-sm text-neutral-400 truncate mt-1">
-                          {currentTrack?.artist} {currentTrack?.album ? `— ${currentTrack.album}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleFavToggle}
-                          className={`p-2 rounded-full transition-all active:scale-90 ${
-                            isFav ? 'text-primary' : 'text-neutral-400 hover:text-white'
-                          }`}
-                          title={isFav ? "Remove from Favorites" : "Add to Favorites"}
-                        >
-                          <Star className="w-5 h-5" fill={isFav ? "currentColor" : "none"} />
-                        </button>
-                        <button
-                          onClick={handleStartEdit}
-                          className="p-2 rounded-full text-neutral-400 hover:text-white transition-all active:scale-90"
-                          title="Edit Lyrics"
-                        >
-                          <MoreHorizontal className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Progress Slider */}
-                    <div className="flex flex-col gap-2 w-full">
-                      <div className="relative group flex items-center h-4 w-full">
-                        <input
-                          type="range"
-                          min="0"
-                          max={duration || 100}
-                          value={currentTime}
-                          onChange={(e) => seek(parseFloat(e.target.value))}
-                          className="w-full h-1 rounded-full cursor-pointer appearance-none focus:outline-none"
-                          style={{
-                            background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${
-                              duration > 0 ? (currentTime / duration) * 100 : 0
-                            }%, rgba(255,255,255,0.15) ${
-                              duration > 0 ? (currentTime / duration) * 100 : 0
-                            }%, rgba(255,255,255,0.15) 100%)`
-                          }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[10px] text-neutral-400 font-mono select-none px-0.5">
-                        <span>{formatCurrentTime(currentTime)}</span>
-                        <span>{formatRemainingTime(remainingTime)}</span>
-                      </div>
-                    </div>
-
-                    {/* Playback Control Deck */}
-                    <div className="flex items-center justify-between px-2 w-full">
-                      <button
-                        onClick={toggleShuffle}
-                        className={`p-2 transition-colors active:scale-90 ${
-                          shuffle ? 'text-primary' : 'text-neutral-400 hover:text-white'
-                        }`}
-                        aria-label="Toggle Shuffle"
-                      >
-                        <Shuffle className="w-5 h-5" />
-                      </button>
-
-                      <button
-                        onClick={prevTrack}
-                        className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
-                        aria-label="Previous Track"
-                      >
-                        <SkipBack className="w-6 h-6 fill-current" />
-                      </button>
-
-                      <button
-                        onClick={() => setPlaying(!isPlaying)}
-                        className="p-4 rounded-full bg-white text-black active:scale-90 transition-all shadow-lg flex items-center justify-center hover:bg-neutral-100"
-                        aria-label={isPlaying ? 'Pause' : 'Play'}
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-6 h-6 fill-black text-black" />
-                        ) : (
-                          <Play className="w-6 h-6 fill-black text-black ml-0.5" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => nextTrack(true)}
-                        className="p-2 text-neutral-400 hover:text-white active:scale-80 transition-all"
-                        aria-label="Next Track"
-                      >
-                        <SkipForward className="w-6 h-6 fill-current" />
-                      </button>
-
-                      <button
-                        onClick={handleRepeatClick}
-                        className={`p-2 transition-colors active:scale-90 ${
-                          repeat !== 'off' ? 'text-primary' : 'text-neutral-400 hover:text-white'
-                        }`}
-                        aria-label={`Toggle Repeat, currently ${repeat}`}
-                      >
-                        {repeat === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
-                      </button>
-                    </div>
-
-                    {/* Volume Slider */}
-                    <div className="flex items-center gap-3 px-1 w-full mt-2">
-                      <button
-                        onClick={toggleMute}
-                        className="text-neutral-400 hover:text-white transition-colors"
-                        aria-label={isMuted ? 'Unmute' : 'Mute'}
-                      >
-                        {isMuted || volume === 0 ? (
-                          <VolumeX className="w-4 h-4" />
-                        ) : (
-                          <Volume2 className="w-4 h-4" />
-                        )}
-                      </button>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={volume}
-                        onChange={(e) => setVolume(parseFloat(e.target.value))}
-                        className="flex-1 h-1 rounded-full cursor-pointer appearance-none"
-                        style={{
-                          background: `linear-gradient(to right, #fff 0%, #fff ${volume * 100}%, rgba(255,255,255,0.15) ${volume * 100}%, rgba(255,255,255,0.15) 100%)`
-                        }}
-                      />
-                    </div>
-
-                    {/* Highlight Mode Toggle Switcher */}
-                    <div className="flex justify-center mt-6 w-full">
-                      <button
-                        onClick={() => setWordHighlightEnabled(prev => !prev)}
-                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-neutral-300 hover:text-white hover:bg-white/10 text-xs font-semibold tracking-wide transition-all active:scale-95 shadow-md"
-                        title="Toggle between word-by-word and line-by-line highlights"
-                      >
-                        {wordHighlightEnabled ? 'Highlighting: Word-by-Word' : 'Highlighting: Line-by-Line'}
-                      </button>
-                    </div>
-
-                  </div>
+                  <LyricsPlayerControls
+                    currentTrack={currentTrack}
+                    isPlaying={isPlaying}
+                    setPlaying={setPlaying}
+                    favorites={favorites}
+                    handleFavToggle={handleFavToggle}
+                    handleStartEdit={handleStartEdit}
+                    shuffle={shuffle}
+                    toggleShuffle={toggleShuffle}
+                    prevTrack={prevTrack}
+                    nextTrack={nextTrack}
+                    repeat={repeat}
+                    handleRepeatClick={handleRepeatClick}
+                    volume={volume}
+                    setVolume={setVolume}
+                    isMuted={isMuted}
+                    toggleMute={toggleMute}
+                    wordHighlightEnabled={wordHighlightEnabled}
+                    setWordHighlightEnabled={setWordHighlightEnabled}
+                    seek={seek}
+                  />
                 </div>
 
                 {/* Right Side: Interactive Scrolling Lyrics */}

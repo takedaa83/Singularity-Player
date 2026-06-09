@@ -110,7 +110,14 @@ const SortableQueueItem: React.FC<SortableQueueItemProps> = ({
 };
 
 export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh }) => {
-  const { queue, activeQueueIndex, isPlaying, playTrack, setPlaying, removeFromQueue, clearQueue, reorderQueue } = usePlayerStore();
+  const queue = usePlayerStore(state => state.queue);
+  const activeQueueIndex = usePlayerStore(state => state.activeQueueIndex);
+  const isPlaying = usePlayerStore(state => state.isPlaying);
+  const playTrack = usePlayerStore(state => state.playTrack);
+  const setPlaying = usePlayerStore(state => state.setPlaying);
+  const removeFromQueue = usePlayerStore(state => state.removeFromQueue);
+  const clearQueue = usePlayerStore(state => state.clearQueue);
+  const reorderQueue = usePlayerStore(state => state.reorderQueue);
   const { savePlaylist } = useLibraryDB();
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
