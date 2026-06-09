@@ -11,6 +11,7 @@ import { useBatchStore } from '../../stores/batchStore';
 import { api } from '../../utils/api';
 import { formatDuration } from '../../utils/formatDuration';
 import { PlaylistGenerator } from '../../services/playlistGenerator';
+import { useGsapHover } from '../../hooks/useGsap';
 
 interface TrackCardProps {
   track: Track;
@@ -33,6 +34,8 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   const { toggleFavorite, deleteTrack, getAllTracks } = useLibraryDB();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const cardRef = useGsapHover<HTMLDivElement>(1.015, -1);
   const [downloading, setDownloading] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -153,16 +156,17 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
 
   return (
     <div 
+      ref={cardRef}
       onClick={isMultiSelectMode ? onToggleSelect : handlePlayClick}
       onContextMenu={handleContextMenu}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className={`group flex items-center justify-between p-3 rounded-lg transition-all cursor-pointer border select-none ${
+      className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer border select-none ${
         isCurrent 
           ? 'bg-white/10 border-white/30' 
           : isSelected
             ? 'bg-white/8 border-white/20'
-            : 'bg-transparent border-neutral-800 hover:bg-white/5 hover:border-neutral-700'
+            : 'bg-transparent border-neutral-800'
       }`}
     >
       {/* 1. Track Info (Art + Title/Artist) */}

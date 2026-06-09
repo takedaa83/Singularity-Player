@@ -3,6 +3,7 @@ import { Heart } from 'lucide-react';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Track } from '../../types';
 import { TrackCard } from '../search/TrackCard';
+import { useGsapFadeIn } from '../../hooks/useGsap';
 
 interface FavoritesViewProps {
   refreshTrigger: number;
@@ -39,6 +40,8 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ refreshTrigger, tr
     loadFavorites();
   }, [refreshTrigger]);
 
+  useGsapFadeIn('.favorite-track-item', favoriteTracks);
+
   return (
     <div className="flex flex-col gap-6 text-white h-full overflow-y-auto pb-10">
       {/* Header */}
@@ -72,12 +75,13 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ refreshTrigger, tr
       ) : (
         <div className="flex flex-col gap-3">
           {favoriteTracks.map(track => (
-            <TrackCard 
-              key={track.id} 
-              track={track} 
-              refreshTrigger={triggerRefresh}
-              onDeleteSuccess={triggerRefresh}
-            />
+            <div key={track.id} className="favorite-track-item opacity-0">
+              <TrackCard 
+                track={track} 
+                refreshTrigger={triggerRefresh}
+                onDeleteSuccess={triggerRefresh}
+              />
+            </div>
           ))}
         </div>
       )}

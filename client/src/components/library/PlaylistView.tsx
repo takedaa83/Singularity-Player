@@ -5,6 +5,7 @@ import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Track, Playlist } from '../../types';
 import { TrackCard } from '../search/TrackCard';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useGsapFadeIn } from '../../hooks/useGsap';
 
 interface PlaylistViewProps {
   playlistId?: string;
@@ -52,6 +53,8 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
 
     loadPlaylistData();
   }, [playlistId, refreshTrigger]);
+
+  useGsapFadeIn('.playlist-track-item', tracks);
 
   const handlePlayPlaylist = () => {
     if (tracks.length > 0) {
@@ -116,7 +119,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
       ) : (
         <div className="flex flex-col gap-3">
           {tracks.map((track) => (
-            <div key={track.id} className="relative group/pl-card">
+            <div key={track.id} className="playlist-track-item opacity-0 relative group/pl-card">
               <TrackCard 
                 track={track} 
                 refreshTrigger={triggerRefresh}

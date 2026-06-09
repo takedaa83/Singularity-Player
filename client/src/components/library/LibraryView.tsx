@@ -6,6 +6,7 @@ import { TrackCard } from '../search/TrackCard';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../hooks/useToast';
 import { useBatchStore } from '../../stores/batchStore';
+import { useGsapFadeIn } from '../../hooks/useGsap';
 
 interface LibraryViewProps {
   refreshTrigger: number;
@@ -46,6 +47,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   useEffect(() => {
     loadTracks();
   }, [refreshTrigger]);
+
+  useGsapFadeIn('.library-track-item', tracks);
 
   const handleToggleSelect = (trackId: string) => {
     const updated = new Set(selectedTrackIds);
@@ -181,15 +184,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       ) : (
         <div className="flex flex-col gap-3">
           {tracks.map(track => (
-            <TrackCard 
-              key={track.id} 
-              track={track}
-              isMultiSelectMode={isMultiSelectMode}
-              isSelected={selectedTrackIds.has(track.id)}
-              onToggleSelect={() => handleToggleSelect(track.id)}
-              onDeleteSuccess={triggerRefresh}
-              refreshTrigger={triggerRefresh}
-            />
+            <div key={track.id} className="library-track-item opacity-0">
+              <TrackCard 
+                track={track}
+                isMultiSelectMode={isMultiSelectMode}
+                isSelected={selectedTrackIds.has(track.id)}
+                onToggleSelect={() => handleToggleSelect(track.id)}
+                onDeleteSuccess={triggerRefresh}
+                refreshTrigger={triggerRefresh}
+              />
+            </div>
           ))}
         </div>
       )}

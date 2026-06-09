@@ -8,6 +8,7 @@ import { LoadingSkeleton } from '../ui/LoadingSkeleton';
 import { Virtuoso } from 'react-virtuoso';
 import { Box, Typography, Button, FormControl, Select, MenuItem, InputLabel } from '@mui/material';
 import { tokens } from '../../theme/muiTheme';
+import { useGsapFadeIn } from '../../hooks/useGsap';
 
 interface SearchResultsProps {
   query: string;
@@ -81,6 +82,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ query, refreshTrig
 
     return list;
   }, [results, sourceFilter, sortBy]);
+
+  // Apply staggered fade-in entrance for visible search results
+  useGsapFadeIn('.search-result-item', processedTracks);
 
   // Auto-prefetch top 1 YouTube track from search results to eliminate latency on play
   React.useEffect(() => {
@@ -173,7 +177,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ query, refreshTrig
                 style={{ height: '100%' }}
                 data={processedTracks}
                 itemContent={(index, track) => (
-                  <Box sx={{ pb: 1 }}>
+                  <Box className="search-result-item" sx={{ pb: 1, opacity: 0 }}>
                     <TrackCard
                       track={track}
                       refreshTrigger={refreshTrigger}

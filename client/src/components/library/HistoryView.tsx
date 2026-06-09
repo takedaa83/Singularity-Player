@@ -3,6 +3,7 @@ import { Clock, Trash2 } from 'lucide-react';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Track, HistoryEntry } from '../../types';
 import { TrackCard } from '../search/TrackCard';
+import { useGsapFadeIn } from '../../hooks/useGsap';
 
 interface HistoryViewProps {
   refreshTrigger: number;
@@ -47,6 +48,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ refreshTrigger, trigge
     };
     loadHistory();
   }, [refreshTrigger]);
+
+  useGsapFadeIn('.history-track-item', entries);
 
   const handleClearHistory = async () => {
     if (confirm('Clear all playback history?')) {
@@ -112,7 +115,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ refreshTrigger, trigge
       ) : (
         <div className="flex flex-col gap-2">
           {entries.map((entry, idx) => (
-            <div key={`${entry.track.id}-${entry.playedAt}-${idx}`} className="relative group">
+            <div key={`${entry.track.id}-${entry.playedAt}-${idx}`} className="history-track-item opacity-0 relative group">
               <TrackCard 
                 track={entry.track} 
                 refreshTrigger={triggerRefresh}
