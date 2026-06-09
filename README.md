@@ -23,10 +23,10 @@
 > **Note:** Add your own screenshots here after running the app.
 >
 > ```
-> ![Home Page](docs/screenshots/home.png)
-> ![Search Results](docs/screenshots/search.png)
-> ![Equalizer](docs/screenshots/equalizer.png)
-> ![Lyrics Panel](docs/screenshots/lyrics.png)
+> ![Home Page](docs/home.png)
+> ![Search Results](docs/search.png)
+> ![Equalizer](docs/equalizer.png)
+> ![Lyrics Panel](docs/lyrics.png)
 > ```
 
 ---
