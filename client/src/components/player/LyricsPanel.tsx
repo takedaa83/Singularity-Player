@@ -1052,7 +1052,10 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       }
 
       // ── Per-word loop ──
-      for (const word of wordCacheRef.current) {
+      for (let i = 0; i < wordCacheRef.current.length; i++) {
+        const word = wordCacheRef.current[i];
+        const nextWord = i < wordCacheRef.current.length - 1 ? wordCacheRef.current[i + 1] : null;
+
         // ── Not reached yet ──
         if (timeMs < word.start) {
           word.effectiveEnd = word.end; // reset on seek-back
@@ -1065,15 +1068,29 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           continue;
         }
 
+        // ── Force complete if next word has started ──
+        if (nextWord && timeMs >= nextWord.start) {
+          if (word.state !== 'completed') {
+            word.el.style.setProperty('--word-progress', '100%');
+            word.el.style.setProperty('--word-energy', '0');
+            word.el.classList.replace('active', 'completed') || word.el.classList.add('completed');
+            word.state = 'completed';
+          }
+          continue;
+        }
+
         // ── Active ──
         if (word.state !== 'completed' && timeMs <= word.effectiveEnd) {
           const nominalDuration = word.end - word.start;
 
           // Dynamic end extension: while energy is above threshold and we're past
           // 55% of the nominal word, keep the effective end ~200ms ahead.
-          // Cap at 1.8× the original word duration to prevent runaway holds.
+          // Cap at 1.8× the original word duration or the next word's start to prevent runaway holds.
           if (energy > HOLD_THRESHOLD && timeMs > word.start + nominalDuration * 0.55) {
-            const maxEnd = word.end + nominalDuration * 1.8;
+            let maxEnd = word.end + nominalDuration * 1.8;
+            if (nextWord) {
+              maxEnd = Math.min(maxEnd, nextWord.start);
+            }
             word.effectiveEnd = Math.min(maxEnd, timeMs + 200);
           }
           // If energy dropped while we're past the LRC end, snap to complete in 80ms
