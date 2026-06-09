@@ -238,6 +238,28 @@ npm run dev
 
 Open [http://localhost:5173](http://localhost:5173) in your browser. The backend API runs at [http://localhost:3001](http://localhost:3001).
 
+### 📱 Hosting for Mobile & Local Network Access
+
+To access Singularity Player from your mobile phone, tablet, or other devices on your home Wi-Fi network:
+
+1. **Find your PC's Local IP Address**:
+   * **Windows**: Run `ipconfig` in Command Prompt (look for `IPv4 Address`, e.g., `192.168.1.15`).
+   * **macOS/Linux**: Run `ifconfig` or `ip a` in the terminal.
+2. **Update your `.env` configuration**:
+   Change `.env` to make the server accessible across the network and allow requests from your mobile browser:
+   ```env
+   PORT=3001
+   ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://<YOUR-PC-IP>:5173
+   VITE_API_URL=http://<YOUR-PC-IP>:3001
+   ```
+3. **Start the application**:
+   Run `npm run dev` as usual.
+4. **Access from Mobile**:
+   Open your mobile browser (Safari, Chrome) and navigate to `http://<YOUR-PC-IP>:5173`.
+
+> [!TIP]
+> For a native app experience on iOS and Android, open the page in your mobile browser and use **"Add to Home Screen"** to launch it as a full-screen, standalone web app.
+
 ### Production Build
 
 ```bash
