@@ -253,7 +253,10 @@ To access Singularity Player from your mobile phone, tablet, or other devices on
    VITE_API_URL=http://<YOUR-PC-IP>:3001
    ```
 3. **Start the application**:
-   Run `npm run dev` as usual.
+   Run the dev server with the `--host` flag to expose it to your local network:
+   ```bash
+   npm run dev -- --host
+   ```
 4. **Access from Mobile**:
    Open your mobile browser (Safari, Chrome) and navigate to `http://<YOUR-PC-IP>:5173`.
 
