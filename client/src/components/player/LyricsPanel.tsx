@@ -140,6 +140,15 @@ function extractColorsFromImage(url: string): Promise<string[]> {
   });
 }
 
+function segmentText(text: string): string[] {
+  const isCJK = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9fff\u3400-\u4dbf\uac00-\ud7a3]/.test(text);
+  if (isCJK) {
+    const matches = text.match(/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9fff\u3400-\u4dbf\uac00-\ud7a3]|[a-zA-Z0-9']+/g);
+    return matches ? matches.filter(w => w.trim().length > 0) : [];
+  }
+  return text.split(/\s+/).filter(w => w.length > 0);
+}
+
 function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
   // Try to parse as JSON first
   try {
@@ -228,7 +237,7 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
         const tag = tags[j];
         const wordText = curr.content.substring(lastIndex, tag.index).trim();
         if (wordText) {
-          const subWords = wordText.split(/\s+/).filter(w => w.length > 0);
+          const subWords = segmentText(wordText);
           if (subWords.length > 1) {
             const subDuration = tag.time - lastTime;
             const subWordWeights = subWords.map(w => 150 + w.length * 50);
@@ -261,7 +270,7 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
       const finalWordText = curr.content.substring(lastIndex).trim();
       if (finalWordText) {
         const maxFinalWordDuration = Math.min(nextLineTime - lastTime, Math.max(350, finalWordText.length * 70));
-        const subWords = finalWordText.split(/\s+/).filter(w => w.length > 0);
+        const subWords = segmentText(finalWordText);
         if (subWords.length > 1) {
           const subWordWeights = subWords.map(w => 150 + w.length * 50);
           const totalSubWeight = subWordWeights.reduce((sum, w) => sum + w, 0) || 1;
@@ -303,7 +312,7 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
       });
     } else {
       if (estimateWordSync) {
-        const wordsArray = curr.content.split(/\s+/).filter(w => w.length > 0);
+        const wordsArray = segmentText(curr.content);
         const totalChars = curr.content.replace(/\s+/g, '').length || 1;
         const lineDuration = nextLineTime - curr.lineTime;
         
