@@ -20,14 +20,15 @@
 
 ## 🖥️ Screenshots
 
-> **Note:** Add your own screenshots here after running the app.
->
-> ```
-> ![Home Page](docs/home.png)
-> ![Search Results](docs/search.png)
-> ![Equalizer](docs/equalizer.png)
-> ![Lyrics Panel](docs/lyrics.png)
-> ```
+<p align="center">
+  <img src="docs/home.png" alt="Home Page" width="48%" />
+  <img src="docs/search.png" alt="Search Results" width="48%" />
+</p>
+<br/>
+<p align="center">
+  <img src="docs/equalizer.png" alt="Equalizer" width="48%" />
+  <img src="docs/lyrics.png" alt="Lyrics Panel" width="48%" />
+</p>
 
 ---
 
