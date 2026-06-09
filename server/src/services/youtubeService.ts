@@ -275,10 +275,14 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
         // Use optimized yt-dlp flags: print only required fields to avoid huge JSON generation overhead
+        // Format priority: best available audio (highest bitrate), then
+        // specific known-good IDs as fallbacks.  'bestaudio' alone lets
+        // yt-dlp pick the highest bitrate stream YouTube offers — which
+        // can be Opus @ 256 kbps when available.
         const { stdout } = await runYtDlpPooled([
           '--no-warnings',
           '--no-playlist',
-          '-f', '251/140/bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
+          '-f', 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
           '--no-check-formats',
           '--no-check-certificate',
           '--print', '%(url)s',
@@ -288,12 +292,13 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
           '--print', '%(title)s',
           '--print', '%(uploader)s',
           '--print', '%(duration)s',
+          '--print', '%(abr)s',
           '--skip-download',
           ytUrl
         ], 20000);
 
         const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
-        const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr] = lines;
+        const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr, abrStr] = lines;
 
         if (!url || url === 'NA') {
           throw new Error('No valid URL extracted');
@@ -304,6 +309,10 @@ export async function getAudioStreamUrl(videoId: string): Promise<{
         const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
         const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
         const duration = parseFloat(durationStr || '') || 0;
+        const abr = parseFloat(abrStr || '') || 0;
+        if (abr > 0) {
+          console.log(`[yt-dlp] Selected audio: ${ext} @ ${abr}kbps for ${videoId}`);
+        }
 
         const result = {
           url,
@@ -368,7 +377,7 @@ export function spawnAudioStream(videoId: string): {
   const child = spawn(YT_DLP_PATH, [
     '--no-warnings',
     '--no-playlist',
-    '-f', '251/140/bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio',
+    '-f', 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
     '-o', '-', // Output to stdout
     ytUrl

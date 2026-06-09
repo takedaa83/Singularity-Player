@@ -125,7 +125,7 @@ const initAudioGraph = () => {
   if (audioContext) return;
 
   const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-  const ctx = new AudioContextClass();
+  const ctx = new AudioContextClass({ sampleRate: 48000 });
   audioContext = ctx;
 
   if (!sourceNodesCreated) {
@@ -147,7 +147,7 @@ const initAudioGraph = () => {
       else if (idx === EQ_FREQUENCIES.length - 1) filter.type = 'highshelf';
       else filter.type = 'peaking';
       filter.frequency.value = freq;
-      filter.Q.value = 1.0;
+      filter.Q.value = idx === 0 || idx === EQ_FREQUENCIES.length - 1 ? 0.7 : 1.4;
       filter.gain.value = 0;
       filters.push(filter);
     });
@@ -184,15 +184,18 @@ const initAudioGraph = () => {
     analyserNode = analyser;
 
     const mainGain = ctx.createGain();
-    mainGain.gain.value = 0.8;
+    mainGain.gain.value = 1.0;
     mainGainNode = mainGain;
 
+    // Transparent safety limiter — only catches true peaks without coloring the signal.
+    // The previous -1dB hard-knee 20:1 ratio was crushing all dynamics and causing
+    // grainy/blasty sound. This gentle config is inaudible on normal material.
     const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.setValueAtTime(-1.0, ctx.currentTime); // start limiting at -1dB
-    limiter.knee.setValueAtTime(0, ctx.currentTime); // hard knee (acts as limiter)
-    limiter.ratio.setValueAtTime(20.0, ctx.currentTime); // high ratio
-    limiter.attack.setValueAtTime(0.003, ctx.currentTime); // fast attack (3ms)
-    limiter.release.setValueAtTime(0.08, ctx.currentTime); // release (80ms)
+    limiter.threshold.setValueAtTime(-3.0, ctx.currentTime); // catch only peaks above -3dBFS
+    limiter.knee.setValueAtTime(6.0, ctx.currentTime); // soft knee for transparent onset
+    limiter.ratio.setValueAtTime(4.0, ctx.currentTime); // gentle ratio — preserves dynamics
+    limiter.attack.setValueAtTime(0.001, ctx.currentTime); // 1ms attack — catches transients without pumping
+    limiter.release.setValueAtTime(0.15, ctx.currentTime); // 150ms release — smooth recovery
     limiterNode = limiter;
 
     analyser.connect(mainGain);
