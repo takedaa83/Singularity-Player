@@ -62,6 +62,7 @@ interface WordCache {
   el: HTMLElement;
   start: number;
   end: number;
+  effectiveEnd: number;
   state: 'pending' | 'active' | 'completed';
 }
 
@@ -154,6 +155,28 @@ function segmentText(text: string): string[] {
     return matches ? matches.filter(w => w.trim().length > 0) : [];
   }
   return text.split(/\s+/).filter(w => w.length > 0);
+}
+
+function computeVocalPresence(
+  dataArray: Uint8Array,
+  sampleRate: number,
+  fftSize: number
+): number {
+  const binWidth = sampleRate / fftSize; // Hz per bin
+  
+  const fundLow  = Math.max(1, Math.round(200 / binWidth));
+  const fundHigh = Math.min(dataArray.length - 1, Math.round(800 / binWidth));
+  const formLow  = fundHigh;
+  const formHigh = Math.min(dataArray.length - 1, Math.round(3000 / binWidth));
+
+  let fundSq = 0, formSq = 0;
+  for (let i = fundLow;  i <= fundHigh; i++) { const v = dataArray[i] / 255; fundSq += v * v; }
+  for (let i = formLow;  i <= formHigh; i++) { const v = dataArray[i] / 255; formSq += v * v; }
+
+  const fundRms = Math.sqrt(fundSq / Math.max(1, fundHigh - fundLow + 1));
+  const formRms = Math.sqrt(formSq / Math.max(1, formHigh - formLow + 1));
+
+  return Math.min(1, fundRms * 0.35 + formRms * 0.75);
 }
 
 function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
@@ -835,6 +858,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const blob2Ref = useRef<HTMLDivElement>(null);
   const blob3Ref = useRef<HTMLDivElement>(null);
   const smoothedBassRef = useRef(0);
+  const wordEnergyRef = useRef(0);
 
   // Throttled active line index state (updated from RAF loop only on change)
   const [activeLineIndex, setActiveLineIndex] = useState(-1);
@@ -928,6 +952,28 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         + (isPlaying && !isBuffering ? msSinceRead * playbackSpeed : 0)
         + syncOffset;
 
+      // ── Audio analysis & vocal presence detection ──
+      const analyser = getAnalyser();
+      let vocalPresence = 0;
+      let dataArray: Uint8Array | null = null;
+      if (analyser && isPlaying) {
+        if (!analyserBufferRef.current || analyserBufferRef.current.length !== analyser.frequencyBinCount) {
+          analyserBufferRef.current = new Uint8Array(analyser.frequencyBinCount);
+        }
+        dataArray = analyserBufferRef.current;
+        analyser.getByteFrequencyData(dataArray as any);
+        
+        vocalPresence = computeVocalPresence(
+          dataArray,
+          48000,
+          analyser.fftSize
+        );
+      }
+      
+      wordEnergyRef.current = wordEnergyRef.current * 0.5 + vocalPresence * 0.5;
+      const energy = wordEnergyRef.current;
+      const HOLD_THRESHOLD = 0.16;
+
       // 1. Update active line index
       let newActiveIdx = -1;
       for (let i = 0; i < syncedLines.length; i++) {
@@ -955,6 +1001,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
               w.classList.add('completed');
               w.classList.remove('active');
               (w as HTMLElement).style.setProperty('--word-progress', '100%');
+              (w as HTMLElement).style.setProperty('--word-energy', '0');
             });
           } else if (lineIdx > newActiveIdx) {
             el.classList.remove('completed', 'active', 'active-line');
@@ -963,6 +1010,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             words.forEach(w => {
               w.classList.remove('completed', 'active');
               (w as HTMLElement).style.setProperty('--word-progress', '0%');
+              (w as HTMLElement).style.setProperty('--word-energy', '0');
             });
           } else if (lineIdx === newActiveIdx) {
             el.classList.add('active', 'active-line');
@@ -979,6 +1027,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             el: wordEls[i],
             start: w.start,
             end: w.end,
+            effectiveEnd: w.end,
             state: 'pending' as const,
           }));
         } else {
@@ -996,46 +1045,80 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             el: wordEls[i],
             start: w.start,
             end: w.end,
+            effectiveEnd: w.end,
             state: 'pending' as const,
           }));
         }
       }
 
+      // ── Per-word loop ──
       for (const word of wordCacheRef.current) {
-        if (!word.el) continue;
-        if (timeMs >= word.start && timeMs <= word.end) {
-          const progress = Math.min(100, Math.max(0, ((timeMs - word.start) / (word.end - word.start)) * 100));
-          const progressStr = `${progress.toFixed(1)}%`;
-          if (word.el.style.getPropertyValue('--word-progress') !== progressStr) {
-            word.el.style.setProperty('--word-progress', progressStr);
+        // ── Not reached yet ──
+        if (timeMs < word.start) {
+          word.effectiveEnd = word.end; // reset on seek-back
+          if (word.state !== 'pending') {
+            word.el.style.setProperty('--word-progress', '0%');
+            word.el.style.setProperty('--word-energy', '0');
+            word.el.classList.remove('active', 'completed');
+            word.state = 'pending';
           }
+          continue;
+        }
+
+        // ── Active ──
+        if (word.state !== 'completed' && timeMs <= word.effectiveEnd) {
+          const nominalDuration = word.end - word.start;
+
+          // Dynamic end extension: while energy is above threshold and we're past
+          // 55% of the nominal word, keep the effective end ~200ms ahead.
+          // Cap at 1.8× the original word duration to prevent runaway holds.
+          if (energy > HOLD_THRESHOLD && timeMs > word.start + nominalDuration * 0.55) {
+            const maxEnd = word.end + nominalDuration * 1.8;
+            word.effectiveEnd = Math.min(maxEnd, timeMs + 200);
+          }
+          // If energy dropped while we're past the LRC end, snap to complete in 80ms
+          if (timeMs > word.end && energy <= HOLD_THRESHOLD) {
+            word.effectiveEnd = Math.min(word.effectiveEnd, timeMs + 80);
+          }
+
+          const effectiveDuration = Math.max(1, word.effectiveEnd - word.start);
+          const t = Math.min(1, (timeMs - word.start) / effectiveDuration); // [0, 1]
+
+          // ── Energy-shaped progress curve ──
+          let progress: number;
+          if (energy > HOLD_THRESHOLD) {
+            const exponent = Math.max(0.25, 1.0 - energy * 1.2);
+            const holdCurve = 1 - Math.pow(1 - t, exponent);
+            const blend = Math.min(1, (energy - HOLD_THRESHOLD) * 5);
+            const smoothStep = t * t * (3 - 2 * t);
+            progress = smoothStep * (1 - blend) + holdCurve * blend;
+          } else {
+            progress = t * t * (3 - 2 * t);
+          }
+
+          progress = Math.max(0, Math.min(1, progress));
+
+          word.el.style.setProperty('--word-progress', `${(progress * 100).toFixed(1)}%`);
+          word.el.style.setProperty('--word-energy', `${energy.toFixed(3)}`);
+
           if (word.state !== 'active') {
-            word.el.classList.replace('completed', 'active') || word.el.classList.add('active');
+            word.el.classList.add('active');
+            word.el.classList.remove('completed');
             word.state = 'active';
           }
-        } else if (timeMs > word.end) {
-          if (word.state !== 'completed') {
-            word.el.style.setProperty('--word-progress', '100%');
-            word.el.classList.replace('active', 'completed') || word.el.classList.add('completed');
-            word.state = 'completed';
-          }
-        } else if (word.state !== 'pending') {
-          word.el.style.setProperty('--word-progress', '0%');
-          word.el.classList.remove('active', 'completed');
-          word.state = 'pending';
+
+        // ── Complete ──
+        } else if (timeMs > word.effectiveEnd && word.state !== 'completed') {
+          word.el.style.setProperty('--word-progress', '100%');
+          word.el.style.setProperty('--word-energy', '0');
+          word.el.classList.replace('active', 'completed') || word.el.classList.add('completed');
+          word.state = 'completed';
         }
       }
 
-      // 3. Audio analysis & ambient pulsing animation
+      // 3. Ambient pulsing background animation (uses the already fetched dataArray)
       try {
-        const analyser = getAnalyser();
-        if (analyser && isPlaying && isFullscreen) {
-          if (!analyserBufferRef.current || analyserBufferRef.current.length !== analyser.frequencyBinCount) {
-            analyserBufferRef.current = new Uint8Array(analyser.frequencyBinCount);
-          }
-          const dataArray = analyserBufferRef.current;
-          analyser.getByteFrequencyData(dataArray as any);
-
+        if (dataArray && isPlaying && isFullscreen) {
           // Sub-bass and Bass bins (Bins 1 to 10 covers ~23Hz to ~234Hz with 2048 fftSize/48kHz sampleRate)
           let sumBass = 0;
           for (let i = 1; i <= 10; i++) {

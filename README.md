@@ -86,6 +86,7 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 
 - **Interactive Lyrics-Seeking**: Click or tap on any lyric line to instantly jump the audio playback to that specific point in the track.
 - **Apple Music-Style Progressive Sweeps**: Soft, feathered letter-by-letter karaoke coloring and elastic scaling transitions. We've eliminated layout shifts by removing word font-weight overrides, ensuring characters sweep and scale without shifting horizontally.
+- **Vocal-Energy Responsive Holds**: Performs real-time vocal presence analysis using a weighted formant range (800–3000 Hz) against fundamentals (200–800 Hz). This drives a dynamic `effectiveEnd` duration extension and energy-shaped progress curves that plateau during sustained vocal notes.
 - **GPU-Accelerated Scrolling & Scaling**: Lyric lines transition between `scale(1.12)` (active) and `scale(0.92)` (inactive) with a soft glass blur (`blur(1.2px)` inactive). The layout box heights remain constant, allowing the GPU compositor to render smooth scrolls at up to 120fps with no reflow overhead.
 - **Independent Beat-Synced Ambient Backdrop**: Nested floating wrappers isolate the slow CSS orbital float animations from real-time JS-driven scale pulses. Colorful backdrop blobs react independently to the sub-bass of the track for an organic, multi-layered breathing backdrop.
 - **Buffer-Aware Playback Sync**: Automatically freezes visual timeline progression when the track is loading or buffering, preventing desynchronization.
@@ -106,7 +107,7 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 ### 🔍 Search & Discovery
 - **Multi-Source Search** — Queries Deezer, iTunes, and YouTube simultaneously
 - **Trending Suggestions** — Shows popular queries in the search dropdown
-- **Search History** — Remembers your recent searches with quick recall
+- **Search History** — Remember your recent searches with quick recall
 - **Artist & Album Pages** — Browse tracks grouped by artist or album
 - **Genre Exploration** — Quick-search genre tiles (Pop, Rock, Electronic, Hip-Hop, Classical, Jazz, R&B, Indie)
 
@@ -119,6 +120,8 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 
 ### 📝 Lyrics & Visualizer
 - **Native Word-Level Syncing** — Support for Enhanced LRC formats with character-by-character coloring/sweeps matching the song pace
+- **Vocal-Energy Adaptive Holds** — Formant frequency analysis dynamically extends active word highlighting on sustained vowels and stalls progress at 70–80% until vocals decay
+- **Real-Time Visual Glow** — Highlighted words glow dynamically based on real-time vocal presence metrics without introducing highlight lag
 - **Custom Sync Offset** — Slider controls (`-400ms` to `+400ms` in `10ms` increments) to adjust visual anticipation for audio latency (persists in `localStorage`)
 - **Smart Word Sync Toggle** — Switch between tempo-estimated word sync and clean **Line-by-Line Highlight** (Apple Music style) on standard LRC files
 - **Kinetic Lyric Centering** — Smooth GSAP-driven scrolling that centers active lyrics in both sidebar and fullscreen overlays
