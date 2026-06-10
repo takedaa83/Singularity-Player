@@ -142,41 +142,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const mainNav = [
-    { id: 'home', icon: Home, label: 'Home' },
-    { id: 'library', icon: FolderHeart, label: 'Library' },
-    { id: 'artists', icon: User, label: 'Artists', color: tokens.colors.primary },
-    { id: 'favorites', icon: Heart, label: 'Favorites', color: tokens.colors.accent.pink },
-    { id: 'history', icon: Clock, label: 'History' },
+    { id: 'home', icon: Home, label: 'Home', color: tokens.colors.primary },
+    { id: 'library', icon: FolderHeart, label: 'Library', color: '#10b981' }, // Emerald
+    { id: 'artists', icon: User, label: 'Artists', color: '#f59e0b' }, // Amber
+    { id: 'favorites', icon: Heart, label: 'Favorites', color: tokens.colors.accent.pink }, // Pink
+    { id: 'history', icon: Clock, label: 'History', color: '#3b82f6' }, // Blue
   ];
 
   const toolsNav = [
-    { id: 'downloads', icon: Download, label: 'Downloads', color: tokens.colors.accent.cyan },
-    { id: 'batch-download', icon: Package, label: 'Batch Packager', color: tokens.colors.primary },
-    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: 'downloads', icon: Download, label: 'Downloads', color: tokens.colors.accent.cyan }, // Cyan
+    { id: 'batch-download', icon: Package, label: 'Batch Packager', color: '#ec4899' }, // Fuchsia
+    { id: 'settings', icon: Settings, label: 'Settings', color: '#a3a3a3' }, // Gray
   ];
 
   const NavButton: React.FC<{ id: string; icon: any; label: string; color?: string }> = ({ id, icon: Icon, label, color }) => {
     const active = isViewActive(id) && !selectedPlaylistId;
+    const activeColor = color || tokens.colors.primary;
     return (
       <button
         onClick={() => { setActiveView(id); setSelectedPlaylistId(null); }}
         aria-label={`Navigate to ${label}`}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all relative group"
+        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all relative group"
         style={{
-          backgroundColor: active ? `${tokens.colors.primary}18` : 'transparent',
-          color: active ? tokens.colors.primary : tokens.colors.textSecondary,
+          backgroundColor: active ? `${activeColor}12` : 'transparent',
+          color: active ? tokens.colors.textPrimary : tokens.colors.textSecondary,
         }}
       >
         <Icon
-          className="w-[18px] h-[18px] shrink-0 transition-colors"
-          style={{ color: active ? (color || tokens.colors.primary) : undefined }}
+          className={`w-[18px] h-[18px] shrink-0 transition-all duration-300 ${
+            active 
+              ? 'opacity-100 scale-110 drop-shadow-[0_0_8px_var(--icon-glow)]' 
+              : 'opacity-50 group-hover:opacity-90 group-hover:scale-105'
+          }`}
+          style={{ 
+            color: activeColor,
+            '--icon-glow': activeColor 
+          } as React.CSSProperties}
         />
         <span className="group-hover:text-white transition-colors">{label}</span>
         {active && (
           <motion.div
             layoutId="sidebar-indicator"
             className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-            style={{ height: 20, backgroundColor: color || tokens.colors.primary }}
+            style={{ height: 20, backgroundColor: activeColor }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           />
         )}
@@ -188,8 +196,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside
       className="w-60 h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10"
       style={{
-        backgroundColor: tokens.colors.surface,
-        borderRight: `1px solid ${tokens.colors.surfaceBorder}`,
+        backgroundColor: 'rgba(10, 10, 12, 0.6)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRight: `1px solid rgba(255, 255, 255, 0.05)`,
       }}
     >
       <div className="flex flex-col gap-6 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>

@@ -75,6 +75,7 @@ interface DesktopProgressSliderProps {
 
 const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, disabled }) => {
   const { currentTime, duration } = usePlaybackTime();
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +85,25 @@ const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, dis
 
   return (
     <div className="w-full hidden sm:flex items-center gap-3 text-xs text-neutral-500 select-none">
-      <span className="w-10 text-right font-mono">{formatTimeDisplay(currentTime)}</span>
+      <div className="flex items-center gap-1.5 shrink-0 select-none">
+        <span className="w-10 text-right font-mono">{formatTimeDisplay(currentTime)}</span>
+        {!disabled && (
+          <div className="flex items-end gap-[2px] h-3 w-3 px-[1px] mb-[2px]">
+            <span
+              className={`w-[2px] bg-[var(--primary)] rounded-t-full h-full ${isPlaying ? 'equalizer-bar-1' : ''}`}
+              style={{ transform: isPlaying ? undefined : 'scaleY(0.3)', transformOrigin: 'bottom' }}
+            />
+            <span
+              className={`w-[2px] bg-[var(--primary)] rounded-t-full h-full ${isPlaying ? 'equalizer-bar-2' : ''}`}
+              style={{ transform: isPlaying ? undefined : 'scaleY(0.2)', transformOrigin: 'bottom', animationDelay: '0.15s' }}
+            />
+            <span
+              className={`w-[2px] bg-[var(--primary)] rounded-t-full h-full ${isPlaying ? 'equalizer-bar-3' : ''}`}
+              style={{ transform: isPlaying ? undefined : 'scaleY(0.4)', transformOrigin: 'bottom', animationDelay: '0.3s' }}
+            />
+          </div>
+        )}
+      </div>
       <div className="flex-1 relative group flex items-center h-4">
         <input
           type="range"
@@ -170,7 +189,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             {currentTrack ? (
               <>
                 {/* Album Cover Art */}
-                <div className={`w-12 h-12 sm:w-13 sm:h-13 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 ${isPlaying ? 'now-playing-glow' : ''}`}>
+                <div 
+                  className={`w-12 h-12 sm:w-13 sm:h-13 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 transition-all duration-500 ease-out ${
+                    isPlaying 
+                      ? 'translate-y-[-6px] scale-[1.08] shadow-[0_10px_20px_rgba(0,0,0,0.5)] border-white/10 now-playing-glow' 
+                      : 'translate-y-0 scale-100 shadow-none'
+                  }`}
+                >
                   {api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) ? (
                     <img 
                       src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId)!} 

@@ -153,6 +153,14 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 - **Persistent Settings** — All preferences saved to localStorage and restored on next visit
 - **Configurable Downloads** — Set concurrent download limits and auto-download favorites
 
+### 🎨 Premium Visual Overhaul & Aesthetics
+- **Dynamic Hero Section** — Floating organic blobs powered by GSAP, text typing effects, context-aware greetings ("Ready for some [Genre]?"), and blurry parallax background overlays of the featured track cover art.
+- **Translucent Glassmorphic Sidebar** — Semi-transparent navigation panel (`backdrop-filter: blur(20px)`) that dynamically blends with the page backdrops, coupled with scaling navigation icons that light up and glow in active states.
+- **Now Playing Playbar Elevation** — The album artwork raises slightly and glows when a track starts playing, accompanied by a CSS keyframe-bouncing 3-bar progress bar equalizer.
+- **Asymmetric Grid Layout** — Prominent 2x2 featured grids for "Liked Songs" breaking standard grid patterns on desktop.
+- **Card Hover Dimming & Previews** — Hovering over any track card dims surrounding cards and, after a 600ms buffer delay, initiates low-volume (0.15) audio preview playback.
+- **Mood-Based Background Shifts** — Deep background transitions (like deep blue tint for Chill vibe, deep red for Workout vibe) when a vibe mix is played.
+
 ### 📱 Responsive Design
 - **Desktop Layout** — Sidebar navigation, spacious content area, slide-out panels
 - **Mobile Layout** — Bottom tab navigation, collapsible sidebar, touch-friendly controls

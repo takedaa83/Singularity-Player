@@ -154,7 +154,9 @@ export const TrackScrollRowItem: React.FC<{
   currentTrack: Track | null;
   isPlaying: boolean;
   onPlay: (track: Track) => void;
-}> = React.memo(({ track, idx, currentTrack, isPlaying, onPlay }) => {
+  hoveredTrackId: string | null;
+  setHoveredTrackId: (id: string | null) => void;
+}> = React.memo(({ track, idx, currentTrack, isPlaying, onPlay, hoveredTrackId, setHoveredTrackId }) => {
   const navigate = useNavigate();
   const addToQueue = usePlayerStore(state => state.addToQueue);
   const playNext = usePlayerStore(state => state.playNext);
@@ -165,6 +167,58 @@ export const TrackScrollRowItem: React.FC<{
 
   const isActive = currentTrack?.id === track.id;
   const liked = favorites?.includes(track.id) || false;
+
+  const hoverTimeoutRef = useRef<any>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handleMouseEnter = () => {
+    setHoveredTrackId(track.id);
+
+    // If a track is already playing in the app, do not overlay preview audio
+    if (isPlaying) return;
+
+    const rawUrl = track.streamUrl;
+    const streamUrl = rawUrl 
+      ? (rawUrl.startsWith('http') ? rawUrl : `${api.baseUrl}${rawUrl}`) 
+      : (track.videoId ? `${api.baseUrl}/api/yt/stream/${track.videoId}` : null);
+
+    if (!streamUrl) return;
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      const audio = new Audio(streamUrl);
+      audio.volume = 0.15;
+      previewAudioRef.current = audio;
+      audio.play().catch(e => {
+        console.warn('Preview audio playback failed or was interrupted:', e);
+      });
+    }, 600);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredTrackId(null);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+    };
+  }, []);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -217,6 +271,8 @@ export const TrackScrollRowItem: React.FC<{
         className="gsap-tilt"
         onClick={() => onPlay(track)}
         onContextMenu={handleContextMenu}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         sx={{
           flexShrink: 0,
           width: 155,
@@ -230,6 +286,7 @@ export const TrackScrollRowItem: React.FC<{
           transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
           overflow: 'hidden',
+          opacity: hoveredTrackId && hoveredTrackId !== track.id ? 0.4 : 1,
           '&:hover': {
             bgcolor: tokens.colors.surfaceVariant,
             transform: 'translateY(-4px)',
@@ -372,8 +429,11 @@ TrackScrollRowItem.displayName = 'TrackScrollRowItem';
 export const QuickPlayGridItem: React.FC<{
   item: any;
   idx: number;
+  featured?: boolean;
   handlePlayQuickItem: (item: any) => void;
-}> = React.memo(({ item, idx, handlePlayQuickItem }) => {
+  hoveredId: string | null;
+  setHoveredId: (id: string | null) => void;
+}> = React.memo(({ item, idx, featured, handlePlayQuickItem, hoveredId, setHoveredId }) => {
   const navigate = useNavigate();
   const addToQueue = usePlayerStore(state => state.addToQueue);
   const playNext = usePlayerStore(state => state.playNext);
@@ -425,6 +485,7 @@ export const QuickPlayGridItem: React.FC<{
   };
 
   const liked = item.type === 'track' ? favorites?.includes(item.track.id) : false;
+  const isFeatured = featured;
 
   return (
     <motion.div
@@ -433,24 +494,37 @@ export const QuickPlayGridItem: React.FC<{
       variants={trackCardVariants}
       initial="hidden"
       animate="show"
+      style={{
+        gridColumn: isFeatured ? 'span 2' : undefined,
+        gridRow: isFeatured ? 'span 2' : undefined,
+      }}
     >
       <Box
         onClick={() => handlePlayQuickItem(item)}
         onContextMenu={handleContextMenu}
+        onMouseEnter={() => setHoveredId(item.id)}
+        onMouseLeave={() => setHoveredId(null)}
         sx={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: isFeatured ? 'column' : 'row',
+          alignItems: isFeatured ? 'flex-start' : 'center',
           justifyContent: 'space-between',
-          height: 56,
+          height: isFeatured ? { xs: 56, sm: 128 } : 56,
           bgcolor: 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '6px',
+          borderRadius: '12px',
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
-          pr: 3,
+          p: isFeatured ? { xs: 0, sm: 2.5 } : 0,
+          pr: isFeatured ? { xs: 3, sm: 2.5 } : 3,
+          boxShadow: isFeatured ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
+          border: isFeatured ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          opacity: hoveredId && hoveredId !== item.id ? 0.4 : 1,
           '&:hover': {
             bgcolor: 'rgba(255, 255, 255, 0.08)',
+            transform: 'translateY(-2px)',
+            boxShadow: isFeatured ? '0 15px 35px rgba(0,0,0,0.25)' : '0 4px 12px rgba(0,0,0,0.1)',
             '& .quick-play-btn': {
               opacity: 1,
               transform: 'scale(1)',
@@ -461,101 +535,226 @@ export const QuickPlayGridItem: React.FC<{
           }
         }}
       >
-        {/* Left: Image & Title */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%' }}>
-          {item.type === 'favorites' ? (
+        {isFeatured ? (
+          <>
             <Box
               sx={{
-                width: 56,
-                height: 56,
+                position: 'absolute',
+                inset: 0,
                 background: item.gradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.35)',
-                flexShrink: 0,
-              }}
-            >
-              <FavoriteIcon sx={{ color: '#fff', fontSize: 22 }} />
-            </Box>
-          ) : item.type === 'vibe' ? (
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                background: item.gradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <MusicNoteIcon sx={{ color: '#fff', fontSize: 20 }} />
-            </Box>
-          ) : item.image ? (
-            <Box
-              component="img"
-              src={item.image}
-              alt=""
-              sx={{
-                width: 56,
-                height: 56,
-                objectFit: 'cover',
-                flexShrink: 0,
+                opacity: 0.15,
+                zIndex: 0,
+                pointerEvents: 'none',
               }}
             />
-          ) : (
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'row', gap: 3, alignItems: 'center', width: '100%', zIndex: 1 }}>
+              <Box
+                sx={{
+                  width: 80,
+                  height: 80,
+                  background: item.gradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 24px rgba(168, 85, 247, 0.4)',
+                  flexShrink: 0,
+                }}
+              >
+                <FavoriteIcon sx={{ color: '#fff', fontSize: 36 }} />
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1 }}>
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 900,
+                    color: tokens.colors.textPrimary,
+                    fontSize: 20,
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {item.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: tokens.colors.textSecondary }}>
+                  {item.tracks?.length || 0} songs saved
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1 }}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  background: item.gradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <FavoriteIcon sx={{ color: '#fff', fontSize: 22 }} />
+              </Box>
+              <Typography
+                variant="body2"
+                noWrap
+                sx={{
+                  fontWeight: 700,
+                  color: tokens.colors.textPrimary,
+                  fontSize: 13,
+                }}
+              >
+                {item.title}
+              </Typography>
+            </Box>
             <Box
+              className="quick-play-btn"
               sx={{
-                width: 56,
-                height: 56,
-                bgcolor: tokens.colors.surfaceElevated,
+                position: 'absolute',
+                bottom: 16,
+                right: 16,
+                opacity: 0,
+                transform: 'scale(0.8)',
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                bgcolor: '#fff',
+                color: '#000',
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                zIndex: 2,
+                '&:hover': {
+                  bgcolor: '#eeeeee',
+                  transform: 'scale(1.1) !important',
+                }
+              }}
+            >
+              <PlayArrowIcon sx={{ fontSize: 28, ml: 0.3, color: '#000' }} />
+            </Box>
+            <Box
+              className="quick-play-btn"
+              sx={{
+                opacity: 0,
+                transform: 'scale(0.8)',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                bgcolor: tokens.colors.primary,
+                color: '#fff',
+                display: { xs: 'flex', sm: 'none' },
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                zIndex: 2,
+                '&:hover': {
+                  bgcolor: tokens.colors.primaryLight,
+                  transform: 'scale(1.08) !important',
+                }
+              }}
+            >
+              <PlayArrowIcon sx={{ fontSize: 18, ml: 0.2 }} />
+            </Box>
+          </>
+        ) : (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1 }}>
+              {item.type === 'favorites' ? (
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    background: item.gradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.35)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <FavoriteIcon sx={{ color: '#fff', fontSize: 22 }} />
+                </Box>
+              ) : item.type === 'vibe' ? (
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    background: item.gradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <MusicNoteIcon sx={{ color: '#fff', fontSize: 20 }} />
+                </Box>
+              ) : item.image ? (
+                <Box
+                  component="img"
+                  src={item.image}
+                  alt=""
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    bgcolor: tokens.colors.surfaceElevated,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <MusicNoteIcon sx={{ fontSize: 20, color: tokens.colors.textTertiary }} />
+                </Box>
+              )}
+              <Typography
+                variant="body2"
+                noWrap
+                sx={{
+                  fontWeight: 700,
+                  color: tokens.colors.textPrimary,
+                  fontSize: 13,
+                }}
+              >
+                {item.title}
+              </Typography>
+            </Box>
+            <Box
+              className="quick-play-btn"
+              sx={{
+                opacity: 0,
+                transform: 'scale(0.8)',
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                bgcolor: tokens.colors.primary,
+                color: '#fff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                zIndex: 2,
+                '&:hover': {
+                  bgcolor: tokens.colors.primaryLight,
+                  transform: 'scale(1.08) !important',
+                }
               }}
             >
-              <MusicNoteIcon sx={{ fontSize: 20, color: tokens.colors.textTertiary }} />
+              <PlayArrowIcon sx={{ fontSize: 18, ml: 0.2 }} />
             </Box>
-          )}
-          <Typography
-            variant="body2"
-            noWrap
-            sx={{
-              fontWeight: 700,
-              color: tokens.colors.textPrimary,
-              fontSize: 13,
-            }}
-          >
-            {item.title}
-          </Typography>
-        </Box>
-
-        {/* Right: Play Button */}
-        <Box
-          className="quick-play-btn"
-          sx={{
-            opacity: 0,
-            transform: 'scale(0.8)',
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            bgcolor: tokens.colors.primary,
-            color: '#fff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            '&:hover': {
-              bgcolor: tokens.colors.primaryLight,
-              transform: 'scale(1.08) !important',
-            }
-          }}
-        >
-          <PlayArrowIcon sx={{ fontSize: 18, ml: 0.2 }} />
-        </Box>
+          </>
+        )}
       </Box>
       {item.type === 'track' && (
         <TrackContextMenu
@@ -591,6 +790,7 @@ QuickPlayGridItem.displayName = 'QuickPlayGridItem';
 
 const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
   ({ tracks, currentTrack, isPlaying, onPlay }) => {
+    const [hoveredTrackId, setHoveredTrackId] = useState<string | null>(null);
     return (
       <Box
         sx={{
@@ -612,6 +812,8 @@ const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
             currentTrack={currentTrack}
             isPlaying={isPlaying}
             onPlay={onPlay}
+            hoveredTrackId={hoveredTrackId}
+            setHoveredTrackId={setHoveredTrackId}
           />
         ))}
       </Box>
@@ -739,6 +941,18 @@ export const HomePage: React.FC<HomePageProps> = ({
   // ── Curated Vibe Mix Generator ──
   const handleGenerateVibe = useCallback(async (vibe: VibeType) => {
     toast(`Curating a "${vibe}" vibe mix online...`, 'info');
+    
+    // Set dynamic body background override
+    const vibeColors: Record<VibeType, string> = {
+      'Chill': '#050b1a',
+      'Focus': '#030d07',
+      'Workout': '#140404',
+      'Party': '#140314',
+      'Late Night': '#0d0803'
+    };
+    const targetColor = vibeColors[vibe] || '#000000';
+    document.documentElement.style.setProperty('--bg-primary-override', targetColor);
+
     try {
       const playlist = await PlaylistGenerator.generateVibePlaylist(vibe);
       if (!playlist || playlist.trackIds.length === 0) {
@@ -849,7 +1063,12 @@ export const HomePage: React.FC<HomePageProps> = ({
         setOnRepeatTracks(onRepeat);
         setHeavyRotationTracks(heavyRotation);
         setForgottenGemsTracks(forgottenGems);
-        setSmartRecommendedTracks(smartRecs);
+        let recs = smartRecs;
+        if (!recs || recs.length === 0) {
+          const shuffled = [...tracks].sort(() => 0.5 - Math.random());
+          recs = shuffled.slice(0, 6);
+        }
+        setSmartRecommendedTracks(recs);
 
         // Compute hours listened from track durations in history
         let totalSeconds = 0;
@@ -1028,6 +1247,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const handlePlayTrack = useCallback(
     (track: Track) => {
+      document.documentElement.style.removeProperty('--bg-primary-override');
       if (currentTrack?.id === track.id) {
         setPlaying(!isPlaying);
       } else {
@@ -1159,6 +1379,36 @@ export const HomePage: React.FC<HomePageProps> = ({
     },
   ], []);
 
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
+  // Clean up body overrides on unmount
+  useEffect(() => {
+    return () => {
+      document.documentElement.style.removeProperty('--bg-primary-override');
+    };
+  }, []);
+
+  const featuredTrack = useMemo(() => {
+    if (currentTrack) return currentTrack;
+    if (smartRecommendedTracks.length > 0) return smartRecommendedTracks[0];
+    if (recentTracks.length > 0) return recentTracks[0];
+    if (favoriteTracks.length > 0) return favoriteTracks[0];
+    return null;
+  }, [currentTrack, smartRecommendedTracks, recentTracks, favoriteTracks]);
+
+  const contextualGreetingSubtitle = useMemo(() => {
+    if (recentTracks.length > 0) {
+      const genres = recentTracks.map(t => t.genre).filter(Boolean);
+      if (genres.length > 0) {
+        const freq: Record<string, number> = {};
+        genres.forEach(g => { freq[g] = (freq[g] || 0) + 1; });
+        const topGenre = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
+        return `Ready for some ${topGenre}? Here is a mix tailored to your style.`;
+      }
+    }
+    return `Welcome back! Dive into your daily recommendations and vibe playlists.`;
+  }, [recentTracks]);
+
   // ═══════════════════════════════════════════════════════════════════
   // ─── Render ─────────────────────────────────────────────────────────
   // ═══════════════════════════════════════════════════════════════════
@@ -1201,23 +1451,162 @@ export const HomePage: React.FC<HomePageProps> = ({
           }
         }}
       >
-        {/* ─── Greeting & Filter Pills ─── */}
-        <Box className="gsap-hero" sx={{ mt: 1, px: 0.5 }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 850,
-              color: tokens.colors.textPrimary,
-              letterSpacing: '-0.03em',
-              fontSize: { xs: 24, sm: 28, md: 32 },
-              mb: 3
-            }}
-          >
-            {greeting}
-          </Typography>
+        {/* ─── Dynamic Hero Section ─── */}
+        <Box 
+          className="gsap-hero relative overflow-hidden rounded-2xl border border-white/5"
+          sx={{ 
+            minHeight: { xs: 260, md: 340 },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            p: { xs: 4, md: 6 },
+            position: 'relative',
+            mb: 1,
+            zIndex: 1,
+            background: 'rgba(255, 255, 255, 0.01)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        >
+          {/* Organic Background Blobs */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <div className="gsap-blob absolute w-64 h-64 rounded-full bg-indigo-600/10 blur-[60px] top-[-20%] left-[10%]" />
+            <div className="gsap-blob absolute w-72 h-72 rounded-full bg-purple-600/10 blur-[80px] bottom-[-20%] right-[15%]" />
+            <div className="gsap-blob absolute w-48 h-48 rounded-full bg-pink-600/5 blur-[50px] top-[30%] right-[40%]" />
+          </div>
 
-          {/* Filter Pills */}
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 4 }}>
+          {/* Dynamic Parallax Background Artwork Overlay */}
+          {featuredTrack && (
+            <div className="absolute inset-0 z-0 opacity-15 select-none pointer-events-none">
+              <img 
+                src={api.coverUrl(featuredTrack.coverArtUrl, featuredTrack.videoId) || ''}
+                alt=""
+                className="w-full h-full object-cover filter blur-2xl"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent" />
+            </div>
+          )}
+
+          {/* Hero Content */}
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 w-full">
+            <div className="flex-1 max-w-xl text-left">
+              <Typography
+                className="gsap-type-greeting"
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  color: tokens.colors.primaryLight,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  fontSize: 12,
+                  mb: 1
+                }}
+              >
+                {greeting}
+              </Typography>
+              <Typography
+                className="gsap-type-title"
+                variant="h3"
+                sx={{
+                  fontWeight: 850,
+                  color: '#fff',
+                  letterSpacing: '-0.03em',
+                  fontSize: { xs: 28, sm: 36, md: 44 },
+                  lineHeight: 1.15,
+                  mb: 2,
+                  minHeight: { xs: 64, sm: 84, md: 100 }
+                }}
+              >
+                Discover your next favorite song
+              </Typography>
+              
+              <Typography
+                variant="body2"
+                sx={{
+                  color: tokens.colors.textSecondary,
+                  fontSize: 14,
+                  mb: 3,
+                  lineHeight: 1.5,
+                }}
+              >
+                {contextualGreetingSubtitle}
+              </Typography>
+              
+              {featuredTrack && (
+                <Button
+                  onClick={() => handlePlayTrack(featuredTrack)}
+                  variant="contained"
+                  startIcon={isPlaying && currentTrack?.id === featuredTrack.id ? <PauseIcon /> : <PlayArrowIcon />}
+                  sx={{
+                    background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+                    color: '#fff',
+                    fontWeight: 700,
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: '24px',
+                    textTransform: 'none',
+                    boxShadow: `0 4px 20px ${tokens.colors.primary}40`,
+                    '&:hover': {
+                      boxShadow: `0 8px 30px ${tokens.colors.primary}60`,
+                    }
+                  }}
+                >
+                  {isPlaying && currentTrack?.id === featuredTrack.id ? 'Pause Preview' : 'Play Featured Track'}
+                </Button>
+              )}
+            </div>
+
+            {/* Rotating Featured Artwork Card */}
+            {featuredTrack && (
+              <Box
+                className="gsap-tilt shrink-0 self-center md:self-auto"
+                sx={{
+                  width: { xs: 140, sm: 180, md: 220 },
+                  height: { xs: 140, sm: 180, md: 220 },
+                  borderRadius: `${tokens.radius['2xl']}px`,
+                  overflow: 'hidden',
+                  position: 'relative',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: tokens.colors.surfaceElevated,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    '& .featured-play-overlay': { opacity: 1 },
+                  }
+                }}
+                onClick={() => handlePlayTrack(featuredTrack)}
+              >
+                <img 
+                  src={api.coverUrl(featuredTrack.coverArtUrl, featuredTrack.videoId) || ''} 
+                  alt={featuredTrack.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                <div className="absolute bottom-3 left-3 right-3 z-20 text-left">
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600, display: 'block', fontSize: 10 }}>
+                    FEATURED RELEASE
+                  </Typography>
+                  <Typography variant="body2" noWrap sx={{ color: '#fff', fontWeight: 800, fontSize: 13, mt: 0.2 }}>
+                    {featuredTrack.title}
+                  </Typography>
+                  <Typography variant="caption" noWrap sx={{ color: 'rgba(255,255,255,0.8)', display: 'block', fontSize: 11 }}>
+                    {featuredTrack.artist}
+                  </Typography>
+                </div>
+                {/* Play Hover Overlay */}
+                <div className="featured-play-overlay absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 transition-opacity duration-300 z-30">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white scale-90 hover:scale-100 transition-transform">
+                    {isPlaying && currentTrack?.id === featuredTrack.id ? <PauseIcon sx={{ fontSize: 24 }} /> : <PlayArrowIcon sx={{ fontSize: 24, ml: 0.25 }} />}
+                  </div>
+                </div>
+              </Box>
+            )}
+          </div>
+        </Box>
+
+        {/* Filter Pills */}
+        <Box className="gsap-hero" sx={{ mt: 1, px: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 1 }}>
             {(['all', 'music', 'vibes'] as const).map((filter) => (
               <Box
                 key={filter}
@@ -1270,7 +1659,10 @@ export const HomePage: React.FC<HomePageProps> = ({
                   key={item.id}
                   item={item}
                   idx={idx}
+                  featured={idx === 0}
                   handlePlayQuickItem={handlePlayQuickItem}
+                  hoveredId={hoveredItemId}
+                  setHoveredId={setHoveredItemId}
                 />
               ))}
             </Box>
