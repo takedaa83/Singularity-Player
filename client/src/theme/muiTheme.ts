@@ -104,7 +104,7 @@ export const tokens = {
 const adjustHexColor = (hex: string, percent: number) => {
   try {
     const cleanHex = hex.replace('#', '');
-    let num = parseInt(cleanHex, 16);
+    const num = parseInt(cleanHex, 16);
     let r = (num >> 16) + Math.round(2.55 * percent);
     let g = ((num >> 8) & 0x00ff) + Math.round(2.55 * percent);
     let b = (num & 0x0000ff) + Math.round(2.55 * percent);
@@ -114,7 +114,7 @@ const adjustHexColor = (hex: string, percent: number) => {
     b = Math.min(255, Math.max(0, b));
 
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  } catch (e) {
+  } catch {
     return hex;
   }
 };

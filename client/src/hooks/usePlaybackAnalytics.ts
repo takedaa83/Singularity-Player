@@ -86,7 +86,7 @@ export const usePlaybackAnalytics = () => {
       if (duration > 0 && currentTime >= duration * 0.8) {
         const playerState = usePlayerStore.getState();
         const remainingInQueue = playerState.queue.length - playerState.activeQueueIndex;
-        if (remainingInQueue < 2 && hasTriggeredAutoQueueRef.current !== currentTrack.id) {
+        if (remainingInQueue < 2 && hasTriggeredAutoQueueRef.current !== currentTrack.id && playerState.autoplay) {
           hasTriggeredAutoQueueRef.current = currentTrack.id;
           import('../services/smartQueueService').then(({ SmartQueueService }) => {
             SmartQueueService.triggerAutoQueue(currentTrack);

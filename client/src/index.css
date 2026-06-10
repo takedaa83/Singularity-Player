@@ -368,12 +368,15 @@ input[type="range"]::-webkit-slider-runnable-track {
   display: inline-block;
   --word-progress: 0%;
   --word-energy: 0;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease, color 0.35s ease;
   transform: scale(1.0);
   transform-origin: center;
   /* Margin to separate words naturally (breathing room for scale) */
   margin-right: 0.05em;
-  
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.karaoke-word.active {
   /* Text gradient wipe with soft feathering (Apple Music style) */
   background: linear-gradient(
     90deg,
@@ -385,9 +388,6 @@ input[type="range"]::-webkit-slider-runnable-track {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-.karaoke-word.active {
   transform: scale(1.06) !important;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) brightness(calc(1 + var(--word-energy, 0) * 0.55)) !important;
   transition: filter 0.04s linear, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -395,11 +395,19 @@ input[type="range"]::-webkit-slider-runnable-track {
 }
 
 .karaoke-word.completed {
-  --word-progress: 115% !important;
+  color: #ffffff !important;
+  background: none !important;
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
   filter: brightness(1) !important;
 }
 
 .light .karaoke-word {
+  color: rgba(10, 10, 10, 0.28);
+}
+
+.light .karaoke-word.active {
   background: linear-gradient(
     90deg,
     #0a0a0a 0%,
@@ -407,29 +415,30 @@ input[type="range"]::-webkit-slider-runnable-track {
     rgba(10, 10, 10, 0.28) calc(var(--word-progress, 0%) + 5%),
     rgba(10, 10, 10, 0.28) 100%
   );
-}
-
-.light .karaoke-word.active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.25)) brightness(calc(1 - var(--word-energy, 0) * 0.15)) !important;
-  transition: filter 0.04s linear, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  will-change: transform, filter;
 }
 
 .light .karaoke-word.completed {
-  --word-progress: 115% !important;
+  color: #0a0a0a !important;
+  background: none !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
   filter: brightness(1) !important;
 }
 
 .lyrics-line {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               font-size 0.8s cubic-bezier(0.16, 1, 0.3, 1),
               letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lyrics-line.active-line {
-  will-change: transform, opacity, filter;
 }
 
 /* ── Floating Blob Animations ── */

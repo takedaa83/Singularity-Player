@@ -13,7 +13,8 @@ import {
   ListMusic, 
   Mic2,
   Gauge,
-  Music
+  Music,
+  Sparkles
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { usePlaybackTime } from '../../hooks/usePlaybackTime';
@@ -117,6 +118,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const volume = usePlayerStore((s) => s.volume);
   const shuffle = usePlayerStore((s) => s.shuffle);
+  const smartShuffle = usePlayerStore((s) => s.smartShuffle || false);
   const repeat = usePlayerStore((s) => s.repeat);
   const playbackSpeed = usePlayerStore((s) => s.playbackSpeed);
   const isMuted = usePlayerStore((s) => s.isMuted);
@@ -228,12 +230,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               <button
                 onClick={toggleShuffle}
                 disabled={!currentTrack}
-                className={`p-1.5 rounded transition-colors hover:text-white hidden sm:block ${
-                  shuffle ? 'text-white' : 'text-neutral-500'
+                className={`p-1.5 rounded transition-colors hover:text-white hidden sm:flex items-center gap-0.5 ${
+                  shuffle ? 'text-white' : smartShuffle ? 'text-indigo-400 drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' : 'text-neutral-500'
                 } disabled:opacity-30`}
-                title="Shuffle"
+                title={shuffle ? 'Standard Shuffle' : smartShuffle ? 'Smart Shuffle' : 'Shuffle'}
               >
                 <Shuffle className="w-4 h-4" />
+                {smartShuffle && <Sparkles className="w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
               </button>
 
               {/* Previous */}

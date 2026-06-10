@@ -1,9 +1,124 @@
 import { Router, Request, Response } from 'express';
-import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getClient } from '../services/youtubeService';
+import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getClient, YT_DLP_PATH } from '../services/youtubeService';
 import { ytdlpPool } from '../services/processPool';
 import https from 'https';
+import path from 'path';
+import fs from 'fs';
+import { spawn } from 'child_process';
 
 const router = Router();
+
+const CACHE_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'tracks', 'cache');
+if (!fs.existsSync(CACHE_DIR)) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+}
+
+const activeCacheDownloads = new Map<string, Promise<string>>();
+
+function downloadAndCache(videoId: string, quality: string): Promise<string> {
+  const existing = activeCacheDownloads.get(videoId);
+  if (existing) return existing;
+
+  const tempPath = path.join(CACHE_DIR, `${videoId}.tmp`);
+  const finalPath = path.join(CACHE_DIR, `${videoId}.cache`);
+
+  const promise = new Promise<string>((resolve, reject) => {
+    if (fs.existsSync(finalPath)) {
+      resolve(finalPath);
+      return;
+    }
+
+    const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const formatSelector = quality === 'low' 
+      ? '249/250/bestaudio/140' 
+      : quality === 'medium' 
+        ? '140/bestaudio[acodec=aac]/bestaudio' 
+        : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140';
+
+    console.log(`[Cache Manager] Starting background cache download for ${videoId}...`);
+    
+    const child = spawn(YT_DLP_PATH, [
+      '--no-warnings',
+      '--no-playlist',
+      '-f', formatSelector,
+      '--no-check-formats',
+      '--no-check-certificate',
+      '-o', tempPath,
+      ytUrl
+    ], {
+      stdio: ['ignore', 'ignore', 'pipe']
+    });
+
+    child.stderr?.on('data', (data) => {
+      const msg = data.toString().trim();
+      if (msg) console.log(`[Cache yt-dlp stderr] ${msg}`);
+    });
+
+    child.on('exit', (code) => {
+      activeCacheDownloads.delete(videoId);
+      if (code === 0 && fs.existsSync(tempPath)) {
+        try {
+          fs.renameSync(tempPath, finalPath);
+          console.log(`[Cache Manager] Cached track ${videoId} successfully.`);
+          resolve(finalPath);
+        } catch (err) {
+          console.error(`[Cache Manager] Rename failed for ${videoId}:`, err);
+          reject(err);
+        }
+      } else {
+        console.error(`[Cache Manager] yt-dlp failed with code ${code} for ${videoId}`);
+        if (fs.existsSync(tempPath)) {
+          try { fs.unlinkSync(tempPath); } catch {}
+        }
+        reject(new Error(`yt-dlp failed with code ${code}`));
+      }
+    });
+  });
+
+  activeCacheDownloads.set(videoId, promise);
+  return promise;
+}
+
+function cleanCacheOnStartup() {
+  try {
+    if (!fs.existsSync(CACHE_DIR)) return;
+    const files = fs.readdirSync(CACHE_DIR);
+    const maxCacheSizeBytes = 1024 * 1024 * 1024 * 2; // 2 GB limit
+    let totalSize = 0;
+    
+    const fileInfos = files
+      .filter(f => f.endsWith('.cache'))
+      .map(f => {
+        const filePath = path.join(CACHE_DIR, f);
+        const stats = fs.statSync(filePath);
+        totalSize += stats.size;
+        return { name: f, path: filePath, size: stats.size, mtime: stats.mtimeMs };
+      });
+
+    console.log(`[Cache Manager] Cache size: ${(totalSize / 1024 / 1024).toFixed(2)} MB / 2000 MB`);
+
+    if (totalSize > maxCacheSizeBytes) {
+      fileInfos.sort((a, b) => a.mtime - b.mtime);
+      let deletedSize = 0;
+      for (const info of fileInfos) {
+        try {
+          fs.unlinkSync(info.path);
+          deletedSize += info.size;
+          totalSize -= info.size;
+          console.log(`[Cache Manager] Evicted oldest cached file: ${info.name}`);
+        } catch {}
+        if (totalSize <= maxCacheSizeBytes * 0.7) {
+          break;
+        }
+      }
+      console.log(`[Cache Manager] Eviction completed. Freed ${(deletedSize / 1024 / 1024).toFixed(2)} MB`);
+    }
+  } catch (err) {
+    console.error('[Cache Manager] Error cleaning cache on startup:', err);
+  }
+}
+
+cleanCacheOnStartup();
 
 /**
  * GET /api/yt/search?q=...
@@ -43,6 +158,24 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Invalid video ID' });
     return;
   }
+
+  const cacheFilePath = path.join(CACHE_DIR, `${videoId}.cache`);
+  if (fs.existsSync(cacheFilePath)) {
+    console.log(`[YT Route] Serving ${videoId} from local cache`);
+    res.sendFile(cacheFilePath, {
+      headers: {
+        'Content-Type': 'audio/mp4',
+        'Cache-Control': 'public, max-age=86400',
+        'Accept-Ranges': 'bytes'
+      }
+    });
+    return;
+  }
+
+  // Trigger background caching
+  downloadAndCache(videoId, selectedQuality).catch((err) => {
+    console.error(`[YT Route] Background caching failed for ${videoId}:`, err);
+  });
 
   try {
     // Strategy 1: Extract URL and proxy-fetch (supports seeking)
@@ -365,8 +498,8 @@ router.get('/radio', async (req: Request, res: Response) => {
               
               let coverUrl = null;
               if (item.thumbnails && Array.isArray(item.thumbnails) && item.thumbnails.length > 0) {
-                // Try to get a high-quality thumbnail if possible, or fallback to first one
-                coverUrl = item.thumbnails[0].url || null;
+                const sorted = [...item.thumbnails].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
+                coverUrl = sorted[0]?.url || null;
               }
 
               if (!tracks.some(t => t.videoId === item.id)) {

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { usePlayerStore } from '../stores/playerStore';
 import { useToastStore } from './useToast';
 import { api } from '../utils/api';
@@ -58,6 +58,7 @@ export class AudioEngine {
   private convolverNode: ConvolverNode | null = null;
   private reverbGainNode: GainNode | null = null;
   private dryGainNode: GainNode | null = null;
+  private bypassGainNode: GainNode | null = null;
   private analyserNode: AnalyserNode | null = null;
   private mainGainNode: GainNode | null = null;
   private limiterNode: DynamicsCompressorNode | null = null;
@@ -308,7 +309,7 @@ export class AudioEngine {
     const decodeUrl = (url: string) => {
       try {
         return decodeURIComponent(url);
-      } catch (e) {
+      } catch {
         return url;
       }
     };
@@ -373,6 +374,7 @@ export class AudioEngine {
   public initAudioGraph() {
     if (this.audioContext) return;
 
+    const storeState = usePlayerStore.getState();
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     const ctx = new AudioContextClass({ sampleRate: 48000 });
     this.audioContext = ctx;
@@ -414,6 +416,10 @@ export class AudioEngine {
       }
 
       this.eqFilters = filters;
+      const eqOutput = filters[filters.length - 1];
+
+      this.bypassGainNode = ctx.createGain();
+      this.bypassGainNode.gain.value = storeState.spatialAudioEnabled ? 0.0 : 1.0;
 
       this.pannerNode = ctx.createPanner();
       this.pannerNode.panningModel = 'HRTF';
@@ -422,12 +428,10 @@ export class AudioEngine {
       this.convolverNode = ctx.createConvolver();
 
       this.reverbGainNode = ctx.createGain();
-      this.reverbGainNode.gain.value = 0;
+      this.reverbGainNode.gain.value = 0.0;
 
       this.dryGainNode = ctx.createGain();
-      this.dryGainNode.gain.value = 1;
-
-      this.convolverNode.connect(this.reverbGainNode);
+      this.dryGainNode.gain.value = storeState.spatialAudioEnabled ? 1.0 : 0.0;
 
       this.analyserNode = ctx.createAnalyser();
       this.analyserNode.fftSize = 2048;
@@ -442,6 +446,24 @@ export class AudioEngine {
       this.limiterNode.attack.setValueAtTime(0.001, ctx.currentTime);
       this.limiterNode.release.setValueAtTime(0.15, ctx.currentTime);
 
+      // --- Static Graph Connections ---
+      // 1. Bypass route (used when spatial audio is disabled)
+      eqOutput.connect(this.bypassGainNode);
+      this.bypassGainNode.connect(this.analyserNode);
+
+      // 2. Spatial dry route (used when spatial audio is enabled)
+      eqOutput.connect(this.dryGainNode);
+      this.dryGainNode.connect(this.pannerNode);
+
+      // 3. Spatial wet/reverb route (used when spatial audio is enabled and roomSize !== 'none')
+      eqOutput.connect(this.convolverNode);
+      this.convolverNode.connect(this.reverbGainNode);
+      this.reverbGainNode.connect(this.pannerNode);
+
+      // Connect spatial panner output to analyser
+      this.pannerNode.connect(this.analyserNode);
+
+      // Connect analyser to main output controls
       this.analyserNode.connect(this.mainGainNode);
       this.mainGainNode.connect(this.limiterNode);
       this.limiterNode.connect(ctx.destination);
@@ -449,7 +471,6 @@ export class AudioEngine {
       this.sourceNodesCreated = true;
     }
 
-    const storeState = usePlayerStore.getState();
     const preAmp = this.getPreAmpGain();
     const currentMultiplier = this.getLoudnessMultiplier(storeState.currentTrack);
     const targetGain = preAmp * currentMultiplier;
@@ -475,75 +496,40 @@ export class AudioEngine {
   }
 
   private updateAudioConnections() {
-    if (this.eqFilters.length === 0 || !this.analyserNode) return;
-    
-    const eqOutput = this.eqFilters[this.eqFilters.length - 1];
-    
-    if (this.analyserNode) {
-      try { eqOutput.disconnect(this.analyserNode); } catch (e) {}
-    }
-    if (this.dryGainNode) {
-      try { eqOutput.disconnect(this.dryGainNode); } catch (e) {}
-      try { this.dryGainNode.disconnect(this.pannerNode!); } catch (e) {}
-    }
-    if (this.convolverNode) {
-      try { eqOutput.disconnect(this.convolverNode); } catch (e) {}
-      try { this.convolverNode.disconnect(this.reverbGainNode!); } catch (e) {}
-    }
-    if (this.reverbGainNode) {
-      try { this.reverbGainNode.disconnect(this.pannerNode!); } catch (e) {}
-    }
-    if (this.pannerNode) {
-      try { this.pannerNode.disconnect(this.analyserNode); } catch (e) {}
-    }
-
-    const storeState = usePlayerStore.getState();
-    
-    if (!storeState.spatialAudioEnabled) {
-      eqOutput.connect(this.analyserNode);
-    } else {
-      const roomSize = storeState.spatialAudioConfig.roomSize;
-      if (this.dryGainNode && this.convolverNode && this.reverbGainNode && this.pannerNode) {
-        eqOutput.connect(this.dryGainNode);
-        this.dryGainNode.connect(this.pannerNode);
-        
-        if (roomSize !== 'none') {
-          eqOutput.connect(this.convolverNode);
-          this.convolverNode.connect(this.reverbGainNode);
-          this.reverbGainNode.connect(this.pannerNode);
-        }
-        
-        this.pannerNode.connect(this.analyserNode);
-      } else {
-        eqOutput.connect(this.analyserNode);
-      }
-    }
+    // Statically routed, no dynamic connections/disconnections
   }
 
   private applySpatialParams(enabled: boolean, config: SpatialAudioConfig) {
-    if (!this.audioContext || !this.pannerNode || !this.convolverNode || !this.reverbGainNode) return;
+    if (!this.audioContext || !this.pannerNode || !this.convolverNode || !this.reverbGainNode || !this.bypassGainNode || !this.dryGainNode) return;
     const ctx = this.audioContext;
-    
-    this.updateAudioConnections();
+    const now = ctx.currentTime;
 
     if (!enabled) {
-      this.pannerNode.positionX.setValueAtTime(0, ctx.currentTime);
-      this.pannerNode.positionY.setValueAtTime(0, ctx.currentTime);
-      this.pannerNode.positionZ.setValueAtTime(1, ctx.currentTime);
-      this.reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
+      // Crossfade: enable bypass, disable spatial paths
+      this.bypassGainNode.gain.setTargetAtTime(1.0, now, 0.01);
+      this.dryGainNode.gain.setTargetAtTime(0.0, now, 0.01);
+      this.reverbGainNode.gain.setTargetAtTime(0.0, now, 0.01);
+
+      this.pannerNode.positionX.setTargetAtTime(0, now, 0.01);
+      this.pannerNode.positionY.setTargetAtTime(0, now, 0.01);
+      this.pannerNode.positionZ.setTargetAtTime(1, now, 0.01);
       return;
     }
+
+    // Crossfade: disable bypass, enable spatial paths
+    this.bypassGainNode.gain.setTargetAtTime(0.0, now, 0.01);
+    this.dryGainNode.gain.setTargetAtTime(1.0, now, 0.01);
 
     const elevationRad = (config.elevation * Math.PI) / 180;
     const xPos = (config.stereoWidth - 100) / 100;
 
-    this.pannerNode.positionX.setValueAtTime(xPos * 2, ctx.currentTime);
-    this.pannerNode.positionY.setValueAtTime(Math.sin(elevationRad) * 2, ctx.currentTime);
-    this.pannerNode.positionZ.setValueAtTime(Math.cos(elevationRad) * 2, ctx.currentTime);
+    this.pannerNode.positionX.setTargetAtTime(xPos * 2, now, 0.01);
+    this.pannerNode.positionY.setTargetAtTime(Math.sin(elevationRad) * 2, now, 0.01);
+    this.pannerNode.positionZ.setTargetAtTime(Math.cos(elevationRad) * 2, now, 0.01);
 
     const roomSize = config.roomSize;
     if (roomSize === 'none') {
-      this.reverbGainNode.gain.setValueAtTime(0, ctx.currentTime);
+      this.reverbGainNode.gain.setTargetAtTime(0.0, now, 0.01);
     } else {
       let wetVolume = 0.15;
       if (roomSize === 'small') wetVolume = 0.12;
@@ -555,7 +541,7 @@ export class AudioEngine {
       if (this.convolverNode.buffer !== buffer) {
         this.swapConvolverBuffer(buffer, wetVolume);
       } else {
-        this.reverbGainNode.gain.setValueAtTime(wetVolume, ctx.currentTime);
+        this.reverbGainNode.gain.setTargetAtTime(wetVolume, now, 0.01);
       }
     }
   }
@@ -565,18 +551,17 @@ export class AudioEngine {
     const ctx = this.audioContext;
     const now = ctx.currentTime;
     
-    this.reverbGainNode.gain.linearRampToValueAtTime(0, now + 0.05);
+    // Smoothly fade out current reverb
+    this.reverbGainNode.gain.setTargetAtTime(0.0, now, 0.01);
     
-    ctx.suspend().then(() => {
-      if (this.convolverNode) {
+    // Swap buffer and fade back in after 30ms to prevent glitches without blocking AudioContext
+    setTimeout(() => {
+      if (this.convolverNode && this.reverbGainNode && this.audioContext) {
+        const swapTime = this.audioContext.currentTime;
         this.convolverNode.buffer = buffer;
+        this.reverbGainNode.gain.setTargetAtTime(targetWetGain, swapTime, 0.01);
       }
-      ctx.resume().then(() => {
-        if (this.reverbGainNode) {
-          this.reverbGainNode.gain.linearRampToValueAtTime(targetWetGain, ctx.currentTime + 0.05);
-        }
-      });
-    });
+    }, 30);
   }
 
   private prefetchNextTrack() {
@@ -917,6 +902,7 @@ export class AudioEngine {
     this.convolverNode = null;
     this.reverbGainNode = null;
     this.dryGainNode = null;
+    this.bypassGainNode = null;
     this.analyserNode = null;
     this.mainGainNode = null;
     this.limiterNode = null;

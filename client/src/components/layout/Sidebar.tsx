@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music, Heart, FolderHeart, ListMusic, Plus, Download, Upload, Trash2,
-  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, Package
+  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, Package, User
 } from 'lucide-react';
 import { Box, Typography, IconButton, Tooltip, Divider } from '@mui/material';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Playlist } from '../../types';
 import { tokens } from '../../theme/muiTheme';
+import { AbstractPlaylistCover } from '../library/AbstractPlaylistCover';
 
 interface SidebarProps {
   activeView: string;
@@ -131,6 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (id === 'home') return activeView === '/' || activeView === 'home';
     if (id === 'search') return activeView.includes('search');
     if (id === 'library') return activeView.includes('library');
+    if (id === 'artists') return activeView.includes('artists') || activeView.includes('artist/');
     if (id === 'favorites') return activeView.includes('favorites');
     if (id === 'history') return activeView.includes('history');
     if (id === 'downloads') return activeView.includes('downloads');
@@ -142,6 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const mainNav = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'library', icon: FolderHeart, label: 'Library' },
+    { id: 'artists', icon: User, label: 'Artists', color: tokens.colors.primary },
     { id: 'favorites', icon: Heart, label: 'Favorites', color: tokens.colors.accent.pink },
     { id: 'history', icon: Clock, label: 'History' },
   ];
@@ -355,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <ListMusic className="w-3.5 h-3.5 shrink-0" style={{ color: tokens.colors.textTertiary }} />
+                        <AbstractPlaylistCover name={pl.name} id={pl.id} size="small" />
                         <span className="truncate">{pl.name}</span>
                       </div>
                       <Trash2

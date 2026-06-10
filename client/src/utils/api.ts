@@ -147,15 +147,41 @@ export const api = {
 
   /** Server cover art URL */
   coverUrl(path: string | null | undefined, videoId?: string): string | null {
+    let resolvedUrl: string | null = null;
     if (!path) {
       if (videoId) {
-        return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+        resolvedUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+      } else {
+        return null;
       }
-      return null;
+    } else if (path.startsWith('//')) {
+      resolvedUrl = `https:${path}`;
+    } else if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) {
+      resolvedUrl = path;
+    } else {
+      resolvedUrl = `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
     }
-    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
-    if (path.startsWith('//')) return `https:${path}`;
-    return `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
+
+    if (resolvedUrl) {
+      // 1. Upgrade Google usercontent/ggpht image sizing parameters to ultra-high-resolution (1200x1200 px)
+      if (resolvedUrl.includes('googleusercontent.com') || resolvedUrl.includes('ggpht.com')) {
+        if (resolvedUrl.includes('=')) {
+          resolvedUrl = resolvedUrl.replace(/=[ws]\d+[^&]*/, '=w1200-h1200-l90-rj');
+          if (!resolvedUrl.includes('=w1200-h1200-l90-rj')) {
+            resolvedUrl = resolvedUrl.replace(/=[^&]*$/, '=w1200-h1200-l90-rj');
+          }
+        } else {
+          resolvedUrl = `${resolvedUrl}=w1200-h1200-l90-rj`;
+        }
+      }
+      
+      // 2. Upgrade YouTube standard thumbnail to maxresdefault for clean rendering
+      if (resolvedUrl.includes('ytimg.com/vi/')) {
+        resolvedUrl = resolvedUrl.replace(/\/(default|mqdefault|hqdefault)\.jpg/, '/maxresdefault.jpg');
+      }
+    }
+
+    return resolvedUrl;
   },
 
   /** Generic POST helper */
@@ -165,5 +191,20 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
       signal,
     });
+  },
+
+  /** Push library sync data to server */
+  async pushSync(data: any): Promise<{ success: boolean; syncedAt: number }> {
+    return this.post('/api/sync/push', data);
+  },
+
+  /** Pull library sync data from server */
+  async pullSync(): Promise<any> {
+    return fetchJSON<any>('/api/sync/pull');
+  },
+
+  /** Retrieve library sync status from server */
+  async getSyncStatus(): Promise<{ exists: boolean; syncedAt?: number; sizeBytes?: number; trackCount?: number; playlistCount?: number }> {
+    return fetchJSON<any>('/api/sync/status');
   },
 };

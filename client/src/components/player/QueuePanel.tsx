@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ListMusic, Trash2, X, Plus, GripVertical } from 'lucide-react';
+import { ListMusic, Trash2, X, Plus, GripVertical, Music, Shuffle, Sparkles } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Playlist, Track } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 import { formatDuration } from '../../utils/formatDuration';
+import { api } from '../../utils/api';
 import {
   DndContext,
   closestCenter,
@@ -85,6 +86,23 @@ const SortableQueueItem: React.FC<SortableQueueItemProps> = ({
         <span className={`font-mono text-[10px] w-4 text-center shrink-0 ${isActive ? 'text-white' : 'text-neutral-600'}`}>
           {idx + 1}
         </span>
+        <div className="w-8 h-8 rounded bg-neutral-900 border border-white/5 overflow-hidden shrink-0 flex items-center justify-center">
+          {api.coverUrl(track.coverArtUrl, track.videoId) ? (
+            <img
+              src={api.coverUrl(track.coverArtUrl, track.videoId)!}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (track.videoId && target.src !== `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`) {
+                  target.src = `https://i.ytimg.com/vi/${track.videoId}/hqdefault.jpg`;
+                }
+              }}
+            />
+          ) : (
+            <Music className="w-3.5 h-3.5 text-neutral-600" />
+          )}
+        </div>
         <div className="flex flex-col truncate">
           <span className={`font-semibold truncate ${isActive ? 'text-white' : 'text-neutral-300'}`}>
             {track.title}
@@ -118,6 +136,12 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
   const removeFromQueue = usePlayerStore(state => state.removeFromQueue);
   const clearQueue = usePlayerStore(state => state.clearQueue);
   const reorderQueue = usePlayerStore(state => state.reorderQueue);
+  const autoplay = usePlayerStore(state => state.autoplay);
+  const setAutoplay = usePlayerStore(state => state.setAutoplay);
+  const shuffle = usePlayerStore(state => state.shuffle);
+  const smartShuffle = usePlayerStore(state => state.smartShuffle || false);
+  const toggleShuffle = usePlayerStore(state => state.toggleShuffle);
+  const toggleSmartShuffle = usePlayerStore(state => state.toggleSmartShuffle || (() => {}));
   const { savePlaylist } = useLibraryDB();
   const [showSaveForm, setShowSaveForm] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
@@ -197,6 +221,57 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
           >
             <X className="w-4 h-4" />
           </button>
+        </div>
+        
+        {/* Autoplay Toggle */}
+        <div className="mx-2 flex items-center justify-between py-2 border-b border-white/5 pb-3 shrink-0">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-semibold text-white">Autoplay</span>
+            <span className="text-[9px] text-neutral-400 leading-tight">Add similar songs automatically</span>
+          </div>
+          <button
+            onClick={() => setAutoplay(!autoplay)}
+            className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex items-center ${
+              autoplay ? 'bg-primary justify-end' : 'bg-neutral-800 justify-start'
+            }`}
+          >
+            <motion.div
+              layout
+              className="w-3.5 h-3.5 rounded-full bg-white shadow-md"
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            />
+          </button>
+        </div>
+
+        {/* Playback Controls (Shuffle & Smart Shuffle) */}
+        <div className="mx-2 flex flex-col gap-2 pb-3 border-b border-white/5 shrink-0">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-white/90">Queue Shuffle</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={toggleShuffle}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
+                shuffle 
+                  ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
+                  : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+              <span>Shuffle</span>
+            </button>
+            <button
+              onClick={toggleSmartShuffle}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-[11px] font-semibold transition-all duration-200 active:scale-95 ${
+                smartShuffle 
+                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                  : 'bg-white/5 border-white/10 text-indigo-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Smart Shuffle</span>
+            </button>
+          </div>
         </div>
 
         {/* Info & Save/Clear actions */}

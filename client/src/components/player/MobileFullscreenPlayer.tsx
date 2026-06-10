@@ -15,7 +15,8 @@ import {
   Gauge, 
   Volume2, 
   VolumeX,
-  Music
+  Music,
+  Sparkles
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { usePlaybackTime } from '../../hooks/usePlaybackTime';
@@ -88,6 +89,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const volume = usePlayerStore((s) => s.volume);
   const shuffle = usePlayerStore((s) => s.shuffle);
+  const smartShuffle = usePlayerStore((s) => s.smartShuffle || false);
   const repeat = usePlayerStore((s) => s.repeat);
   const playbackSpeed = usePlayerStore((s) => s.playbackSpeed);
   const isMuted = usePlayerStore((s) => s.isMuted);
@@ -255,12 +257,13 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
               {/* Shuffle */}
               <button
                 onClick={toggleShuffle}
-                className={`p-2 transition-colors active:scale-90 ${
-                  shuffle ? 'text-primary' : 'text-neutral-400'
+                className={`p-2 transition-all active:scale-90 flex items-center gap-0.5 ${
+                  shuffle ? 'text-primary' : smartShuffle ? 'text-indigo-400 drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' : 'text-neutral-400'
                 }`}
                 aria-label="Toggle Shuffle"
               >
                 <Shuffle className="w-5 h-5" />
+                {smartShuffle && <Sparkles className="w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
               </button>
 
               {/* Skip Back */}

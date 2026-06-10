@@ -26,6 +26,9 @@ import {
   Upload,
   FolderDown,
   RotateCcw,
+  Cloud,
+  RefreshCw,
+  Server,
 } from 'lucide-react';
 import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
@@ -336,6 +339,133 @@ export const SettingsPage: React.FC = () => {
     }
   }, [toast]);
 
+  // ─── Server Library Sync Handlers ─────────────────────────────────────
+  const [syncStatus, setSyncStatus] = React.useState<{
+    exists: boolean;
+    syncedAt?: number;
+    sizeBytes?: number;
+    trackCount?: number;
+    playlistCount?: number;
+  } | null>(null);
+  const [syncLoading, setSyncLoading] = React.useState(false);
+
+  const fetchSyncStatus = useCallback(async () => {
+    try {
+      const status = await api.getSyncStatus();
+      setSyncStatus(status);
+    } catch (err) {
+      console.error('Failed to fetch library sync status:', err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchSyncStatus();
+  }, [fetchSyncStatus]);
+
+  const handlePushSync = useCallback(async () => {
+    try {
+      setSyncLoading(true);
+      const db = await initDB();
+      const exportData = {
+        tracks: await db.getAll('tracks'),
+        playlists: await db.getAll('playlists'),
+        favorites: await db.getAll('favorites'),
+        history: await db.getAll('history'),
+        playSessions: await db.getAll('playSessions'),
+        searchHistory: await db.getAll('searchHistory'),
+        settings: await db.getAll('settings'),
+        settingsStore: useSettingsStore.getState().settings,
+        version: '2.0.0',
+        exportedAt: Date.now(),
+      };
+      
+      const res = await api.pushSync(exportData);
+      updateSetting('lastSyncTimestamp', res.syncedAt);
+      toast('Library backed up to server successfully!', 'success');
+      await fetchSyncStatus();
+    } catch (err) {
+      toast('Failed to push sync backup: ' + (err as Error).message, 'error');
+    } finally {
+      setSyncLoading(false);
+    }
+  }, [toast, fetchSyncStatus, updateSetting]);
+
+  const handlePullSync = useCallback(async () => {
+    if (!window.confirm('Are you sure you want to pull library data from the server? This will overwrite your current local database and refresh the page.')) {
+      return;
+    }
+    try {
+      setSyncLoading(true);
+      const data = await api.pullSync();
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid library data from server');
+      }
+
+      const db = await initDB();
+
+      // Clear local IndexedDB
+      const stores = ['tracks', 'playlists', 'favorites', 'history', 'playSessions', 'searchHistory', 'settings'] as const;
+      const txClear = db.transaction(stores, 'readwrite');
+      for (const store of stores) {
+        await txClear.objectStore(store).clear();
+      }
+      await txClear.done;
+
+      // Restore data
+      const txRestore = db.transaction(stores, 'readwrite');
+      if (Array.isArray(data.tracks)) {
+        const store = txRestore.objectStore('tracks');
+        for (const track of data.tracks) await store.put(track);
+      }
+      if (Array.isArray(data.playlists)) {
+        const store = txRestore.objectStore('playlists');
+        for (const playlist of data.playlists) await store.put(playlist);
+      }
+      if (Array.isArray(data.favorites)) {
+        const store = txRestore.objectStore('favorites');
+        for (const trackId of data.favorites) await store.put(trackId);
+      }
+      if (Array.isArray(data.history)) {
+        const store = txRestore.objectStore('history');
+        for (const item of data.history) await store.put(item);
+      }
+      if (Array.isArray(data.playSessions)) {
+        const store = txRestore.objectStore('playSessions');
+        for (const session of data.playSessions) await store.put(session);
+      }
+      if (Array.isArray(data.searchHistory)) {
+        const store = txRestore.objectStore('searchHistory');
+        for (const query of data.searchHistory) await store.put(query);
+      }
+      if (Array.isArray(data.settings)) {
+        const store = txRestore.objectStore('settings');
+        for (const set of data.settings) await store.put(set);
+      }
+      await txRestore.done;
+
+      // Restore Zustand store settings
+      if (data.settingsStore) {
+        const store = useSettingsStore.getState();
+        Object.entries(data.settingsStore).forEach(([key, val]) => {
+          if (key !== 'autoSync' && key !== 'lastSyncTimestamp') {
+            store.updateSetting(key as any, val);
+          }
+        });
+      }
+
+      if (syncStatus?.syncedAt) {
+        updateSetting('lastSyncTimestamp', syncStatus.syncedAt);
+      }
+
+      toast('Library pulled from server successfully! Page is reloading...', 'success');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      toast('Failed to pull sync: ' + (err as Error).message, 'error');
+    } finally {
+      setSyncLoading(false);
+    }
+  }, [toast, syncStatus, updateSetting]);
+
   return (
     <Box sx={{ maxWidth: 720, mx: 'auto' }}>
       <ViewHeader
@@ -467,11 +597,19 @@ export const SettingsPage: React.FC = () => {
           />
         </SettingRow>
 
-        <SettingRow label="Auto-play Next" description="Automatically play the next track" noDivider>
+        <SettingRow label="Auto-play Next" description="Automatically play the next track">
           <Switch
             checked={settings.autoPlayNext}
             onChange={(_, checked) => updateSetting('autoPlayNext', checked)}
             slotProps={{ input: { 'aria-label': 'Toggle auto-play next' } }}
+          />
+        </SettingRow>
+
+        <SettingRow label="Autoplay Recommendations" description="Auto-add similar songs when queue is ending" noDivider>
+          <Switch
+            checked={settings.enableRecommendations}
+            onChange={(_, checked) => updateSetting('enableRecommendations', checked)}
+            slotProps={{ input: { 'aria-label': 'Toggle autoplay recommendations' } }}
           />
         </SettingRow>
       </SettingSection>
@@ -661,6 +799,102 @@ export const SettingsPage: React.FC = () => {
             }}
           >
             Import Library
+          </Button>
+        </Box>
+      </SettingSection>
+
+      {/* ── Library Synchronization ────────────────────────────────────── */}
+      <SettingSection
+        icon={Cloud}
+        title="Library Synchronization"
+        iconColor={tokens.colors.accent.blue}
+      >
+        <SettingRow
+          label="Auto-Sync to Server"
+          description="Automatically synchronize history, playlists, and settings with the server in the background"
+          noDivider
+        >
+          <Switch
+            checked={settings.autoSync}
+            onChange={(_, checked) => {
+              updateSetting('autoSync', checked);
+              if (checked) {
+                handlePushSync();
+              }
+            }}
+            slotProps={{ input: { 'aria-label': 'Toggle library auto-sync' } }}
+          />
+        </SettingRow>
+
+        {syncStatus?.exists && (
+          <Box sx={{ mb: 2, p: 2, borderRadius: `${tokens.radius.md}px`, backgroundColor: `${tokens.colors.surfaceVariant}50`, border: `1px solid ${tokens.colors.surfaceBorder}` }}>
+            <Typography variant="caption" sx={{ display: 'block', color: tokens.colors.textSecondary, mb: 1, fontWeight: 600 }}>
+              SERVER BACKUP STATUS:
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
+              <Typography variant="caption" sx={{ color: tokens.colors.textSecondary }}>
+                Last Synced: <span style={{ color: tokens.colors.textPrimary, fontWeight: 500 }}>{syncStatus.syncedAt ? new Date(syncStatus.syncedAt).toLocaleString() : 'Never'}</span>
+              </Typography>
+              <Typography variant="caption" sx={{ color: tokens.colors.textSecondary }}>
+                Backup Size: <span style={{ color: tokens.colors.textPrimary, fontWeight: 500 }}>{(syncStatus.sizeBytes! / 1024).toFixed(1)} KB</span>
+              </Typography>
+              <Typography variant="caption" sx={{ color: tokens.colors.textSecondary }}>
+                Tracks Count: <span style={{ color: tokens.colors.textPrimary, fontWeight: 500 }}>{syncStatus.trackCount}</span>
+              </Typography>
+              <Typography variant="caption" sx={{ color: tokens.colors.textSecondary }}>
+                Playlists Count: <span style={{ color: tokens.colors.textPrimary, fontWeight: 500 }}>{syncStatus.playlistCount}</span>
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 1.5,
+            mt: 1
+          }}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<Upload size={16} />}
+            onClick={handlePushSync}
+            disabled={syncLoading}
+            sx={{
+              borderColor: tokens.colors.surfaceBorder,
+              color: tokens.colors.textSecondary,
+              borderRadius: `${tokens.radius.lg}px`,
+              py: 1.5,
+              justifyContent: 'flex-start',
+              '&:hover': {
+                borderColor: tokens.colors.accent.blue,
+                color: tokens.colors.accent.blue,
+                backgroundColor: `${tokens.colors.accent.blue}08`,
+              },
+            }}
+          >
+            Push to Server
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<FolderDown size={16} />}
+            onClick={handlePullSync}
+            disabled={syncLoading || !syncStatus?.exists}
+            sx={{
+              borderColor: tokens.colors.surfaceBorder,
+              color: tokens.colors.textSecondary,
+              borderRadius: `${tokens.radius.lg}px`,
+              py: 1.5,
+              justifyContent: 'flex-start',
+              '&:hover': {
+                borderColor: tokens.colors.accent.pink,
+                color: tokens.colors.accent.pink,
+                backgroundColor: `${tokens.colors.accent.pink}08`,
+              },
+            }}
+          >
+            Pull from Server
           </Button>
         </Box>
       </SettingSection>

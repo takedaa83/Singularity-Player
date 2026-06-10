@@ -108,25 +108,29 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 - **Multi-Source Search** — Queries Deezer, iTunes, and YouTube simultaneously
 - **Trending Suggestions** — Shows popular queries in the search dropdown
 - **Search History** — Remember your recent searches with quick recall
+- **Artists Library** — circular card grid of listened-to artists with dynamic Apple Music-style profiles
+- **Wikipedia Profile Sync** — Automatically fetches biography summaries and high-res artist photos via Wikipedia REST API on the fly
 - **Artist & Album Pages** — Browse tracks grouped by artist or album
 - **Genre Exploration** — Quick-search genre tiles (Pop, Rock, Electronic, Hip-Hop, Classical, Jazz, R&B, Indie)
 
 ### 🎵 Playback & Queue
 - **Instant Streaming** — Play any song on demand with full seek support via HTTP range requests
 - **Smart Prefetching** — Silently resolves the next track before you need it
-- **Queue Management** — Drag-and-drop reordering with visual feedback
-- **Shuffle & Repeat** — Shuffle mode, repeat-one, and repeat-all
+- **Queue Management** — Drag-and-drop reordering with visual feedback and album art integration
+- **Smart Shuffle** — Balanced interleaving algorithm that prevents consecutive tracks by the same artist/genre and injects library recommendations
+- **Autoplay Recommendations** — Automatically appends related songs to the queue with strict artist diversity constraints (no duplicates or artist clustering)
 - **Keyboard Shortcuts** — Full keyboard control (see table below)
 
 ### 📝 Lyrics & Visualizer
 - **Native Word-Level Syncing** — Support for Enhanced LRC formats with character-by-character coloring/sweeps matching the song pace
+- **Virtual DOM Glow Fixes** — Reset styling states on active line transitions to prevent visual glow glitches during DOM recycling
 - **Vocal-Energy Adaptive Holds** — Formant frequency analysis dynamically extends active word highlighting on sustained vowels and stalls progress at 70–80% until vocals decay
 - **Real-Time Visual Glow** — Highlighted words glow dynamically based on real-time vocal presence metrics without introducing highlight lag
 - **Custom Sync Offset** — Slider controls (`-400ms` to `+400ms` in `10ms` increments) to adjust visual anticipation for audio latency (persists in `localStorage`)
 - **Smart Word Sync Toggle** — Switch between tempo-estimated word sync and clean **Line-by-Line Highlight** (Apple Music style) on standard LRC files
 - **Kinetic Lyric Centering** — Smooth GSAP-driven scrolling that centers active lyrics in both sidebar and fullscreen overlays
 - **Ambient Blurred Backdrop** — Rotating and floating circular blobs that morph and change color to match the dominant and accent shades of the active album cover art
-- **Large Scale Typography** — Adjustable font sizes up to `40px` base scale for enhanced visibility
+- **Large Scale Typography** — Shifted layout and adjustable font sizes up to `52px` base scale for enhanced visibility
 
 ### 🧠 Smart Queue & Recommendations
 - **Smart Queue Service** — Queries YouTube Music dynamically at queue exhaustion to inject recommended related radio tracks

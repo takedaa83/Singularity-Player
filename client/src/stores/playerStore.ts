@@ -33,6 +33,7 @@ interface PlayerState {
   activeQueueIndex: number;
   volume: number;
   shuffle: boolean;
+  smartShuffle: boolean;
   repeat: 'off' | 'one' | 'all';
   playbackSpeed: number;
   crossfadeDuration: number;
@@ -46,9 +47,11 @@ interface PlayerState {
   isBuffering: boolean;
   streamingQuality: 'high' | 'medium' | 'low';
   measuredAudioLatency: number;
+  autoplay: boolean;
   
   // Actions
   setPlaying: (playing: boolean) => void;
+  setAutoplay: (autoplay: boolean) => void;
   playTrack: (track: Track, newQueue?: Track[]) => void;
   addToQueue: (track: Track) => void;
   playNext: (track: Track) => void;
@@ -58,6 +61,7 @@ interface PlayerState {
   setVolume: (volume: number) => void;
   toggleMute: () => void;
   toggleShuffle: () => void;
+  toggleSmartShuffle: () => void;
   setRepeat: (repeat: 'off' | 'one' | 'all') => void;
   setPlaybackSpeed: (speed: number) => void;
   setCrossfadeDuration: (duration: number) => void;
@@ -83,6 +87,48 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return newArray;
 };
 
+// Helper for Smart Shuffle (balanced interleave by artist)
+const smartShuffleArray = (array: Track[], currentTrack: Track | null): Track[] => {
+  if (array.length <= 1) return array;
+  
+  // Separate current track to keep it first
+  const remaining = array.filter(t => !currentTrack || t.id !== currentTrack.id);
+  
+  // Group by artist
+  const groups: Record<string, Track[]> = {};
+  for (const track of remaining) {
+    const artist = (track.artist || 'Unknown').toLowerCase().trim();
+    if (!groups[artist]) groups[artist] = [];
+    groups[artist].push(track);
+  }
+  
+  // Shuffle each artist group individually
+  for (const artist in groups) {
+    groups[artist] = shuffleArray(groups[artist]);
+  }
+  
+  // Interleave the groups (distribute them evenly)
+  const groupLists = Object.values(groups).sort((a, b) => b.length - a.length);
+  const result: Track[] = [];
+  
+  while (groupLists.length > 0) {
+    for (let i = 0; i < groupLists.length; i++) {
+      const item = groupLists[i].pop();
+      if (item) {
+        result.push(item);
+      }
+    }
+    // Remove empty groups
+    for (let i = groupLists.length - 1; i >= 0; i--) {
+      if (groupLists[i].length === 0) {
+        groupLists.splice(i, 1);
+      }
+    }
+  }
+  
+  return currentTrack ? [currentTrack, ...result] : result;
+};
+
 export const usePlayerStore = create<PlayerState>()(
   persist(
     (set, get) => ({
@@ -95,6 +141,7 @@ export const usePlayerStore = create<PlayerState>()(
       spatialAudioConfig: DEFAULT_USER_SETTINGS.spatialAudioConfig,
       volume: 0.8,
       shuffle: false,
+      smartShuffle: false,
       repeat: 'off',
       playbackSpeed: 1.0,
       crossfadeDuration: 3, // 3 seconds default
@@ -106,8 +153,10 @@ export const usePlayerStore = create<PlayerState>()(
       isBuffering: false,
       streamingQuality: 'high',
       measuredAudioLatency: 0,
+      autoplay: true,
 
       setPlaying: (playing) => set({ isPlaying: playing }),
+      setAutoplay: (autoplay) => set({ autoplay }),
       setBuffering: (buffering) => set({ isBuffering: buffering }),
       setStreamingQuality: (quality) => set({ streamingQuality: quality }),
 
@@ -129,6 +178,14 @@ export const usePlayerStore = create<PlayerState>()(
           isPlaying: true
         });
         prefetchNextQueuedTrack(updatedQueue, index, get().shuffle, get().repeat);
+
+        // Auto-queue similar recommendations if ending
+        const remaining = updatedQueue.length - 1 - index;
+        if (remaining <= 2 && get().autoplay) {
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(track);
+          });
+        }
       },
 
       addToQueue: (track) => {
@@ -152,7 +209,7 @@ export const usePlayerStore = create<PlayerState>()(
         const { queue, currentTrack } = get();
         
         // Remove track or duplicate versions from queue if already present to prevent duplicates
-        let updatedQueue = queue.filter(t => t.id !== track.id && !isDuplicateTrack(t, track));
+        const updatedQueue = queue.filter(t => t.id !== track.id && !isDuplicateTrack(t, track));
         
         if (!currentTrack) {
           // If nothing is playing, play immediately
@@ -196,17 +253,26 @@ export const usePlayerStore = create<PlayerState>()(
         }
         
         const index = Math.max(0, Math.min(startIndex, newQueue.length - 1));
+        const track = newQueue[index];
         set({
           queue: newQueue,
           activeQueueIndex: index,
-          currentTrack: newQueue[index],
+          currentTrack: track,
           isPlaying: true
         });
         prefetchNextQueuedTrack(newQueue, index, get().shuffle, get().repeat);
+
+        // Auto-queue similar recommendations if ending
+        const remaining = newQueue.length - 1 - index;
+        if (remaining <= 2 && get().autoplay) {
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(track);
+          });
+        }
       },
 
       nextTrack: (force = false) => {
-        const { queue, activeQueueIndex, repeat, shuffle } = get();
+        const { queue, activeQueueIndex, repeat, shuffle, smartShuffle } = get();
         if (queue.length === 0) return;
 
         // Handle repeat one (unless skipped manually)
@@ -216,9 +282,9 @@ export const usePlayerStore = create<PlayerState>()(
           return;
         }
 
-        let nextIndex = activeQueueIndex;
+        let nextIndex: number;
 
-        if (shuffle) {
+        if (shuffle && !smartShuffle) {
           // Pick a random track index that is different if possible
           nextIndex = Math.floor(Math.random() * queue.length);
         } else {
@@ -234,12 +300,21 @@ export const usePlayerStore = create<PlayerState>()(
           }
         }
 
+        const nextTrack = queue[nextIndex];
         set({
           activeQueueIndex: nextIndex,
-          currentTrack: queue[nextIndex],
+          currentTrack: nextTrack,
           isPlaying: true
         });
         prefetchNextQueuedTrack(queue, nextIndex, shuffle, repeat);
+
+        // Auto-queue similar recommendations if ending
+        const remaining = queue.length - 1 - nextIndex;
+        if (remaining <= 2 && get().autoplay) {
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(nextTrack);
+          });
+        }
       },
 
       prevTrack: () => {
@@ -279,31 +354,100 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       toggleShuffle: () => {
-        const { shuffle, queue, originalQueue, currentTrack } = get();
-        const nextShuffle = !shuffle;
+        const { shuffle, smartShuffle, queue, originalQueue, currentTrack } = get();
         
-        if (nextShuffle && queue.length > 0 && currentTrack) {
-          // Save original order before shuffling
+        // Cycle: Off (shuffle=false, smart=false) -> On (shuffle=true, smart=false) -> Smart (shuffle=false, smart=true) -> Off
+        if (!shuffle && !smartShuffle) {
+          // Turn on Standard Shuffle
+          if (queue.length > 0 && currentTrack) {
+            const remaining = queue.filter(t => t.id !== currentTrack.id);
+            const shuffled = [currentTrack, ...shuffleArray(remaining)];
+            set({
+              shuffle: true,
+              smartShuffle: false,
+              originalQueue: [...queue],
+              queue: shuffled,
+              activeQueueIndex: 0
+            });
+            prefetchNextQueuedTrack(shuffled, 0, true, get().repeat);
+          } else {
+            set({ shuffle: true, smartShuffle: false });
+          }
+        } else if (shuffle && !smartShuffle) {
+          // Turn on Smart Shuffle (cycle from standard to smart)
+          get().toggleSmartShuffle();
+        } else {
+          // Turn off all shuffle
+          if (originalQueue.length > 0 && currentTrack) {
+            const restoredIndex = originalQueue.findIndex(t => t.id === currentTrack.id);
+            set({
+              shuffle: false,
+              smartShuffle: false,
+              queue: [...originalQueue],
+              activeQueueIndex: restoredIndex >= 0 ? restoredIndex : 0,
+            });
+            prefetchNextQueuedTrack(originalQueue, restoredIndex >= 0 ? restoredIndex : 0, false, get().repeat);
+          } else {
+            set({ shuffle: false, smartShuffle: false });
+          }
+        }
+      },
+
+      toggleSmartShuffle: async () => {
+        const { shuffle, smartShuffle, queue, originalQueue, currentTrack } = get();
+        const nextSmartShuffle = !smartShuffle;
+        
+        if (nextSmartShuffle && queue.length > 0 && currentTrack) {
           const remaining = queue.filter(t => t.id !== currentTrack.id);
-          const shuffled = [currentTrack, ...shuffleArray(remaining)];
+          
+          // Fetch 2-3 recommended library tracks to inject
+          let smartRecommendations: Track[] = [];
+          try {
+            const db = await initDB();
+            const localTracks = await db.getAll('tracks');
+            const filteredLocal = localTracks.filter(t => 
+              t.id !== currentTrack.id && 
+              !queue.some(q => q.id === t.id)
+            );
+            
+            const currArtist = (currentTrack.artist || '').toLowerCase().trim();
+            const currGenre = (currentTrack.genre || '').toLowerCase().trim();
+            
+            const related = filteredLocal.filter(t => {
+              const art = (t.artist || '').toLowerCase().trim();
+              const gen = (t.genre || '').toLowerCase().trim();
+              return art === currArtist || gen === currGenre;
+            });
+            
+            const pool = related.length > 0 ? related : filteredLocal;
+            const shuffledPool = shuffleArray(pool);
+            smartRecommendations = shuffledPool.slice(0, 3);
+          } catch (e) {
+            console.error('[PlayerStore] Smart Shuffle recommendation fetch failed:', e);
+          }
+
+          const combinedRemaining = [...remaining, ...smartRecommendations];
+          const shuffled = smartShuffleArray(combinedRemaining, currentTrack);
+          
           set({
-            shuffle: nextShuffle,
-            originalQueue: [...queue], // preserve original order
+            shuffle: false,
+            smartShuffle: true,
+            originalQueue: (shuffle || smartShuffle) ? originalQueue : [...queue],
             queue: shuffled,
             activeQueueIndex: 0
           });
-          prefetchNextQueuedTrack(shuffled, 0, nextShuffle, get().repeat);
-        } else if (!nextShuffle && originalQueue.length > 0 && currentTrack) {
-          // Restore original order
+          prefetchNextQueuedTrack(shuffled, 0, false, get().repeat);
+        } else if (!nextSmartShuffle && originalQueue.length > 0 && currentTrack) {
           const restoredIndex = originalQueue.findIndex(t => t.id === currentTrack.id);
           set({
-            shuffle: nextShuffle,
+            shuffle: false,
+            smartShuffle: false,
             queue: [...originalQueue],
             activeQueueIndex: restoredIndex >= 0 ? restoredIndex : 0,
           });
-          prefetchNextQueuedTrack(originalQueue, restoredIndex >= 0 ? restoredIndex : 0, nextShuffle, get().repeat);
+          prefetchNextQueuedTrack(originalQueue, restoredIndex >= 0 ? restoredIndex : 0, false, get().repeat);
         } else {
-          set({ shuffle: nextShuffle });
+          set({ shuffle: false, smartShuffle: nextSmartShuffle });
         }
       },
 
@@ -394,6 +538,9 @@ export const usePlayerStore = create<PlayerState>()(
         spatialAudioEnabled: state.spatialAudioEnabled,
         spatialAudioConfig: state.spatialAudioConfig,
         streamingQuality: state.streamingQuality,
+        autoplay: state.autoplay,
+        shuffle: state.shuffle,
+        smartShuffle: state.smartShuffle,
       }),
     }
   )

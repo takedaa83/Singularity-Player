@@ -74,7 +74,7 @@ export function passesQualityFilter(track: Track): boolean {
   const artist = (track.artist || '').trim();
   if (!title || title.length < 2) return false;
   if (!artist || artist.length < 1) return false;
-  if (track.duration !== undefined && track.duration !== null) {
+  if (track.duration !== undefined && track.duration !== null && track.duration !== 0) {
     if (track.duration < 60 || track.duration > 900) return false;
   }
   for (const pattern of QUALITY_BLACKLIST_PATTERNS) {
@@ -183,6 +183,29 @@ export const SmartQueueService = {
 
       if (relatedTracks.length === 0) relatedTracks = await db.getAll('tracks');
       if (relatedTracks.length === 0) return;
+
+      // Limit candidate tracks from any single artist to at most 4 in the raw pool
+      const rawArtistCounts = new Map<string, number>();
+      relatedTracks = relatedTracks.filter(t => {
+        const artist = (t.artist || '').toLowerCase().trim();
+        const currentCount = rawArtistCounts.get(artist) || 0;
+        if (currentCount >= 4) return false;
+        rawArtistCounts.set(artist, currentCount + 1);
+        return true;
+      });
+
+      // If candidates are sparse, pull in tracks of other artists from the local library database
+      if (relatedTracks.length < 15) {
+        const localTracks = await db.getAll('tracks');
+        const localFiltered = localTracks.filter(passesQualityFilter);
+        for (const t of localFiltered) {
+          const artist = (t.artist || '').toLowerCase().trim();
+          if (!rawArtistCounts.has(artist) || rawArtistCounts.get(artist)! < 2) {
+            relatedTracks.push(t);
+            rawArtistCounts.set(artist, (rawArtistCounts.get(artist) || 0) + 1);
+          }
+        }
+      }
 
       relatedTracks = relatedTracks
         .filter(passesQualityFilter)
@@ -393,38 +416,104 @@ export const SmartQueueService = {
         }
       }
 
+      const getRecentArtistCount = (artistName: string, selectedBatch: Track[], queue: Track[], windowSize = 5) => {
+        const cleanName = artistName.toLowerCase().trim();
+        let count = 0;
+        for (const track of selectedBatch) {
+          if ((track.artist || '').toLowerCase().trim() === cleanName) count++;
+        }
+        const queueToCheck = queue.slice(-windowSize);
+        for (const track of queueToCheck) {
+          if ((track.artist || '').toLowerCase().trim() === cleanName) count++;
+        }
+        return count;
+      };
+
+      const getConsecutiveArtistCount = (artistName: string, selectedBatch: Track[], queue: Track[]) => {
+        const cleanName = artistName.toLowerCase().trim();
+        const allTracks = [...queue, ...selectedBatch];
+        let count = 0;
+        for (let i = allTracks.length - 1; i >= 0; i--) {
+          if ((allTracks[i].artist || '').toLowerCase().trim() === cleanName) {
+            count++;
+          } else {
+            break;
+          }
+        }
+        return count;
+      };
+
       const selectedTracks: Track[] = [];
-      const artistCount = new Map<string, number>();
-      const lastTrackInQueue = playerStore.queue[playerStore.queue.length - 1];
-      let cleanLastArtist = ((lastTrackInQueue ? lastTrackInQueue.artist : currentTrack.artist) || '').toLowerCase().trim();
       const sortedPool = [...candidatePool].sort((a, b) => b.score - a.score);
 
       while (selectedTracks.length < TARGET && sortedPool.length > 0) {
         let indexToPick = sortedPool.findIndex(item => {
           const artist = (item.track.artist || '').toLowerCase().trim();
           const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
-          return !isDup && artist !== cleanLastArtist && (artistCount.get(artist) || 0) < 2;
+          if (isDup) return false;
+          
+          const consecutive = getConsecutiveArtistCount(artist, selectedTracks, playerStore.queue);
+          const totalInWindow = getRecentArtistCount(artist, selectedTracks, playerStore.queue, 5);
+          
+          // Strict rule: max 2 consecutive, max 2 in recent window of 5
+          return consecutive < 2 && totalInWindow < 2;
         });
 
         if (indexToPick === -1) {
+          // Relax total count to < 3, consecutive < 2
           indexToPick = sortedPool.findIndex(item => {
             const artist = (item.track.artist || '').toLowerCase().trim();
             const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
-            return !isDup && (artistCount.get(artist) || 0) < 2;
+            if (isDup) return false;
+            
+            const consecutive = getConsecutiveArtistCount(artist, selectedTracks, playerStore.queue);
+            const totalInWindow = getRecentArtistCount(artist, selectedTracks, playerStore.queue, 5);
+            
+            return consecutive < 2 && totalInWindow < 3;
           });
         }
 
         if (indexToPick === -1) {
+          // Relax to consecutive < 3, total in window < 4
+          indexToPick = sortedPool.findIndex(item => {
+            const artist = (item.track.artist || '').toLowerCase().trim();
+            const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
+            if (isDup) return false;
+            
+            const consecutive = getConsecutiveArtistCount(artist, selectedTracks, playerStore.queue);
+            const totalInWindow = getRecentArtistCount(artist, selectedTracks, playerStore.queue, 5);
+            
+            return consecutive < 3 && totalInWindow < 4;
+          });
+        }
+
+        if (indexToPick === -1) {
+          // Fallback: just not duplicate, but still avoid consecutive >= 3 if possible
+          indexToPick = sortedPool.findIndex(item => {
+            const artist = (item.track.artist || '').toLowerCase().trim();
+            const isDup = selectedTracks.some(t => isDuplicateTrack(t, item.track));
+            if (isDup) return false;
+            
+            const consecutive = getConsecutiveArtistCount(artist, selectedTracks, playerStore.queue);
+            return consecutive < 3;
+          });
+        }
+
+        if (indexToPick === -1) {
+          // Absolute fallback: just not duplicate
           indexToPick = sortedPool.findIndex(item => !selectedTracks.some(t => isDuplicateTrack(t, item.track)));
         }
 
-        if (indexToPick === -1) indexToPick = 0;
+        if (indexToPick === -1) {
+          indexToPick = 0;
+        }
 
-        const picked = sortedPool.splice(indexToPick, 1)[0].track;
-        selectedTracks.push(picked);
-        const pickedArtist = (picked.artist || '').toLowerCase().trim();
-        artistCount.set(pickedArtist, (artistCount.get(pickedArtist) || 0) + 1);
-        cleanLastArtist = pickedArtist;
+        if (sortedPool[indexToPick]) {
+          const picked = sortedPool.splice(indexToPick, 1)[0].track;
+          selectedTracks.push(picked);
+        } else {
+          break;
+        }
       }
 
       if (selectedTracks.length > 0) {

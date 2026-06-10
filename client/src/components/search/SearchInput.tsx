@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search as SearchIcon, X as CloseIcon, Clock as HistoryIcon, TrendingUp as TrendingIcon, Trash2 as DeleteIcon } from 'lucide-react';
+import { Search as SearchIcon, X as CloseIcon, Clock as HistoryIcon, TrendingUp as TrendingIcon, Trash2 as DeleteIcon, Mic as MicIcon } from 'lucide-react';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { api } from '../../utils/api';
 import { tokens } from '../../theme/muiTheme';
 import { Box, Paper, List, ListItem, ListItemButton, ListItemText, IconButton, Typography, Divider, Button } from '@mui/material';
+import { AudioRecognizer } from './AudioRecognizer';
+import { usePlayerStore } from '../../stores/playerStore';
 
 interface SearchInputProps {
   onSearch: (query: string) => void;
@@ -17,6 +19,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
   const [trending, setTrending] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isRecognizerOpen, setIsRecognizerOpen] = useState(false);
 
   const debounceTimerRef = useRef<number | null>(null);
   const searchDebounceRef = useRef<number | null>(null);
@@ -178,6 +181,16 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
     onSearch('');
   };
 
+  const handleRecognized = (titleArtist: string, resolvedTrack: any) => {
+    setIsRecognizerOpen(false);
+    setQuery(titleArtist);
+    onSearch(titleArtist);
+    addSearchHistoryEntry(titleArtist).then(() => loadDropdownData());
+    if (resolvedTrack) {
+      usePlayerStore.getState().playTrack(resolvedTrack);
+    }
+  };
+
   const getDropdownItems = () => {
     if (query.trim().length >= 2) {
       return { type: 'suggestions' as const, items: suggestions };
@@ -205,7 +218,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
           className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-neutral-600 focus:border-white focus:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-white/30 text-sm text-white placeholder-neutral-500 transition-all"
         />
         <SearchIcon className="absolute left-3.5 top-3 w-4.5 h-4.5 text-neutral-400 pointer-events-none" />
-        {query && (
+        {query ? (
           <button
             type="button"
             onClick={handleClear}
@@ -213,6 +226,15 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
             className="absolute right-3.5 top-3 p-0.5 rounded-full hover:bg-white/15 text-neutral-400 hover:text-white transition-colors"
           >
             <CloseIcon className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsRecognizerOpen(true)}
+            aria-label="Identify song playing"
+            className="absolute right-3.5 top-2.5 p-1 rounded-full hover:bg-white/10 text-neutral-400 hover:text-primary transition-all active:scale-90"
+          >
+            <MicIcon className="w-4.5 h-4.5" />
           </button>
         )}
       </Box>
@@ -385,6 +407,12 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
           )}
         </Paper>
       )}
+
+      <AudioRecognizer
+        isOpen={isRecognizerOpen}
+        onClose={() => setIsRecognizerOpen(false)}
+        onRecognized={handleRecognized}
+      />
     </Box>
   );
 };

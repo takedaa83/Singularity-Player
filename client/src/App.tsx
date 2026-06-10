@@ -18,11 +18,14 @@ import { LoadingSkeleton } from './components/ui/LoadingSkeleton';
 import { MobileNav } from './components/layout/MobileNav';
 import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyticsTracker';
 import { useSettingsStore } from './stores/settingsStore';
+import { api } from './utils/api';
+import { initDB } from './lib/db';
 
 // Lazy-load heavy pages for code splitting
 const HomePage = lazy(() => import('./components/home/HomePage').then(m => ({ default: m.HomePage })));
 const SearchResults = lazy(() => import('./components/search/SearchResults').then(m => ({ default: m.SearchResults })));
 const LibraryView = lazy(() => import('./components/library/LibraryView').then(m => ({ default: m.LibraryView })));
+const ArtistsView = lazy(() => import('./components/library/ArtistsView').then(m => ({ default: m.ArtistsView })));
 const FavoritesView = lazy(() => import('./components/library/FavoritesView').then(m => ({ default: m.FavoritesView })));
 const HistoryView = lazy(() => import('./components/library/HistoryView').then(m => ({ default: m.HistoryView })));
 const PlaylistView = lazy(() => import('./components/library/PlaylistView').then(m => ({ default: m.PlaylistView })));
@@ -60,7 +63,7 @@ const pageVariants = {
 const adjustHexColor = (hex: string, percent: number) => {
   try {
     const cleanHex = hex.replace('#', '');
-    let num = parseInt(cleanHex, 16);
+    const num = parseInt(cleanHex, 16);
     let r = (num >> 16) + Math.round(2.55 * percent);
     let g = ((num >> 8) & 0x00ff) + Math.round(2.55 * percent);
     let b = (num & 0x0000ff) + Math.round(2.55 * percent);
@@ -70,7 +73,7 @@ const adjustHexColor = (hex: string, percent: number) => {
     b = Math.min(255, Math.max(0, b));
 
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  } catch (e) {
+  } catch {
     return hex;
   }
 };
@@ -167,6 +170,126 @@ export const App: React.FC = () => {
     }
   }, [currentTrack]);
 
+  // ─── Auto-Sync Engine ─────────────────────────────────────────────────
+  const autoSync = useSettingsStore((s) => s.settings.autoSync);
+  const lastSyncTimestamp = useSettingsStore((s) => s.settings.lastSyncTimestamp);
+
+  const performPushSync = useCallback(async () => {
+    try {
+      const db = await initDB();
+      const exportData = {
+        tracks: await db.getAll('tracks'),
+        playlists: await db.getAll('playlists'),
+        favorites: await db.getAll('favorites'),
+        history: await db.getAll('history'),
+        playSessions: await db.getAll('playSessions'),
+        searchHistory: await db.getAll('searchHistory'),
+        settings: await db.getAll('settings'),
+        settingsStore: useSettingsStore.getState().settings,
+        version: '2.0.0',
+        exportedAt: Date.now(),
+      };
+      const pushResult = await api.pushSync(exportData);
+      useSettingsStore.getState().updateSetting('lastSyncTimestamp', pushResult.syncedAt);
+      console.log('[AutoSync] Background push completed at:', new Date(pushResult.syncedAt).toLocaleTimeString());
+    } catch (err) {
+      console.error('[AutoSync] Background push failed:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!autoSync) return;
+
+    const runStartupSync = async () => {
+      try {
+        const status = await api.getSyncStatus();
+        if (status.exists && status.syncedAt) {
+          const localLastSync = lastSyncTimestamp || 0;
+          
+          if (status.syncedAt > localLastSync) {
+            const data = await api.pullSync();
+            if (data && typeof data === 'object') {
+              const db = await initDB();
+              const stores = ['tracks', 'playlists', 'favorites', 'history', 'playSessions', 'searchHistory', 'settings'] as const;
+              
+              const txClear = db.transaction(stores, 'readwrite');
+              for (const store of stores) {
+                await txClear.objectStore(store).clear();
+              }
+              await txClear.done;
+
+              const txRestore = db.transaction(stores, 'readwrite');
+              if (Array.isArray(data.tracks)) {
+                const store = txRestore.objectStore('tracks');
+                for (const track of data.tracks) await store.put(track);
+              }
+              if (Array.isArray(data.playlists)) {
+                const store = txRestore.objectStore('playlists');
+                for (const playlist of data.playlists) await store.put(playlist);
+              }
+              if (Array.isArray(data.favorites)) {
+                const store = txRestore.objectStore('favorites');
+                for (const trackId of data.favorites) await store.put(trackId);
+              }
+              if (Array.isArray(data.history)) {
+                const store = txRestore.objectStore('history');
+                for (const item of data.history) await store.put(item);
+              }
+              if (Array.isArray(data.playSessions)) {
+                const store = txRestore.objectStore('playSessions');
+                for (const session of data.playSessions) await store.put(session);
+              }
+              if (Array.isArray(data.searchHistory)) {
+                const store = txRestore.objectStore('searchHistory');
+                for (const query of data.searchHistory) await store.put(query);
+              }
+              if (Array.isArray(data.settings)) {
+                const store = txRestore.objectStore('settings');
+                for (const set of data.settings) await store.put(set);
+              }
+              await txRestore.done;
+
+              if (data.settingsStore) {
+                const store = useSettingsStore.getState();
+                Object.entries(data.settingsStore).forEach(([key, val]) => {
+                  if (key !== 'autoSync' && key !== 'lastSyncTimestamp') {
+                    store.updateSetting(key as any, val);
+                  }
+                });
+              }
+
+              useSettingsStore.getState().updateSetting('lastSyncTimestamp', status.syncedAt);
+              console.log('[AutoSync] Pulled library updates from server on startup');
+              window.location.reload();
+            }
+          } else if (localLastSync > status.syncedAt) {
+            await performPushSync();
+          }
+        } else {
+          await performPushSync();
+        }
+      } catch (err) {
+        console.error('[AutoSync] Startup sync check failed:', err);
+      }
+    };
+
+    runStartupSync();
+
+    const intervalId = setInterval(() => {
+      performPushSync();
+    }, 3 * 60 * 1000);
+
+    const handleBeforeUnload = () => {
+      performPushSync();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [autoSync, lastSyncTimestamp, performPushSync]);
+
   const triggerRefresh = useCallback(() => {
     setRefreshTrigger((prev) => prev + 1);
   }, []);
@@ -185,6 +308,7 @@ export const App: React.FC = () => {
       home: '/',
       search: '/search',
       library: '/library',
+      artists: '/artists',
       favorites: '/favorites',
       history: '/history',
       downloads: '/downloads',
@@ -287,6 +411,11 @@ export const App: React.FC = () => {
                         selectedTrackIds={selectedTrackIds}
                         setSelectedTrackIds={setSelectedTrackIds}
                       />
+                    </PageWrapper>
+                  } />
+                  <Route path="/artists" element={
+                    <PageWrapper>
+                      <ArtistsView refreshTrigger={refreshTrigger} triggerRefresh={triggerRefresh} />
                     </PageWrapper>
                   } />
                   <Route path="/favorites" element={

@@ -7,6 +7,8 @@ import { TrackCard } from '../search/TrackCard';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useGsapFadeIn } from '../../hooks/useGsap';
 
+import { AbstractPlaylistCover } from './AbstractPlaylistCover';
+
 interface PlaylistViewProps {
   playlistId?: string;
   refreshTrigger: number;
@@ -78,9 +80,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({
     <div className="flex flex-col gap-6 text-white h-full overflow-y-auto pb-10">
       {/* Playlist Hero Header */}
       <div className="flex items-center gap-6 p-4 rounded-lg bg-neutral-900 border border-neutral-800">
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
-          <ListMusic className="w-12 h-12 text-white" />
-        </div>
+        <AbstractPlaylistCover name={playlist.name} id={playlist.id} size="large" />
         <div className="flex flex-col gap-2 truncate">
           <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Playlist</span>
           <h2 className="text-xl sm:text-2xl font-black truncate">{playlist.name}</h2>

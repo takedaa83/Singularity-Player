@@ -867,6 +867,9 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   // Time tracking refs for RAF loop
   const lastTimeRef = useRef(0);
   const lastPerfRef = useRef(performance.now());
+  const maxTimeMsRef = useRef(0);
+  const lastTimeMsRef = useRef(0);
+  const lastTrackIdForMonotonicRef = useRef<string | null>(null);
 
   // Center active line using GSAP smooth scroll in side panel
   useEffect(() => {
@@ -947,10 +950,29 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       const msSinceRead = performance.now() - stampedAt;
 
       // Interpolate forward from the exact moment currentTime was sampled
-      const timeMs =
+      let timeMs =
         rawTime * 1000
         + (isPlaying && !isBuffering ? msSinceRead * playbackSpeed : 0)
         + syncOffset;
+
+      // Monotonic filter to prevent backward jitter during active playback
+      if (currentTrack?.id !== lastTrackIdForMonotonicRef.current) {
+        lastTrackIdForMonotonicRef.current = currentTrack?.id || null;
+        maxTimeMsRef.current = 0;
+        lastTimeMsRef.current = 0;
+      }
+
+      const isSeeking = Math.abs(timeMs - lastTimeMsRef.current) > 1000 || timeMs < lastTimeMsRef.current - 300;
+      if (isSeeking || !isPlaying) {
+        maxTimeMsRef.current = timeMs;
+      } else {
+        if (timeMs < maxTimeMsRef.current) {
+          timeMs = maxTimeMsRef.current;
+        } else {
+          maxTimeMsRef.current = timeMs;
+        }
+      }
+      lastTimeMsRef.current = timeMs;
 
       // ── Audio analysis & vocal presence detection ──
       const analyser = getAnalyser();
@@ -1015,6 +1037,13 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           } else if (lineIdx === newActiveIdx) {
             el.classList.add('active', 'active-line');
             el.classList.remove('completed');
+            
+            const words = el.querySelectorAll('.karaoke-word');
+            words.forEach(w => {
+              w.classList.remove('completed', 'active');
+              (w as HTMLElement).style.setProperty('--word-progress', '0%');
+              (w as HTMLElement).style.setProperty('--word-energy', '0');
+            });
           }
         });
 
@@ -1023,6 +1052,11 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         const lineEl = document.querySelector(`.lyrics-line.active-line`) || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
         if (lineEl && newActiveLine?.words) {
           const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+          wordEls.forEach(w => {
+            w.classList.remove('completed', 'active');
+            w.style.setProperty('--word-progress', '0%');
+            w.style.setProperty('--word-energy', '0');
+          });
           wordCacheRef.current = newActiveLine.words.map((w, i) => ({
             el: wordEls[i],
             start: w.start,
@@ -1041,6 +1075,11 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         const lineEl = document.querySelector(`.lyrics-line.active-line`) || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
         if (lineEl && newActiveLine?.words) {
           const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
+          wordEls.forEach(w => {
+            w.classList.remove('completed', 'active');
+            w.style.setProperty('--word-progress', '0%');
+            w.style.setProperty('--word-energy', '0');
+          });
           wordCacheRef.current = newActiveLine.words.map((w, i) => ({
             el: wordEls[i],
             start: w.start,
@@ -1635,6 +1674,16 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
           >
+            {/* SVG Displacement Filter for Fluid/Organic Abstract Deformation */}
+            <svg style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}>
+              <defs>
+                <filter id="fluid-organic-distortion">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.0035" numOctaves="3" result="noise" />
+                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="180" xChannelSelector="R" yChannelSelector="G" />
+                </filter>
+              </defs>
+            </svg>
+
             {/* Smooth dynamic radial gradient backdrop centered behind the album art */}
             <div 
               className="absolute inset-0 transition-all duration-1000 ease-in-out z-0 pointer-events-none"
@@ -1651,7 +1700,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             <div 
               ref={ambientContainerRef}
               className="absolute inset-0 overflow-hidden pointer-events-none z-0"
-              style={{ transformOrigin: 'center center' }}
+              style={{ transformOrigin: 'center center', filter: 'url(#fluid-organic-distortion)' }}
             >
               {/* Blob 1 Wrapper */}
               <div 
@@ -1722,7 +1771,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             {!isSyncMode && (
               <div className="relative z-10 flex-1 flex flex-col md:flex-row h-full w-full overflow-hidden">
                 {/* Left Side: Large Album Cover & Playback Controls */}
-                <div className="w-full md:w-[45%] flex flex-col justify-center items-center px-8 md:px-16 py-8 md:py-16 select-none h-full bg-transparent">
+                <div className="w-full md:w-[38%] flex flex-col justify-center items-center px-8 md:px-16 py-8 md:py-16 select-none h-full bg-transparent">
                   <LyricsPlayerControls
                     currentTrack={currentTrack}
                     isPlaying={isPlaying}
@@ -1747,10 +1796,10 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                 </div>
 
                 {/* Right Side: Interactive Scrolling Lyrics */}
-                <div className="w-full md:w-[55%] flex flex-col relative overflow-hidden h-full">
+                <div className="w-full md:w-[62%] flex flex-col relative overflow-hidden h-full">
                   <div
                     ref={fullLyricsContainerRef}
-                    className="flex-1 overflow-y-auto px-6 md:px-16 py-20 mask-fade-gradient bg-transparent no-scrollbar scroll-smooth"
+                    className="flex-1 overflow-y-auto px-6 md:pl-2 md:pr-12 py-20 mask-fade-gradient bg-transparent no-scrollbar scroll-smooth"
                   >
                     <div ref={scrollWrapperRef} className="w-full text-left">
                       <div style={{ height: '35vh' }} />
@@ -1767,7 +1816,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                                 isActive ? 'active active-line' : ''
                               }`}
                               style={{
-                                fontSize: `${fontSize + 6}px`,
+                                fontSize: `${fontSize + 12}px`,
                                 lineHeight: 1.5,
                                 opacity: isActive ? 1.0 : 0.30,
                                 transform: isActive ? 'scale(1.12) translate3d(0, 0, 0)' : 'scale(0.92) translate3d(0, 0, 0)',

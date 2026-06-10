@@ -34,7 +34,7 @@ export function cleanString(str: string): string {
 
 export function normalizeTitleForDuplication(title: string): string {
   let normalized = (title || '').toLowerCase();
-  normalized = normalized.replace(/\s*[\(\[\{][^\)\]\}]*[\)\]\}]/g, '');
+  normalized = normalized.replace(/\s*[([{][^)\]}]*[)\]}]/g, '');
   for (const kw of DUPLICATE_VARIANT_KEYWORDS) {
     const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     normalized = normalized.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), '');

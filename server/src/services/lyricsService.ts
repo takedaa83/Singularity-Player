@@ -90,6 +90,204 @@ class LyricsCache {
 
 const lyricsCache = new LyricsCache();
 
+class AppleTokenManager {
+  private cachedToken: string | null = null;
+  private tokenExpiry = 0;
+
+  async getToken(): Promise<string> {
+    const now = Date.now();
+    if (this.cachedToken && now < this.tokenExpiry) {
+      return this.cachedToken;
+    }
+
+    try {
+      console.log('[LyricsService] Fetching new Apple Music developer token...');
+      const pageRes = await fetch('https://beta.music.apple.com', {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      if (!pageRes.ok) throw new Error(`Apple Music index returned status ${pageRes.status}`);
+      const pageBody = await pageRes.text();
+
+      const indexJsRegex = /\/assets\/index~[^/]+\.js/;
+      const indexJsMatch = pageBody.match(indexJsRegex);
+      if (!indexJsMatch) throw new Error('Could not find Apple Music index JS URL');
+
+      const indexJsUri = indexJsMatch[0];
+      const jsRes = await fetch(`https://beta.music.apple.com${indexJsUri}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      if (!jsRes.ok) throw new Error(`Apple Music JS returned status ${jsRes.status}`);
+      const jsBody = await jsRes.text();
+
+      const tokenRegex = /eyJh([^"]*)/;
+      const tokenMatch = jsBody.match(tokenRegex);
+      if (!tokenMatch) throw new Error('Could not find Apple Music developer token inside JS');
+
+      const token = tokenMatch[0];
+      this.cachedToken = token;
+      this.tokenExpiry = now + 24 * 60 * 60 * 1000; // 24 hours validity
+      console.log('[LyricsService] Successfully fetched Apple Music developer token');
+      return token;
+    } catch (e) {
+      console.error('[LyricsService] Error fetching Apple Music developer token:', e);
+      throw e;
+    }
+  }
+
+  clearToken() {
+    this.cachedToken = null;
+    this.tokenExpiry = 0;
+  }
+}
+
+const appleTokenManager = new AppleTokenManager();
+
+function cleanSearchString(str: string): string {
+  return str
+    .replace(/\s*\(feat\..*?\)/gi, '')
+    .replace(/\s*\(ft\..*?\)/gi, '')
+    .replace(/\s*feat\..*/gi, '')
+    .replace(/\s*ft\..*/gi, '')
+    .replace(/\s*\(.*?official.*?\)/gi, '')
+    .replace(/\s*\[.*?official.*?\]/gi, '')
+    .replace(/\s*【.*?】/g, '')
+    .trim();
+}
+
+function formatLrcMs(timeMs: number): string {
+  const totalSeconds = timeMs / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const centiseconds = Math.floor((timeMs % 1000) / 10);
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
+}
+
+async function fetchAppleMusicLyrics(trackName: string, artistName: string): Promise<LyricsResult | null> {
+  try {
+    const token = await appleTokenManager.getToken();
+    if (!token) return null;
+
+    const cleanedTitle = cleanSearchString(trackName);
+    const cleanedArtist = cleanSearchString(artistName);
+
+    console.log(`[LyricsService] Searching Apple Music Catalog for: ${cleanedArtist} - ${cleanedTitle}`);
+    const query = encodeURIComponent(`${cleanedArtist} ${cleanedTitle}`);
+    const searchUrl = `https://amp-api.music.apple.com/v1/catalog/us/search?term=${query}&types=songs&limit=5&l=en-US&platform=web`;
+
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Origin': 'https://music.apple.com',
+        'Referer': 'https://music.apple.com/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (searchRes.status === 401) {
+      console.warn('[LyricsService] Apple Music search unauthorized (401), clearing token and retrying...');
+      appleTokenManager.clearToken();
+      return fetchAppleMusicLyrics(trackName, artistName);
+    }
+
+    if (!searchRes.ok) {
+      console.warn(`[LyricsService] Apple Music catalog search returned status ${searchRes.status}`);
+      return null;
+    }
+
+    const searchJson = await searchRes.json() as any;
+    const songs = searchJson?.results?.songs?.data || [];
+    if (songs.length === 0) {
+      console.log('[LyricsService] Apple Music: No matching tracks found.');
+      return null;
+    }
+
+    const bestSong = songs[0];
+    const trackId = bestSong.id;
+    const attr = bestSong.attributes || {};
+    const albumName = attr.albumName || '';
+    const duration = attr.durationInMillis ? attr.durationInMillis / 1000 : 0;
+
+    console.log(`[LyricsService] Apple Music found track ID: ${trackId} (${attr.artistName} - ${attr.name})`);
+
+    console.log(`[LyricsService] Querying lyrics.paxsenix.org for track ID: ${trackId}`);
+    const lyricsRes = await fetch(`https://lyrics.paxsenix.org/apple-music/lyrics?id=${trackId}`, {
+      headers: {
+        'User-Agent': 'Singularity Music Player/1.0'
+      }
+    });
+
+    if (!lyricsRes.ok) {
+      console.warn(`[LyricsService] Paxsenix lyrics fetch returned status ${lyricsRes.status}`);
+      return null;
+    }
+
+    const lyricsJson = await lyricsRes.json() as any;
+    let syncedLyrics: string | null = null;
+    let plainLyrics: string | null = lyricsJson.plain || null;
+
+    if (lyricsJson.elrcMultiPerson) {
+      syncedLyrics = lyricsJson.elrcMultiPerson;
+    } else if (lyricsJson.elrc) {
+      syncedLyrics = lyricsJson.elrc;
+    } else if (lyricsJson.content && Array.isArray(lyricsJson.content)) {
+      const lrcLines: string[] = [];
+      const plainLines: string[] = [];
+      
+      for (const line of lyricsJson.content) {
+        const timeMs = line.timestamp || 0;
+        const timeStr = formatLrcMs(timeMs);
+        const lineText = line.text && Array.isArray(line.text)
+          ? line.text.map((w: any) => w.text).join(' ')
+          : '';
+        
+        if (lineText.trim()) {
+          let agentPrefix = '';
+          if (line.background) agentPrefix = '{bg}';
+          else if (line.oppositeTurn) agentPrefix = '{agent:v2}';
+          
+          lrcLines.push(`[${timeStr}]${agentPrefix}${lineText}`);
+          plainLines.push(lineText);
+          
+          if (line.text && line.text.length > 0) {
+            const wordTimings = line.text.map((w: any) => {
+              const startSec = (w.timestamp || 0) / 1000;
+              const endSec = (w.endtime || 0) / 1000;
+              return `${w.text}:${startSec.toFixed(3)}:${endSec.toFixed(3)}`;
+            }).join('|');
+            lrcLines.push(`<${wordTimings}>`);
+          }
+        }
+      }
+      
+      syncedLyrics = lrcLines.join('\n');
+      if (!plainLyrics) {
+        plainLyrics = plainLines.join('\n');
+      }
+    }
+
+    if (!syncedLyrics && !plainLyrics) {
+      return null;
+    }
+
+    return {
+      syncedLyrics,
+      plainLyrics,
+      trackName: attr.name || trackName,
+      artistName: attr.artistName || artistName,
+      albumName,
+      duration,
+    };
+  } catch (error) {
+    console.error('[LyricsService] Error in fetchAppleMusicLyrics:', error);
+    return null;
+  }
+}
+
 let musixmatchToken: string | null = null;
 let musixmatchTokenExpiry = 0;
 
@@ -519,7 +717,15 @@ export async function fetchLyrics(
     return diskCached;
   }
 
-  // 3. Fallback Chain: Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
+  // 3. Fallback Chain: Apple Music -> Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
+
+  // A0. Apple Music
+  const appleRes = await fetchAppleMusicLyrics(trackName, artistName);
+  if (appleRes) {
+    lyricsCache.set(trackName, artistName, appleRes);
+    await saveLyricsToDisk(trackName, artistName, appleRes);
+    return appleRes;
+  }
 
   // A. Musixmatch
   const musixmatchRes = await fetchMusixmatchLyrics(trackName, artistName);

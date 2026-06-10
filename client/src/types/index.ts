@@ -97,6 +97,9 @@ export interface UserSettings {
   lyricsFontSize: number;
   // Recommendations
   enableRecommendations: boolean;
+  // Sync
+  autoSync: boolean;
+  lastSyncTimestamp: number;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -118,6 +121,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   autoFetchLyrics: true,
   lyricsFontSize: 16,
   enableRecommendations: true,
+  autoSync: false,
+  lastSyncTimestamp: 0,
 };
 
 // ─── History & Favorites ──────────────────────────────────────────────

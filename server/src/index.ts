@@ -17,6 +17,7 @@ import downloadRouter from './routes/download';
 import ytRouter from './routes/yt';
 import lyricsRouter from './routes/lyrics';
 import downloadsRouter from './routes/downloads';
+import syncRouter from './routes/sync';
 import { preWarmClient, ensureYtDlpBinary } from './services/youtubeService';
 import { ytdlpPool } from './services/processPool';
 
@@ -60,7 +61,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Rate Limiting
 const generalLimiter = rateLimit({
@@ -116,6 +117,7 @@ const downloadsLimiter = (req: express.Request, res: express.Response, next: exp
   generalLimiter(req, res, next);
 };
 app.use('/api/downloads', downloadsLimiter, downloadsRouter);
+app.use('/api/sync', generalLimiter, syncRouter);
 
 // Image Proxy Endpoint to bypass CORS blocks for canvas-based color extraction
 app.get('/api/proxy-image', (req, res) => {
@@ -144,15 +146,11 @@ app.get('/api/proxy-image', (req, res) => {
   // Whitelist YouTube, Google, iTunes, and Deezer CDN image domains to prevent SSRF
   const allowedHosts = [
     'i.ytimg.com',
-    'lh3.googleusercontent.com',
-    'play-lh.googleusercontent.com',
-    'is1-ssl.mzstatic.com',
-    'is2-ssl.mzstatic.com',
-    'is3-ssl.mzstatic.com',
-    'is4-ssl.mzstatic.com',
-    'is5-ssl.mzstatic.com',
-    'e-cdns-images.dzcdn.net',
-    'cdns-images.dzcdn.net'
+    'ytimg.com',
+    'googleusercontent.com',
+    'ggpht.com',
+    'mzstatic.com',
+    'dzcdn.net'
   ];
   
   const isAllowed = allowedHosts.some(host => hostname === host || hostname.endsWith('.' + host));
