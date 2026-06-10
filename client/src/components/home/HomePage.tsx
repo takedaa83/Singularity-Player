@@ -286,7 +286,6 @@ export const TrackScrollRowItem: React.FC<{
           transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
           overflow: 'hidden',
-          opacity: hoveredTrackId && hoveredTrackId !== track.id ? 0.4 : 1,
           '&:hover': {
             bgcolor: tokens.colors.surfaceVariant,
             transform: 'translateY(-4px)',
@@ -520,7 +519,6 @@ export const QuickPlayGridItem: React.FC<{
           pr: isFeatured ? { xs: 3, sm: 2.5 } : 3,
           boxShadow: isFeatured ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
           border: isFeatured ? '1px solid rgba(255,255,255,0.06)' : 'none',
-          opacity: hoveredId && hoveredId !== item.id ? 0.4 : 1,
           '&:hover': {
             bgcolor: 'rgba(255, 255, 255, 0.08)',
             transform: 'translateY(-2px)',
