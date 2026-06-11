@@ -85,7 +85,7 @@ export class MetadataService {
   /**
    * Helper to write raw cover art buffer to uploads/covers folder with a hash name
    */
-  private static async saveCoverArt(buffer: Buffer, format: string): Promise<string | null> {
+  private static async saveCoverArt(buffer: Uint8Array, format: string): Promise<string | null> {
     try {
       const hash = crypto.createHash('md5').update(buffer).digest('hex');
       

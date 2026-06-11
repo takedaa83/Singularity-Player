@@ -1511,7 +1511,11 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/DqO1lLavWGo",
       "videoId": "DqO1lLavWGo",
-      "addedAt": 1781103605776
+      "addedAt": 1781103605776,
+      "playCount": 1,
+      "skipCount": 0,
+      "lastPlayedAt": 1781205763427,
+      "totalListenDuration": 5
     },
     {
       "id": "yt-DrEMKf229DQ",
@@ -6888,11 +6892,6 @@
   ],
   "history": [
     {
-      "trackId": "yt-0_9TCak--cw",
-      "playedAt": 1781015605052,
-      "id": 178
-    },
-    {
       "trackId": "yt-kyqJ_FId-_w",
       "playedAt": 1781015606724,
       "id": 179
@@ -7886,6 +7885,11 @@
       "trackId": "yt-DqO1lLavWGo",
       "playedAt": 1781202894827,
       "id": 377
+    },
+    {
+      "trackId": "yt-DqO1lLavWGo",
+      "playedAt": 1781205763200,
+      "id": 378
     }
   ],
   "playSessions": [
@@ -9248,6 +9252,14 @@
       "completed": true,
       "skipped": false,
       "id": 170
+    },
+    {
+      "trackId": "yt-DqO1lLavWGo",
+      "startTime": 1781202894820,
+      "duration": 5,
+      "completed": true,
+      "skipped": false,
+      "id": 171
     }
   ],
   "searchHistory": [
@@ -9573,9 +9585,9 @@
     "lyricsFontSize": 16,
     "enableRecommendations": true,
     "autoSync": true,
-    "lastSyncTimestamp": 1781205383453
+    "lastSyncTimestamp": 1781205745452
   },
   "version": "2.0.0",
-  "exportedAt": 1781205564444,
-  "syncedAt": 1781205564489
+  "exportedAt": 1781205945454,
+  "syncedAt": 1781205945467
 }
