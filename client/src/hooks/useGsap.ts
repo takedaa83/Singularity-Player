@@ -13,7 +13,6 @@ export const useGsapFadeIn = (
   staggerDelay: number = 0.04
 ) => {
   useEffect(() => {
-    // Small delay to ensure React has finished rendering the DOM
     const ctx = gsap.context(() => {
       const elements = document.querySelectorAll(selector);
       if (elements.length === 0) return;
@@ -23,9 +22,10 @@ export const useGsapFadeIn = (
         {
           opacity: 1,
           y: 0,
-          duration: 0.5,
+          duration: 0.45,
           stagger: staggerDelay,
           ease: 'power3.out',
+          force3D: true, // Forces GPU acceleration
           clearProps: 'transform,opacity', // clear styles after animation completes
         }
       );
@@ -52,10 +52,11 @@ export const useGsapHover = <T extends HTMLElement = HTMLDivElement>(
       gsap.to(el, {
         scale: scale,
         y: yOffset,
-        duration: 0.35,
-        ease: 'elastic.out(1, 0.75)',
+        duration: 0.3,
+        ease: 'power3.out', // Extremely smooth cubic ease for fluid interaction
         boxShadow: '0 10px 25px -5px rgba(255, 255, 255, 0.08), 0 8px 10px -6px rgba(255, 255, 255, 0.08)',
         borderColor: 'rgba(255, 255, 255, 0.22)',
+        force3D: true, // Promotes element to a GPU composted layer
         overwrite: 'auto',
       });
     };
@@ -64,10 +65,11 @@ export const useGsapHover = <T extends HTMLElement = HTMLDivElement>(
       gsap.to(el, {
         scale: 1,
         y: 0,
-        duration: 0.3,
+        duration: 0.25,
         ease: 'power2.out',
         boxShadow: 'none',
         borderColor: '', // resets to default stylesheet border
+        force3D: true, // Keep GPU composting active
         overwrite: 'auto',
       });
     };

@@ -291,14 +291,19 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 /* ── Synced Lyrics ── */
 .lyrics-line {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+              filter 0.45s cubic-bezier(0.25, 1, 0.5, 1),
+              text-shadow 0.45s cubic-bezier(0.25, 1, 0.5, 1);
   opacity: 0.35;
-  transform: scale(0.95);
+  transform: scale(0.96) translate3d(0, 0, 0);
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
 }
 
 .lyrics-line.active {
   opacity: 1;
-  transform: scale(1);
+  transform: scale(1.04) translate3d(0, 0, 0);
   text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
 
@@ -332,10 +337,16 @@ input[type="range"]::-webkit-slider-runnable-track {
 
 .animate-rotate-ambient {
   animation: rotate-ambient 45s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .animate-pulse-ambient {
   animation: pulse-ambient 12s ease-in-out infinite;
+  will-change: opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .mask-fade-gradient {
@@ -430,16 +441,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   filter: brightness(1) !important;
 }
 
-.lyrics-line {
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  will-change: transform, opacity, filter;
-  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              font-size 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-              letter-spacing 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
+
 
 /* ── Floating Blob Animations ── */
 .animate-float-blob-1 {
@@ -486,14 +488,23 @@ input[type="range"]::-webkit-slider-runnable-track {
 .equalizer-bar-1 {
   animation: bounce-bar-1 1.2s infinite ease-in-out;
   transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 .equalizer-bar-2 {
   animation: bounce-bar-2 0.8s infinite ease-in-out;
   transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 .equalizer-bar-3 {
   animation: bounce-bar-3 1.0s infinite ease-in-out;
   transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 /* Hide player bar when fullscreen lyrics are open */
