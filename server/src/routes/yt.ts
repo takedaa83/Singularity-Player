@@ -172,10 +172,14 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
-  // Trigger background caching
-  downloadAndCache(videoId, selectedQuality).catch((err) => {
-    console.error(`[YT Route] Background caching failed for ${videoId}:`, err);
-  });
+  // Trigger background caching if enabled
+  if (process.env.ENABLE_DISK_CACHE !== 'false') {
+    downloadAndCache(videoId, selectedQuality).catch((err) => {
+      console.error(`[YT Route] Background caching failed for ${videoId}:`, err);
+    });
+  } else {
+    console.log(`[YT Route] Background caching is disabled (ENABLE_DISK_CACHE=false)`);
+  }
 
   try {
     // Strategy 1: Extract URL and proxy-fetch (supports seeking)

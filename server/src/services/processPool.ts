@@ -101,4 +101,8 @@ class ProcessPool {
   }
 }
 
-export const ytdlpPool = new ProcessPool(5);
+const DEFAULT_MAX_CONCURRENT = process.env.NODE_ENV === 'production' ? 2 : 5;
+const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_PROCESSES || String(DEFAULT_MAX_CONCURRENT), 10);
+console.log(`[ProcessPool] Initialized with maxConcurrent = ${MAX_CONCURRENT}`);
+export const ytdlpPool = new ProcessPool(MAX_CONCURRENT);
+

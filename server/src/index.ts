@@ -8,6 +8,8 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import * as path from 'path';
 import * as fs from 'fs';
+import http from 'http';
+import https from 'https';
 
 // Routes
 import searchRouter from './routes/search';
@@ -54,7 +56,24 @@ app.use(compression({
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map(s => s.trim());
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    
+    const isAllowed = allowedOrigins.includes('*') || 
+                      allowedOrigins.includes(origin) || 
+                      origin.startsWith('http://localhost') || 
+                      origin.startsWith('capacitor://localhost');
+                      
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Range', 'Authorization'],
   exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'],
@@ -211,6 +230,26 @@ app.listen(PORT, async () => {
   console.log(`[Server] CORS origins: ${allowedOrigins.join(', ')}`);
   await ensureYtDlpBinary();
   preWarmClient();
+
+  // Self-pinging keep-alive mechanism to prevent Render spin-down
+  const PUBLIC_URL = process.env.PUBLIC_URL;
+  if (PUBLIC_URL) {
+    const pingIntervalMs = 10 * 60 * 1000; // ping every 10 minutes
+    console.log(`[Keep-Alive] Configured to self-ping ${PUBLIC_URL} every 10 minutes`);
+    setInterval(() => {
+      const healthUrl = `${PUBLIC_URL.replace(/\/$/, '')}/api/health`;
+      console.log(`[Keep-Alive] Sending self-ping to ${healthUrl}...`);
+      
+      const clientLib = healthUrl.startsWith('https') ? https : http;
+      clientLib.get(healthUrl, (res) => {
+        console.log(`[Keep-Alive] Self-ping status code: ${res.statusCode}`);
+      }).on('error', (err) => {
+        console.error('[Keep-Alive] Self-ping failed:', err.message);
+      });
+    }, pingIntervalMs);
+  } else {
+    console.log('[Keep-Alive] PUBLIC_URL not set. Self-pinging is disabled.');
+  }
 });
 
 // Graceful shutdown

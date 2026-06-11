@@ -599,7 +599,11 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/4-WkUn6DhXQ",
       "videoId": "4-WkUn6DhXQ",
-      "addedAt": 1780989541246
+      "addedAt": 1780989541246,
+      "playCount": 1,
+      "skipCount": 0,
+      "lastPlayedAt": 1781202879492,
+      "totalListenDuration": 6
     },
     {
       "id": "yt-4BrziEPQrOQ",
@@ -684,6 +688,18 @@
       "streamUrl": "/api/yt/stream/4kbSC3HXfJw",
       "videoId": "4kbSC3HXfJw",
       "addedAt": 1780990069082
+    },
+    {
+      "id": "yt-4mEPJg9q23Q",
+      "title": "Meherbaan",
+      "artist": "Aditya Rikhari, Ravator",
+      "album": "Meherbaan",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/wN8dMc6cci-UNjXSE2qBFTI0X6Jbs_9Gw7l2--Y8y4IpbPHRGT750ElGlYRnaDHsNlmuCaCOB-Nx5jIa=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/4mEPJg9q23Q",
+      "videoId": "4mEPJg9q23Q",
+      "addedAt": 1781202866597
     },
     {
       "id": "yt-4rDbsl7tt48",
@@ -858,6 +874,18 @@
       "addedAt": 1780989541246
     },
     {
+      "id": "yt-6eW99oNNRvI",
+      "title": "Love Me Like You Do (From \"Fifty Shades Of Grey\")",
+      "artist": "Ellie Goulding",
+      "album": "Delirium (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/3RCDbhJsO0mTsAT7tKq7g3vuV5pzGN6lCLpO-vRTUWrYMxewvkRkkm7HmAOoAuE2nzPZa_ZeJQ7hZcI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/6eW99oNNRvI",
+      "videoId": "6eW99oNNRvI",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-6f8gDL-wPN8",
       "title": "Life Is Good (feat. Drake)",
       "artist": "Future",
@@ -942,6 +970,18 @@
       "addedAt": 1781006190518
     },
     {
+      "id": "yt-8FnQBK8d2cI",
+      "title": "Makeen",
+      "artist": "Salem Sandhu, Taimour Baig, Nimit",
+      "album": "Makeen",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/grT6-Zn-FZOJipb2ohp_DLHMl1jbcXApEfcg2gvgqNUuN183u1HpzHubE6wOWN-ZUMQV38yeH03CKaut2A=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/8FnQBK8d2cI",
+      "videoId": "8FnQBK8d2cI",
+      "addedAt": 1781202866597
+    },
+    {
       "id": "yt-8G3JfHBSBr0",
       "title": "#bhajan #maa तूने पानी में जोत जलाई रे तेरी जय हो ज्वाला माई रे (8448840778)",
       "artist": "Unknown Artist",
@@ -952,6 +992,18 @@
       "streamUrl": "/api/yt/stream/8G3JfHBSBr0",
       "videoId": "8G3JfHBSBr0",
       "addedAt": 1780991151810
+    },
+    {
+      "id": "yt-8M3Vlnu_i3c",
+      "title": "Story of My Life",
+      "artist": "One Direction",
+      "album": "Midnight Memories (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/8wMcyJUf_TH65Rlsu_nM98sPC9OyR2Bcn-C0q1TA4tuVnbmmdcwAdos1xh2GF9qetGzx8ng67KEaCTlemQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/8M3Vlnu_i3c",
+      "videoId": "8M3Vlnu_i3c",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-8VEqzGViPrc",
@@ -1450,6 +1502,18 @@
       "addedAt": 1780989541246
     },
     {
+      "id": "yt-DqO1lLavWGo",
+      "title": "Stitches",
+      "artist": "Shawn Mendes",
+      "album": "Handwritten (Revisited)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/NzSs07RpDeDg2olsJ0N8D5TeJRoZjBPf7Vv1z4FaTmrOo3uyn9mAlDGiZjcdkz4-bSUnDwZ9xr-Qtfin=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/DqO1lLavWGo",
+      "videoId": "DqO1lLavWGo",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-DrEMKf229DQ",
       "title": "AMY",
       "artist": "Chase Atlantic",
@@ -1714,6 +1778,18 @@
       "addedAt": 1781096257193
     },
     {
+      "id": "yt-GRRU11cFNOQ",
+      "title": "IDGAF",
+      "artist": "Dua Lipa",
+      "album": "Dua Lipa (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/DAMVezymoY4RlzZWQiddgnKVZ-BxHF4_GdHEn7nz4YDUD_dZA2ndqsoAFpjJ9vAccsTYsRNacdzingE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/GRRU11cFNOQ",
+      "videoId": "GRRU11cFNOQ",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-Gb76TgCUqAY",
       "title": "ARE WE STILL FRIENDS?",
       "artist": "Tyler, The Creator",
@@ -1784,6 +1860,18 @@
       "skipCount": 0,
       "lastPlayedAt": 1781087521543,
       "totalListenDuration": 271
+    },
+    {
+      "id": "yt-GtXvzJRuH9M",
+      "title": "Rewrite The Stars",
+      "artist": "James Arthur, Anne-Marie",
+      "album": "The Greatest Showman: Reimagined (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_smlnJRTPIsRn-TjAUvL8kgWy2gaCyWH3FcEvX9gJ53gyv68jGybOKPG05_Xl67VcEWosC9X0yqYhYICFA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/GtXvzJRuH9M",
+      "videoId": "GtXvzJRuH9M",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-H89qGpQo7NA",
@@ -1892,6 +1980,18 @@
       "streamUrl": "/api/yt/stream/HfFSk8dHHR8",
       "videoId": "HfFSk8dHHR8",
       "addedAt": 1781096257193
+    },
+    {
+      "id": "yt-HiILqTEupto",
+      "title": "TERA PATA",
+      "artist": "Saahel",
+      "album": "TERA PATA",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/SAcaj2_kxOFLMhN59iBetzL5iXP9BTyGWFKaA7zSNGqCoaqbAE3jlRDrOp9hoiqUhZ6Rljw8p3uITzW9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/HiILqTEupto",
+      "videoId": "HiILqTEupto",
+      "addedAt": 1781202866597
     },
     {
       "id": "yt-I5D1XqYkMZs",
@@ -2050,6 +2150,18 @@
       "addedAt": 1780991151810
     },
     {
+      "id": "yt-Iui8OzAVrGM",
+      "title": "Treat You Better (Live On The Tonight Show Starring Jimmy Fallon)",
+      "artist": "Unknown Artist",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://i.ytimg.com/vi/Iui8OzAVrGM/sddefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCghqEJQEGHgg6AJIWg&rs=AMzJL3nn6DsxMDh8KRwcDpFs_cPnpdi8jA",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Iui8OzAVrGM",
+      "videoId": "Iui8OzAVrGM",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-IxJjY5T9yag",
       "title": "The Box",
       "artist": "Roddy Ricch",
@@ -2108,6 +2220,18 @@
       "streamUrl": "/api/yt/stream/JmLhGLM4Uqc",
       "videoId": "JmLhGLM4Uqc",
       "addedAt": 1780989041685
+    },
+    {
+      "id": "yt-K0pKc935Y98",
+      "title": "The One That Got Away",
+      "artist": "Katy Perry",
+      "album": "Teenage Dream",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/UBAvsIklBW9AakyDHYtBXN9nZlDwaZnDEWf73D8d0a4KVl5evEt0hqvUOO0CYH84RSrptF8u8qFxu1ivag=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/K0pKc935Y98",
+      "videoId": "K0pKc935Y98",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-K8P4_3NZsKs",
@@ -2574,6 +2698,18 @@
       "addedAt": 1780990069082
     },
     {
+      "id": "yt-Nywpt3krHV8",
+      "title": "Shawn Mendes - \"Treat You Better\" (Live in New York City 2021) | Global Citizen Live",
+      "artist": "Unknown Artist",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://i.ytimg.com/vi/Nywpt3krHV8/sddefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCghqEJQEGHgg6AJIWg&rs=AMzJL3lXgda-KXh3-cFWKAMlyhDOTy5K5g",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Nywpt3krHV8",
+      "videoId": "Nywpt3krHV8",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-OBhN_FwzFEg",
       "title": "Kasturi (From \"Amar Prem Ki Prem Kahani\")",
       "artist": "Arijit Singh, Prasad S, Kunaal Vermaa",
@@ -2584,6 +2720,18 @@
       "streamUrl": "/api/yt/stream/OBhN_FwzFEg",
       "videoId": "OBhN_FwzFEg",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-ORrFJ63nlcA",
+      "title": "Perfect",
+      "artist": "Ed Sheeran",
+      "album": "÷ (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/xpDEOr2TeqEn1QpXosXhqtj149FzNnTgAG3oqPnpTxTbQk-oceO90Sz4Axq0s4Jp_QLGQha_um6_EG3WGQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ORrFJ63nlcA",
+      "videoId": "ORrFJ63nlcA",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-O_0-QjZfoGs",
@@ -2660,6 +2808,18 @@
       "skipCount": 1,
       "lastPlayedAt": 1781024633223,
       "totalListenDuration": 29
+    },
+    {
+      "id": "yt-Ow-XzVmtrPg",
+      "title": "Treat You Better (Live)",
+      "artist": "Unknown Artist",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://i.ytimg.com/vi/Ow-XzVmtrPg/sddefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCghqEJQEGHgg6AJIWg&rs=AMzJL3m68n3vy-C8hFQHR0Tzyv7u2nm17w",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Ow-XzVmtrPg",
+      "videoId": "Ow-XzVmtrPg",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-P5ZBISo2CaE",
@@ -2748,6 +2908,18 @@
       "streamUrl": "/api/yt/stream/Q6FarZpy67M",
       "videoId": "Q6FarZpy67M",
       "addedAt": 1781031240077
+    },
+    {
+      "id": "yt-QQVa4xCf8JY",
+      "title": "Before You Go",
+      "artist": "Lewis Capaldi",
+      "album": "Divinely Uninspired To A Hellish Extent (Extended Edition)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/NbtQPGhtq1iG1sreQi6fa0iKiZi3Uc0zLVbhO2Vd36srp0LmlbDYMuVSfs9el3JWRVS5xUcRbpnAjfY=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/QQVa4xCf8JY",
+      "videoId": "QQVa4xCf8JY",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-Qh5eSojwo0Y",
@@ -3078,6 +3250,30 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-T3x1eLzJdLg",
+      "title": "Till The End",
+      "artist": "King, NEXA Music",
+      "album": "Till The End",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/A7buQq7yJLfVaBFGYQ0oh6GQHqMOFF21ykm_cPXux-ElixPPbEs-ESvqTztGKL_6qlNvYlv5Z95KuNJQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/T3x1eLzJdLg",
+      "videoId": "T3x1eLzJdLg",
+      "addedAt": 1781202866597
+    },
+    {
+      "id": "yt-TUnEJM6W-Fw",
+      "title": "Say You Won't Let Go",
+      "artist": "James Arthur",
+      "album": "Say You Won't Let Go",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/XtAf1Box9h3DViDF5keWbkgiF7VMgCBPaexmHPS-s9tIj8rxu7IH-6h77koUjtgY4anzQZDmt7JyMCeJ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/TUnEJM6W-Fw",
+      "videoId": "TUnEJM6W-Fw",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-T_OWvLDIyno",
       "title": "Swimming Pools (Drank)",
       "artist": "Kendrick Lamar",
@@ -3328,6 +3524,18 @@
       "streamUrl": "/api/yt/stream/VKAcYC4KXvU",
       "videoId": "VKAcYC4KXvU",
       "addedAt": 1781008998695
+    },
+    {
+      "id": "yt-VKC_hzJ3jzg",
+      "title": "Señorita",
+      "artist": "Shawn Mendes, Camila Cabello",
+      "album": "Señorita",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/TK-09E9wZOUk84ktqwb-zNBXfnY3Z927d3fpJ3ObwwOyREKzjAQMMYx0pGSjVAAV2zpRJDpDAavlAPSz=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/VKC_hzJ3jzg",
+      "videoId": "VKC_hzJ3jzg",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-VU233kzU9Wg",
@@ -3691,6 +3899,18 @@
       "totalListenDuration": 18
     },
     {
+      "id": "yt-YfuyEdCpAp0",
+      "title": "Mercy",
+      "artist": "Shawn Mendes",
+      "album": "Illuminate",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/qKMzPuozrW2r-MHn_w_yopPEp1QrY6mscv0lOe7AHOFyN8p-e3T5T9B_sgR7OdN15hYwpi5gQVtHIEk=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/YfuyEdCpAp0",
+      "videoId": "YfuyEdCpAp0",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-YjVlTAoTYz4",
       "title": "पांच रोटी दो मछली यीशु हजारों को खिलाया..|| PANCH ROTI DO MACHALI YESHU HAZARO KO..|| HINDI GEET.",
       "artist": "Unknown Artist",
@@ -3811,6 +4031,18 @@
       "addedAt": 1781006190518
     },
     {
+      "id": "yt-Ztdc7TcPdAA",
+      "title": "There's Nothing Holdin' Me Back",
+      "artist": "Shawn Mendes",
+      "album": "Illuminate (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/CC48Fib8dGz3RNA9jkB85XGQMCSlcqkjCpAMePqHKG-ieGvQHQps-f858yiJZG96vlol60sRL50444k=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Ztdc7TcPdAA",
+      "videoId": "Ztdc7TcPdAA",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-ZwU45ZSaTpw",
       "title": "Khayaal",
       "artist": "Mitraz",
@@ -3887,6 +4119,18 @@
       "addedAt": 1780991151810
     },
     {
+      "id": "yt-_WdBi4JoPTM",
+      "title": "Treat JB",
+      "artist": "Rucka Rucka Ali",
+      "album": "KSWhy",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/HiMtDUwT3HOgO8z1mu_wfjcu5D6t8ph9-ZTYwc6wgX53yIvDWwcCamnEWbGuibzpokfFKbxDA3Ks9iEUfw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_WdBi4JoPTM",
+      "videoId": "_WdBi4JoPTM",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-_XttzFVveo4",
       "title": "Khwahish",
       "artist": "Mitraz, Arooh",
@@ -3909,6 +4153,18 @@
       "streamUrl": "/api/yt/stream/_deqdZmKzyg",
       "videoId": "_deqdZmKzyg",
       "addedAt": 1781095937523
+    },
+    {
+      "id": "yt-_doON0Favg0",
+      "title": "Treat You Better (Shawn Mendes) - Cover by Jake Cornell l Car covers ep. 10",
+      "artist": "Unknown Artist",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://i.ytimg.com/vi/_doON0Favg0/sddefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCghqEJQEGHgg6AJIWg&rs=AMzJL3lIJ0-85H3aNQ28jqi4y4QisFGYRg",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_doON0Favg0",
+      "videoId": "_doON0Favg0",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-_eoHFJZPC4M",
@@ -4391,6 +4647,18 @@
       "addedAt": 1780990731154
     },
     {
+      "id": "yt-dvDYqblsMz0",
+      "title": "Jiya Laage Na",
+      "artist": "Aditya Rikhari, Shirley Setia, Ravator",
+      "album": "Jiya Laage Na",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Fw2YAQiy39MYvT4cy_jLUaFw0nHiKgybkpZ7YnQW-CLZ0Me0RZisEGyqFwwTR5ex4QEpS6F72ebBq3JG=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/dvDYqblsMz0",
+      "videoId": "dvDYqblsMz0",
+      "addedAt": 1781202866596
+    },
+    {
       "id": "yt-eBLfCp6M2To",
       "title": "What Did I Miss?",
       "artist": "Drake",
@@ -4583,6 +4851,18 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-fSKtPBRV1gE",
+      "title": "PILLOWTALK",
+      "artist": "ZAYN",
+      "album": "Mind Of Mine (Deluxe Edition)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/eAf4vUXn6VXtIkVPmHEvO88PxBOMzVTlLMfT33-5wtIxcHtcQyRMhoTMk_UFyOLYRxu_7jEs1jrQWuY=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/fSKtPBRV1gE",
+      "videoId": "fSKtPBRV1gE",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-fWmYeaveS6o",
       "title": "Preet Re (From \"Dhadak 2\")",
       "artist": "Darshan Raval, Rochak Kohli, Jonita Gandhi, Gurpreet Saini",
@@ -4631,6 +4911,18 @@
       "addedAt": 1781018010758
     },
     {
+      "id": "yt-ffqliB42Nh4",
+      "title": "We Don't Talk Anymore (feat. Selena Gomez)",
+      "artist": "Charlie Puth",
+      "album": "Nine Track Mind",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/TlXKDSRGrj0ogqmGbzyGvZrsT9T0F6xgV-2-3pelbzRms0cODdb-ndDg6SpFzkHYMb4NMMMW957wmrObfw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ffqliB42Nh4",
+      "videoId": "ffqliB42Nh4",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-fsLe6OuA1m8",
       "title": "Alif",
       "artist": "Dabzee, SA, ABRAW",
@@ -4641,6 +4933,18 @@
       "streamUrl": "/api/yt/stream/fsLe6OuA1m8",
       "videoId": "fsLe6OuA1m8",
       "addedAt": 1780997170000
+    },
+    {
+      "id": "yt-g4HpTDmNU5k",
+      "title": "Gallan 4",
+      "artist": "talwiinder",
+      "album": "Gallan 4",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/5v_0Qrdh9RsdVzC8ajG28V8fCACTOoNPkQ_gyRD5tFd35CYGMMXYN5qbNrKRTruGXebcO6kOsncjNPNiYg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/g4HpTDmNU5k",
+      "videoId": "g4HpTDmNU5k",
+      "addedAt": 1781202866597
     },
     {
       "id": "yt-g5CJBY6bt4c",
@@ -4741,6 +5045,18 @@
       "streamUrl": "/api/yt/stream/h6iQcGIWoz8",
       "videoId": "h6iQcGIWoz8",
       "addedAt": 1780990069082
+    },
+    {
+      "id": "yt-h8slzEkObi8",
+      "title": "Grenade",
+      "artist": "Bruno Mars",
+      "album": "Doo-Wops & Hooligans (Deluxe)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Jrcws67rGflH1eJNV3dpOsBP8JosmTswvHNUQ2jD_a8-_EBYNXkUAwzHRPIgsuxY0G9Xf5MQde-mJQKP=w120-h120-s-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/h8slzEkObi8",
+      "videoId": "h8slzEkObi8",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-hFr9IXokr3Q",
@@ -5331,6 +5647,18 @@
       "addedAt": 1781077767463
     },
     {
+      "id": "yt-nbtTb8huxWA",
+      "title": "Raatein Guzaari",
+      "artist": "Aditya Rikhari",
+      "album": "Raatein Guzaari",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/sHSsApm_NTQD7xo40jDAvsMC81dolA4VV6hk1gzBv6eXb-_Q1zsqXiQKA8SsC21HjhmEjszBVhQptrI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/nbtTb8huxWA",
+      "videoId": "nbtTb8huxWA",
+      "addedAt": 1781202866596
+    },
+    {
       "id": "yt-nkq4M13You8",
       "title": "Saiyaara x Pal Pal Mashup x Aashiqui 2 - Mashup || Talwiinder | Afusic | Faheem Abdullah",
       "artist": "Unknown Artist",
@@ -5575,6 +5903,18 @@
       "totalListenDuration": 7
     },
     {
+      "id": "yt-pRIZohFFOMo",
+      "title": "Someone You Loved",
+      "artist": "Lewis Capaldi",
+      "album": "Divinely Uninspired To A Hellish Extent",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/DJE9ox7ulDe30gFXprMbbeFyXuivmp2xiMFU1SQ0KzQIqFl2PBMcDHjPD-3fjLq8J1P58fbo-NGRMLBpVg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/pRIZohFFOMo",
+      "videoId": "pRIZohFFOMo",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-pU1tE4USq5I",
       "title": "Teri Hasi",
       "artist": "Dibya Prasad",
@@ -5621,6 +5961,18 @@
       "streamUrl": "/api/yt/stream/phDmHdQAPyo",
       "videoId": "phDmHdQAPyo",
       "addedAt": 1781007495750
+    },
+    {
+      "id": "yt-pmc93sA80HI",
+      "title": "Too Good At Goodbyes",
+      "artist": "Sam Smith",
+      "album": "The Thrill Of It All",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/83rXLjSQxIRR2jnzXjd09D0ojiTwT3-pFZQVztGbHElUJQbZ_NGl-hhxrWxmQPmvz10bt2l-N9aNqv8vhw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/pmc93sA80HI",
+      "videoId": "pmc93sA80HI",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-pxwm3sqAytE",
@@ -5763,6 +6115,18 @@
       "addedAt": 1781077767463
     },
     {
+      "id": "yt-rOLiG5mgiVQ",
+      "title": "Attention (Acoustic)",
+      "artist": "Charlie Puth",
+      "album": "Attention (Acoustic)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/69EVWlZ1xzdR_Ag0gJt0g6hQWiPxSx6dPU3DIstIqrRr03g3WybY50zcbfFdhijRGq2PnFTQjz5YFlc=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/rOLiG5mgiVQ",
+      "videoId": "rOLiG5mgiVQ",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-rVqcPUQ2YXI",
       "title": "Aasa Kooda (From \"Think Indie\")",
       "artist": "Sai Abhyankkar, Sai Smriti",
@@ -5861,6 +6225,18 @@
       "streamUrl": "/api/yt/stream/sJp7p7iDZvQ",
       "videoId": "sJp7p7iDZvQ",
       "addedAt": 1781008998695
+    },
+    {
+      "id": "yt-sQtnhwU2R9Y",
+      "title": "All of Me",
+      "artist": "John Legend",
+      "album": "Love In The Future (Expanded Edition)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/jnnppNZrKrStQE8k8bvAplsQ7fqpgcwlgszsFcGS79cWU98SOF1jtZiL_mNBI-j7jMmOHrpFrJ4LqHNy=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/sQtnhwU2R9Y",
+      "videoId": "sQtnhwU2R9Y",
+      "addedAt": 1781103605776
     },
     {
       "id": "yt-sZvn_-S24uw",
@@ -6025,6 +6401,18 @@
       "streamUrl": "/api/yt/stream/tqypaV0MX3o",
       "videoId": "tqypaV0MX3o",
       "addedAt": 1781076423554
+    },
+    {
+      "id": "yt-u-spF5nPtb8",
+      "title": "Suroor",
+      "artist": "Aditya Rikhari, Rochak Kohli, Gurpreet Saini, Lijo George",
+      "album": "Suroor",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FRoMsbCq3CZDqieYtBkp_XD1uYADsRE7B_GaW22P6xJC8YOcaXzXNtxVaQeds8UMb1ZLlqFqAQn70BE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/u-spF5nPtb8",
+      "videoId": "u-spF5nPtb8",
+      "addedAt": 1781202866596
     },
     {
       "id": "yt-uT_HXrrmHX8",
@@ -6267,6 +6655,18 @@
       "addedAt": 1780990731154
     },
     {
+      "id": "yt-xTvyyoF_LZY",
+      "title": "Shape of You",
+      "artist": "Ed Sheeran",
+      "album": "Shape of You",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/TMbA3LImAL96nFkm5cI1x6LiEMvMbRg4IRxEeABd9qpXsfmwKhZHRD1MucnjG5QIsVEp0Vpn7h7M51FH3Q=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/xTvyyoF_LZY",
+      "videoId": "xTvyyoF_LZY",
+      "addedAt": 1781103605776
+    },
+    {
       "id": "yt-xhlndak-fIY",
       "title": "तू ही मेरा किनारा | Soulful Female Classical Song | Indian Classical Love Song | Female Vocal",
       "artist": "Unknown Artist",
@@ -6461,6 +6861,18 @@
       "streamUrl": "/api/yt/stream/zRU5401SIYk",
       "videoId": "zRU5401SIYk",
       "addedAt": 1781030922569
+    },
+    {
+      "id": "yt-zw2oGtn02I0",
+      "title": "Treat You Better",
+      "artist": "Boyce Avenue",
+      "album": "Cover Sessions, Vol. 4",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/AUsh7DMLed12bhybsbOV7ZmTcvMTZeUrzTI455InjWsaxYtSPWQoypGCzFQMLVrzaJaSVO1mGYyxnfng=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/zw2oGtn02I0",
+      "videoId": "zw2oGtn02I0",
+      "addedAt": 1781103605776
     }
   ],
   "playlists": [],
@@ -6475,31 +6887,6 @@
     }
   ],
   "history": [
-    {
-      "trackId": "yt-4BrziEPQrOQ",
-      "playedAt": 1781014876672,
-      "id": 173
-    },
-    {
-      "trackId": "yt-kyqJ_FId-_w",
-      "playedAt": 1781015243215,
-      "id": 174
-    },
-    {
-      "trackId": "yt-0_9TCak--cw",
-      "playedAt": 1781015244562,
-      "id": 175
-    },
-    {
-      "trackId": "yt-kyqJ_FId-_w",
-      "playedAt": 1781015411020,
-      "id": 176
-    },
-    {
-      "trackId": "yt-tOV-AUJE5ME",
-      "playedAt": 1781015431394,
-      "id": 177
-    },
     {
       "trackId": "yt-0_9TCak--cw",
       "playedAt": 1781015605052,
@@ -7474,6 +7861,31 @@
       "trackId": "yt-KrJ5c-Egz-U",
       "playedAt": 1781096884174,
       "id": 372
+    },
+    {
+      "trackId": "yt-qSay_8xzijg",
+      "playedAt": 1781103603934,
+      "id": 373
+    },
+    {
+      "trackId": "yt-QzYfeAWAROQ",
+      "playedAt": 1781103616561,
+      "id": 374
+    },
+    {
+      "trackId": "yt-4-WkUn6DhXQ",
+      "playedAt": 1781202865843,
+      "id": 375
+    },
+    {
+      "trackId": "yt-QzYfeAWAROQ",
+      "playedAt": 1781202879448,
+      "id": 376
+    },
+    {
+      "trackId": "yt-DqO1lLavWGo",
+      "playedAt": 1781202894827,
+      "id": 377
     }
   ],
   "playSessions": [
@@ -8820,24 +9232,25 @@
       "completed": false,
       "skipped": false,
       "id": 168
+    },
+    {
+      "trackId": "yt-4-WkUn6DhXQ",
+      "startTime": 1781202865806,
+      "duration": 6,
+      "completed": true,
+      "skipped": false,
+      "id": 169
+    },
+    {
+      "trackId": "yt-QzYfeAWAROQ",
+      "startTime": 1781202879441,
+      "duration": 9,
+      "completed": true,
+      "skipped": false,
+      "id": 170
     }
   ],
   "searchHistory": [
-    {
-      "query": "karan aujla",
-      "timestamp": 1781006111936,
-      "id": 83
-    },
-    {
-      "query": "j",
-      "timestamp": 1781006653688,
-      "id": 84
-    },
-    {
-      "query": "ja",
-      "timestamp": 1781006654192,
-      "id": 85
-    },
     {
       "query": "janiye",
       "timestamp": 1781006655637,
@@ -9072,6 +9485,21 @@
       "query": "arz kiya",
       "timestamp": 1781095621162,
       "id": 132
+    },
+    {
+      "query": "trea yo",
+      "timestamp": 1781103598123,
+      "id": 133
+    },
+    {
+      "query": "trea you better",
+      "timestamp": 1781103600148,
+      "id": 134
+    },
+    {
+      "query": "trea you better",
+      "timestamp": 1781202875626,
+      "id": 135
     }
   ],
   "settings": [
@@ -9145,9 +9573,9 @@
     "lyricsFontSize": 16,
     "enableRecommendations": true,
     "autoSync": true,
-    "lastSyncTimestamp": 1781096729363
+    "lastSyncTimestamp": 1781205383453
   },
   "version": "2.0.0",
-  "exportedAt": 1781096965101,
-  "syncedAt": 1781096965139
+  "exportedAt": 1781205564444,
+  "syncedAt": 1781205564489
 }
