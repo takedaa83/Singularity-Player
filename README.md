@@ -38,6 +38,8 @@
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
+  - [Native Mobile App (Capacitor)](#-native-mobile-app-capacitor)
+  - [Hosting Backend on Render](#-hosting-backend-on-render)
 - [Configuration](#-configuration)
 - [Project Structure](#-project-structure)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
@@ -285,6 +287,75 @@ To access Singularity Player from your mobile phone, tablet, or other devices on
 > [!TIP]
 > For a native app experience on iOS and Android, open the page in your mobile browser and use **"Add to Home Screen"** to launch it as a full-screen, standalone web app.
 
+### 📲 Native Mobile App (Capacitor)
+
+For a fully native, premium app experience on iOS and Android with features like hardware back button mapping, system status bar styling, and native performance, you can build a native shell using **Capacitor**.
+
+#### 🛠️ Prerequisites
+1. **Android SDK & Android Studio** (for Android builds) or **Xcode** (for iOS builds).
+2. Switch to the Capacitor feature branch:
+   ```bash
+   git checkout feature/capacitor-app
+   ```
+
+#### 🏗️ Building and Launching
+1. **Install mobile dependencies** (run in the root folder):
+   ```bash
+   npm install
+   ```
+2. **Compile the client code** pointing to your backend:
+   ```powershell
+   # For local network backend, use your PC's IP address:
+   $env:VITE_API_URL="http://<YOUR-PC-IP>:3001"
+   
+   # For cloud backend, use your Render URL:
+   $env:VITE_API_URL="https://your-app-name.onrender.com"
+   
+   npm run build:client
+   ```
+   *(For macOS/Linux, use: `VITE_API_URL="https://your-app-name.onrender.com" npm run build:client`)*
+3. **Sync files with Capacitor**:
+   ```bash
+   cd client
+   npx cap sync
+   ```
+4. **Open the project in Android Studio / Xcode**:
+   ```bash
+   npx cap open android
+   # or
+   npx cap open ios
+   ```
+5. **Generate the APK**:
+   * In Android Studio: Go to **Build** -> **Generate App Bundles or APKs** -> **Build APK(s)**.
+   * Transfer the generated `app-debug.apk` to your phone and install it!
+
+---
+
+### ☁️ Hosting Backend on Render (Cloud)
+
+To use your music player on the go without keeping your PC powered on at home, you can host the backend server on the **Render Free Tier**.
+
+#### ⚙️ Environment Variables Config (Render Dashboard)
+Add these keys in your Render **Environment** settings:
+
+| Variable | Value | Description |
+| :--- | :--- | :--- |
+| `NODE_ENV` | `production` | Enables production optimizations. |
+| `MAX_CONCURRENT_PROCESSES` | `2` | **(Critical)** Restricts `yt-dlp` concurrency to 2 to prevent Render OOM (Out Of Memory) crashes. |
+| `ENABLE_DISK_CACHE` | `false` | **(Critical)** Disables background download-to-disk pipelines on Render's ephemeral disk, drastically reducing CPU/RAM spikes. |
+| `PUBLIC_URL` | `https://your-app-name.onrender.com` | Enables the built-in self-pinging loop to prevent Render from going to sleep. |
+| `ALLOWED_ORIGINS` | `*` | Allows your mobile app's native WebView origin (`http://localhost`) to fetch API requests. |
+
+#### 🏗️ Build & Start Settings
+* **Build Command**: `npm install --include=dev && npm run build:server`
+* **Start Command**: `npm start`
+* **Health Check Path**: `/api/health`
+
+#### ⏰ Keep-Alive (Prevent Sleep Mode)
+To guarantee your server stays awake 24/7, set up a free monitor on [UptimeRobot](https://uptimerobot.com/) or [Cron-Job.org](https://cron-job.org/) pointing to `https://your-app-name.onrender.com/api/health` with a **10-minute interval**.
+
+---
+
 ### Production Build
 
 ```bash
@@ -295,6 +366,7 @@ npm run build
 npm run start
 ```
 
+---
 ---
 
 ## ⚙️ Configuration
