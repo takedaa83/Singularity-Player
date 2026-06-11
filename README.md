@@ -291,43 +291,82 @@ To access Singularity Player from your mobile phone, tablet, or other devices on
 
 For a fully native, premium app experience on iOS and Android with features like hardware back button mapping, system status bar styling, and native performance, you can build a native shell using **Capacitor**.
 
-#### 🛠️ Prerequisites
-1. **Android SDK & Android Studio** (for Android builds) or **Xcode** (for iOS builds).
-2. Switch to the Capacitor feature branch:
-   ```bash
-   git checkout feature/capacitor-app
-   ```
+#### 🧭 Step-by-Step Build Pipeline
+```
+[1. Install Tools] ---> [2. Compile Web Client] ---> [3. Sync with Capacitor] ---> [4. Build APK in Studio] ---> [5. Run & Debug]
+```
 
-#### 🏗️ Building and Launching
-1. **Install mobile dependencies** (run in the root folder):
+#### 🛠️ Step 1: Install the Prerequisites
+Before starting, ensure your computer has the following tools installed and configured:
+1. **Java Development Kit (JDK)**: Install **JDK 17** or higher (required by Android Gradle tools).
+2. **Android Studio**: Install [Android Studio](https://developer.android.com/studio). Open it once to complete the setup wizard, which will download the Android SDK and platform tools.
+3. **USB Debugging (On your Phone)**:
+   * Go to your Android phone settings -> **About Phone**.
+   * Tap **Build Number** 7 times until it says *"You are now a developer"*.
+   * Go to **Developer Options** in settings and enable **USB Debugging**.
+
+#### 📂 Step 2: Prepare the Workspace
+Open a terminal (like PowerShell) and navigate to the project directory:
+1. Switch to the branch (if not already active):
+   ```bash
+   git checkout master
+   ```
+2. Install all package dependencies (installs both client and server dependencies):
    ```bash
    npm install
    ```
-2. **Compile the client code** pointing to your backend:
+
+#### 💻 Step 3: Compile the Client Code with your Backend URL
+To tell the mobile app where to connect, you must inject your backend URL before building the frontend.
+1. Set the environment variable:
+   * **For Cloud Backend (Render)**:
+     ```powershell
+     $env:VITE_API_URL="https://singularity-player-backend.onrender.com"
+     ```
+   * **For Local PC Backend (Home Wi-Fi)**:
+     ```powershell
+     $env:VITE_API_URL="http://<YOUR-PC-LOCAL-IP>:3001"
+     ```
+     *(For macOS/Linux terminals, run: `export VITE_API_URL="https://your-url.com"`)*
+2. Compile the client web assets:
    ```powershell
-   # For local network backend, use your PC's IP address:
-   $env:VITE_API_URL="http://<YOUR-PC-IP>:3001"
-   
-   # For cloud backend, use your Render URL:
-   $env:VITE_API_URL="https://your-app-name.onrender.com"
-   
    npm run build:client
    ```
-   *(For macOS/Linux, use: `VITE_API_URL="https://your-app-name.onrender.com" npm run build:client`)*
-3. **Sync files with Capacitor**:
-   ```bash
+   *This compiles the files into `client/dist` with your server URL pre-baked into the requests.*
+
+#### 🔄 Step 4: Sync Assets to the Native Shell
+Capacitor acts as a bridge. We need to copy the compiled React files into the native Android folder.
+1. Navigate to the `client` directory:
+   ```powershell
    cd client
+   ```
+2. Run the Capacitor Sync command:
+   ```powershell
    npx cap sync
    ```
-4. **Open the project in Android Studio / Xcode**:
-   ```bash
+   *This copies the files from `client/dist` to `client/android/app/src/main/assets/public`.*
+
+#### 🏗️ Step 5: Open and Compile in Android Studio
+Now we use Android Studio to bundle everything into an installable `.apk` file.
+1. Launch Android Studio for this project:
+   ```powershell
    npx cap open android
-   # or
-   npx cap open ios
    ```
-5. **Generate the APK**:
-   * In Android Studio: Go to **Build** -> **Generate App Bundles or APKs** -> **Build APK(s)**.
-   * Transfer the generated `app-debug.apk` to your phone and install it!
+2. **Wait for indexing**: Wait for the loading indicators at the bottom of Android Studio to finish syncing the Gradle configuration (takes 1 to 2 minutes on first run).
+3. **Build the APK file**:
+   * Click **Build** in the top menu bar of Android Studio.
+   * Select **Generate App Bundles or APKs**.
+   * In the sub-menu, click **Build APK(s)**.
+4. **Locate the APK**: Once compiling is finished, click the blue **`locate`** link inside the successful notification popup (bottom-right corner) to find your `app-debug.apk`.
+5. **Install**: Copy the `app-debug.apk` to your phone and install it!
+
+#### 🐛 Step 6: Live Run & Console Debugging (Optional)
+If you want to view logs, inspect requests, or debug errors in real-time on your phone:
+1. Connect your phone to your PC using a USB cable.
+2. In the top toolbar of Android Studio, select your phone name in the device dropdown.
+3. Click the green **Run (Play icon)** button. The app will launch directly on your phone.
+4. Open **Google Chrome** on your computer and navigate to: `chrome://inspect`
+5. Click **Inspect** under your phone's name to open the Chrome DevTools on your PC and debug the app live!
 
 ---
 
