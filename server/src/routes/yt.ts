@@ -601,4 +601,39 @@ router.post('/prefetch', (req: Request, res: Response) => {
   res.json({ status: 'queued' });
 });
 
+/**
+ * Diagnostic endpoint to test all InnerTube clients on Render
+ */
+router.get('/test-clients', async (req: Request, res: Response) => {
+  const videoId = (req.query.videoId as string) || '5U5Ru0nTiUM';
+  const clients = ['WEB', 'ANDROID', 'YTMUSIC', 'YTMUSIC_ANDROID', 'TV', 'IOS'];
+  const results: Record<string, any> = {};
+
+  try {
+    const yt = await getClient();
+    for (const clientName of clients) {
+      try {
+        const info = await yt.getInfo(videoId, { client: clientName as any });
+        const format = info.chooseFormat({ type: 'audio', quality: 'best' });
+        if (format) {
+          const url = await format.decipher(yt.session.player);
+          results[clientName] = {
+            success: !!url,
+            mime_type: format.mime_type,
+            has_url: !!format.url,
+            has_cipher: !!format.signature_cipher || !!format.cipher
+          };
+        } else {
+          results[clientName] = { success: false, error: 'No audio format found' };
+        }
+      } catch (err: any) {
+        results[clientName] = { success: false, error: err.message || err };
+      }
+    }
+    res.json(results);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || err });
+  }
+});
+
 export default router;
