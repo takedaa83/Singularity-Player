@@ -156,8 +156,6 @@ export async function ensureYtDlpBinary(): Promise<string> {
 export async function getClient(): Promise<Innertube> {
   if (!innertubeClient) {
     innertubeClient = await Innertube.create({
-      lang: 'en',
-      location: 'US',
       retrieve_player: true, // Crucial for deciphering signature cipher URLs!
       cache: new UniversalCache(true, path.join(__dirname, '..', '..', '.cache')),
     });
