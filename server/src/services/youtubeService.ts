@@ -364,21 +364,218 @@ async function getVideoInfoWithInnertube(videoId: string): Promise<{
  * Search YouTube Music for tracks matching the query.
  * Uses youtubei.js InnerTube API (search works fine, only stream deciphering is broken).
  */
-// ─── Piped API Fallback ──────────────────────────────────────────────────
-// Piped is an open-source YouTube frontend with its own infrastructure
-// that handles YouTube's anti-bot measures. We use it as a fallback
-// when Innertube fails on datacenter IPs.
+// ─── Invidious + Piped API Fallback ──────────────────────────────────────
+// When Innertube fails (datacenter IP blocked), we try third-party YouTube
+// frontends that handle bot detection on their own infrastructure.
+// Invidious is tried first (more stable API), then Piped as a backup.
+// Instance lists are fetched dynamically on startup for freshness.
 // ─────────────────────────────────────────────────────────────────────────
 
-const PIPED_INSTANCES = [
-  'https://pipedapi.kavin.rocks',
-  'https://pipedapi.r4fo.com',
-  'https://api.piped.privacydev.net',
-  'https://pipedapi.in.projectsegfau.lt',
+// Hardcoded fallback instances (used if dynamic fetch fails)
+const FALLBACK_INVIDIOUS_INSTANCES = [
+  'https://inv.nadeko.net',
+  'https://invidious.nerdvpn.de',
+  'https://invidious.jing.rocks',
+  'https://yt.cdaut.de',
+  'https://invidious.privacyredirect.com',
+  'https://yewtu.be',
 ];
 
+const FALLBACK_PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.r4fo.com',
+  'https://watchapi.whatever.social',
+  'https://api.piped.privacydev.net',
+];
+
+// Dynamic instance lists (populated on startup)
+let invidiousInstances: string[] = [...FALLBACK_INVIDIOUS_INSTANCES];
+let pipedInstances: string[] = [...FALLBACK_PIPED_INSTANCES];
+let instancesLastFetched = 0;
+const INSTANCE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
+
 /**
- * Extract streaming URL using Piped API as a fallback.
+ * Fetch and cache working Invidious instances from the official API.
+ */
+async function refreshInvidiousInstances(): Promise<void> {
+  if (Date.now() - instancesLastFetched < INSTANCE_REFRESH_INTERVAL) return;
+  
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    
+    const response = await fetch('https://api.invidious.io/instances.json?sort_by=type,health', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    
+    if (!response.ok) return;
+    
+    const data = await response.json() as any[];
+    const working: string[] = [];
+    
+    for (const [, info] of data) {
+      if (
+        info?.type === 'https' &&
+        info?.uri &&
+        info?.monitor?.uptime > 90 &&
+        !info?.monitor?.down
+      ) {
+        working.push(info.uri);
+      }
+      if (working.length >= 8) break; // limit to top 8
+    }
+    
+    if (working.length > 0) {
+      invidiousInstances = working;
+      instancesLastFetched = Date.now();
+      console.log(`[Proxy] Refreshed Invidious instances: ${working.length} found`);
+    }
+  } catch (err: any) {
+    console.warn(`[Proxy] Failed to refresh Invidious instances: ${err.message || err}`);
+  }
+}
+
+// Refresh instances on module load
+refreshInvidiousInstances().catch(() => {});
+
+/**
+ * Helper: make a fetch request with timeout
+ */
+async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    });
+    clearTimeout(timeout);
+    return response;
+  } catch (err) {
+    clearTimeout(timeout);
+    throw err;
+  }
+}
+
+/**
+ * Extract streaming URL using Invidious API.
+ * Uses /api/v1/videos/:id endpoint and picks from adaptiveFormats.
+ */
+async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+  url: string;
+  contentType: string;
+  title: string;
+  artist: string;
+  duration: number;
+  filesize: number;
+} | null> {
+  // Refresh instances if stale
+  refreshInvidiousInstances().catch(() => {});
+  
+  for (const instance of invidiousInstances) {
+    try {
+      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`;
+      console.log(`[Invidious] Trying ${instance} for ${videoId}...`);
+      
+      const response = await fetchWithTimeout(apiUrl, 12000);
+      
+      if (!response.ok) {
+        console.warn(`[Invidious] ${instance} returned ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json() as any;
+      
+      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) {
+        console.warn(`[Invidious] ${instance} returned no adaptive formats for ${videoId}`);
+        continue;
+      }
+      
+      // Filter for audio-only streams
+      const audioStreams = data.adaptiveFormats
+        .filter((s: any) => s.type && s.type.startsWith('audio/') && s.url)
+        .sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
+      
+      if (audioStreams.length === 0) {
+        console.warn(`[Invidious] ${instance} has no audio streams for ${videoId}`);
+        continue;
+      }
+      
+      let selected;
+      if (quality === 'low') {
+        selected = audioStreams[audioStreams.length - 1];
+      } else if (quality === 'medium') {
+        selected = audioStreams[Math.floor(audioStreams.length / 2)];
+      } else {
+        selected = audioStreams[0];
+      }
+      
+      const contentType = (selected.type || 'audio/mp4').split(';')[0].trim();
+      
+      console.log(`[Invidious] ✓ Extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
+      
+      return {
+        url: selected.url,
+        contentType,
+        title: data.title || 'Unknown',
+        artist: data.author || 'Unknown Artist',
+        duration: data.lengthSeconds || 0,
+        filesize: parseInt(selected.clen) || 0,
+      };
+    } catch (err: any) {
+      const reason = err.name === 'AbortError' ? 'timed out' : (err.message || err);
+      console.warn(`[Invidious] ${instance} failed for ${videoId}: ${reason}`);
+      continue;
+    }
+  }
+  
+  console.warn(`[Invidious] All instances failed for ${videoId}`);
+  return null;
+}
+
+/**
+ * Get video metadata using Invidious API.
+ */
+async function getVideoInfoWithInvidious(videoId: string): Promise<{
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  coverArtUrl: string | null;
+} | null> {
+  for (const instance of invidiousInstances) {
+    try {
+      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails`;
+      const response = await fetchWithTimeout(apiUrl, 10000);
+      
+      if (!response.ok) continue;
+      
+      const data = await response.json() as any;
+      
+      // Pick the best thumbnail
+      let coverArtUrl: string | null = null;
+      if (data.videoThumbnails && data.videoThumbnails.length > 0) {
+        const maxres = data.videoThumbnails.find((t: any) => t.quality === 'maxresdefault' || t.quality === 'maxres');
+        coverArtUrl = maxres?.url || data.videoThumbnails[0]?.url || null;
+      }
+      
+      return {
+        title: data.title || 'Unknown',
+        artist: data.author || 'Unknown Artist',
+        album: 'YouTube',
+        duration: data.lengthSeconds || 0,
+        coverArtUrl,
+      };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract streaming URL using Piped API as secondary fallback.
  * Tries multiple Piped instances for redundancy.
  */
 async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
@@ -389,19 +586,12 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
   duration: number;
   filesize: number;
 } | null> {
-  for (const instance of PIPED_INSTANCES) {
+  for (const instance of pipedInstances) {
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
       console.log(`[Piped] Trying ${instance} for ${videoId}...`);
       
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      
-      const response = await fetch(apiUrl, {
-        signal: controller.signal,
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-      });
-      clearTimeout(timeout);
+      const response = await fetchWithTimeout(apiUrl, 10000);
       
       if (!response.ok) {
         console.warn(`[Piped] ${instance} returned ${response.status}`);
@@ -427,16 +617,16 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
       
       let selected;
       if (quality === 'low') {
-        selected = streams[streams.length - 1]; // lowest bitrate
+        selected = streams[streams.length - 1];
       } else if (quality === 'medium') {
-        selected = streams[Math.floor(streams.length / 2)]; // middle
+        selected = streams[Math.floor(streams.length / 2)];
       } else {
-        selected = streams[0]; // highest bitrate
+        selected = streams[0];
       }
       
       const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
       
-      console.log(`[Piped] Successfully extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
+      console.log(`[Piped] ✓ Extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
       
       return {
         url: selected.url,
@@ -447,21 +637,18 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
         filesize: selected.contentLength || 0,
       };
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn(`[Piped] ${instance} timed out for ${videoId}`);
-      } else {
-        console.warn(`[Piped] ${instance} failed for ${videoId}: ${err.message || err}`);
-      }
+      const reason = err.name === 'AbortError' ? 'timed out' : (err.message || err);
+      console.warn(`[Piped] ${instance} failed for ${videoId}: ${reason}`);
       continue;
     }
   }
   
-  console.error(`[Piped] All instances failed for ${videoId}`);
+  console.warn(`[Piped] All instances failed for ${videoId}`);
   return null;
 }
 
 /**
- * Get video metadata using Piped API as a fallback.
+ * Get video metadata using Piped API as secondary fallback.
  */
 async function getVideoInfoWithPiped(videoId: string): Promise<{
   title: string;
@@ -470,18 +657,11 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
   duration: number;
   coverArtUrl: string | null;
 } | null> {
-  for (const instance of PIPED_INSTANCES) {
+  for (const instance of pipedInstances) {
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
       
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-      
-      const response = await fetch(apiUrl, {
-        signal: controller.signal,
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-      });
-      clearTimeout(timeout);
+      const response = await fetchWithTimeout(apiUrl, 10000);
       
       if (!response.ok) continue;
       
@@ -498,6 +678,47 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
       continue;
     }
   }
+  return null;
+}
+
+/**
+ * Combined proxy fallback: tries Invidious first, then Piped.
+ */
+async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+  url: string;
+  contentType: string;
+  title: string;
+  artist: string;
+  duration: number;
+  filesize: number;
+} | null> {
+  // Try Invidious first (more stable API)
+  const invResult = await extractUrlWithInvidious(videoId, quality);
+  if (invResult) return invResult;
+  
+  // Fall back to Piped
+  const pipedResult = await extractUrlWithPiped(videoId, quality);
+  if (pipedResult) return pipedResult;
+  
+  return null;
+}
+
+/**
+ * Combined proxy fallback for video info.
+ */
+async function getVideoInfoWithProxy(videoId: string): Promise<{
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  coverArtUrl: string | null;
+} | null> {
+  const invResult = await getVideoInfoWithInvidious(videoId);
+  if (invResult) return invResult;
+  
+  const pipedResult = await getVideoInfoWithPiped(videoId);
+  if (pipedResult) return pipedResult;
+  
   return null;
 }
 
@@ -616,15 +837,15 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return innertubeResult;
         }
 
-        // Try Piped API as fallback (handles bot detection on its own infra)
-        console.log(`[YouTubeService] Innertube failed, trying Piped API for ${videoId}...`);
-        const pipedResult = await extractUrlWithPiped(videoId, quality);
-        if (pipedResult) {
-          streamUrlCache.set(cacheKey, { data: pipedResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-          return pipedResult;
+        // Try Invidious + Piped proxy APIs as fallback
+        console.log(`[YouTubeService] Innertube failed, trying proxy APIs for ${videoId}...`);
+        const proxyResult = await extractUrlWithProxy(videoId, quality);
+        if (proxyResult) {
+          streamUrlCache.set(cacheKey, { data: proxyResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return proxyResult;
         }
 
-        console.log(`[YouTubeService] Piped also failed, falling back to yt-dlp for ${videoId}`);
+        console.log(`[YouTubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
 
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
@@ -794,19 +1015,19 @@ export async function getVideoInfo(videoId: string): Promise<{
       return innertubeResult;
     }
 
-    // Try Piped API as fallback
-    console.log(`[YouTubeService] Innertube failed, trying Piped API for video info ${videoId}...`);
-    const pipedResult = await getVideoInfoWithPiped(videoId);
-    if (pipedResult) {
+    // Try Invidious + Piped proxy APIs as fallback
+    console.log(`[YouTubeService] Innertube failed, trying proxy APIs for video info ${videoId}...`);
+    const proxyResult = await getVideoInfoWithProxy(videoId);
+    if (proxyResult) {
       if (videoInfoCache.size >= MAX_CACHE_SIZE) {
         const oldest = videoInfoCache.keys().next().value;
         if (oldest) videoInfoCache.delete(oldest);
       }
-      videoInfoCache.set(videoId, { data: pipedResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
-      return pipedResult;
+      videoInfoCache.set(videoId, { data: proxyResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
+      return proxyResult;
     }
 
-    console.log(`[YouTubeService] Piped also failed, falling back to yt-dlp for ${videoId}`);
+    console.log(`[YouTubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
 
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
     
