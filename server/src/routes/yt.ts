@@ -5,6 +5,7 @@ import https from 'https';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import { Readable } from 'stream';
 
 const router = Router();
 
@@ -22,57 +23,94 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
   const tempPath = path.join(CACHE_DIR, `${videoId}.tmp`);
   const finalPath = path.join(CACHE_DIR, `${videoId}.cache`);
 
-  const promise = new Promise<string>((resolve, reject) => {
+  const promise = new Promise<string>(async (resolve, reject) => {
     if (fs.existsSync(finalPath)) {
       resolve(finalPath);
       return;
     }
 
-    const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const formatSelector = quality === 'low' 
-      ? '249/250/bestaudio/140' 
-      : quality === 'medium' 
-        ? '140/bestaudio[acodec=aac]/bestaudio' 
-        : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140';
-
     console.log(`[Cache Manager] Starting background cache download for ${videoId}...`);
-    
-    const child = spawn(YT_DLP_PATH, [
-      '--no-warnings',
-      '--no-playlist',
-      '-f', formatSelector,
-      '--no-check-formats',
-      '--no-check-certificate',
-      '-o', tempPath,
-      ytUrl
-    ], {
-      stdio: ['ignore', 'ignore', 'pipe']
-    });
+    try {
+      const selectedQuality = quality as 'high' | 'medium' | 'low';
+      const streamInfo = await getAudioStreamUrl(videoId, selectedQuality);
+      if (streamInfo && streamInfo.url) {
+        console.log(`[Cache Manager] Fetching stream from ${streamInfo.url} for caching...`);
+        const response = await fetch(streamInfo.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch stream: ${response.status} ${response.statusText}`);
+        }
+        if (!response.body) {
+          throw new Error('Response body is empty');
+        }
 
-    child.stderr?.on('data', (data) => {
-      const msg = data.toString().trim();
-      if (msg) console.log(`[Cache yt-dlp stderr] ${msg}`);
-    });
+        const fileStream = fs.createWriteStream(tempPath);
+        const nodeStream = Readable.fromWeb(response.body as any);
 
-    child.on('exit', (code) => {
-      activeCacheDownloads.delete(videoId);
-      if (code === 0 && fs.existsSync(tempPath)) {
-        try {
+        await new Promise<void>((resolveWrite, rejectWrite) => {
+          nodeStream.pipe(fileStream);
+          fileStream.on('finish', resolveWrite);
+          fileStream.on('error', rejectWrite);
+          nodeStream.on('error', rejectWrite);
+        });
+
+        activeCacheDownloads.delete(videoId);
+        if (fs.existsSync(tempPath)) {
           fs.renameSync(tempPath, finalPath);
           console.log(`[Cache Manager] Cached track ${videoId} successfully.`);
           resolve(finalPath);
-        } catch (err) {
-          console.error(`[Cache Manager] Rename failed for ${videoId}:`, err);
-          reject(err);
+        } else {
+          throw new Error('Temp file not found after download');
         }
       } else {
-        console.error(`[Cache Manager] yt-dlp failed with code ${code} for ${videoId}`);
-        if (fs.existsSync(tempPath)) {
-          try { fs.unlinkSync(tempPath); } catch {}
-        }
-        reject(new Error(`yt-dlp failed with code ${code}`));
+        throw new Error('Could not get audio stream URL for caching');
       }
-    });
+    } catch (err: any) {
+      console.error(`[Cache Manager] Cache download failed for ${videoId}, falling back to yt-dlp:`, err?.message || err);
+
+      const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const formatSelector = quality === 'low' 
+        ? '249/250/bestaudio/140' 
+        : quality === 'medium' 
+          ? '140/bestaudio[acodec=aac]/bestaudio' 
+          : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140';
+
+      const child = spawn(YT_DLP_PATH, [
+        '--no-warnings',
+        '--no-playlist',
+        '-f', formatSelector,
+        '--no-check-formats',
+        '--no-check-certificate',
+        '-o', tempPath,
+        ytUrl
+      ], {
+        stdio: ['ignore', 'ignore', 'pipe']
+      });
+
+      child.stderr?.on('data', (data) => {
+        const msg = data.toString().trim();
+        if (msg) console.log(`[Cache yt-dlp stderr] ${msg}`);
+      });
+
+      child.on('exit', (code) => {
+        activeCacheDownloads.delete(videoId);
+        if (code === 0 && fs.existsSync(tempPath)) {
+          try {
+            fs.renameSync(tempPath, finalPath);
+            console.log(`[Cache Manager] Cached track ${videoId} successfully via yt-dlp fallback.`);
+            resolve(finalPath);
+          } catch (renameErr) {
+            console.error(`[Cache Manager] Rename failed for ${videoId}:`, renameErr);
+            reject(renameErr);
+          }
+        } else {
+          console.error(`[Cache Manager] yt-dlp fallback failed with code ${code} for ${videoId}`);
+          if (fs.existsSync(tempPath)) {
+            try { fs.unlinkSync(tempPath); } catch {}
+          }
+          reject(new Error(`yt-dlp failed with code ${code}`));
+        }
+      });
+    }
   });
 
   activeCacheDownloads.set(videoId, promise);

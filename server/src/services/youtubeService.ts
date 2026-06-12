@@ -722,6 +722,82 @@ async function getVideoInfoWithProxy(videoId: string): Promise<{
   return null;
 }
 
+/**
+ * Extract streaming URL using Cobalt API.
+ * Uses a list of active community Cobalt backends that return proxied/tunnel URLs.
+ */
+async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+  url: string;
+  contentType: string;
+  title: string;
+  artist: string;
+  duration: number;
+  filesize: number;
+} | null> {
+  const cobaltBackends = [
+    'https://cobaltapi.kittycat.boo/',
+    'https://rue-cobalt.xenon.zone/'
+  ];
+
+  const payload = {
+    url: `https://www.youtube.com/watch?v=${videoId}`,
+    downloadMode: 'audio',
+    audioFormat: 'best',
+    audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
+  };
+
+  for (const backend of cobaltBackends) {
+    try {
+      console.log(`[Cobalt] Trying ${backend} for ${videoId}...`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      
+      const response = await fetch(backend, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (!response.ok) {
+        console.warn(`[Cobalt] ${backend} returned status ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json() as any;
+      if (data && data.url) {
+        const filename = data.filename || '';
+        const cleanFilename = filename.replace(/\.[^/.]+$/, "");
+        const parts = cleanFilename.split(' - ');
+        const title = parts[0] || 'Unknown';
+        const artist = parts[1] || 'Unknown Artist';
+        const contentType = filename.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
+        
+        console.log(`[Cobalt] ✓ Extracted stream from ${backend} for ${videoId}: ${contentType}`);
+        
+        return {
+          url: data.url,
+          contentType,
+          title,
+          artist,
+          duration: 0,
+          filesize: 0
+        };
+      }
+    } catch (err: any) {
+      console.warn(`[Cobalt] ${backend} failed for ${videoId}: ${err.message || err}`);
+    }
+  }
+
+  console.warn(`[Cobalt] All instances failed for ${videoId}`);
+  return null;
+}
+
 export async function searchYouTube(query: string): Promise<YouTubeTrack[]> {
   try {
     const yt = await getClient();
@@ -837,8 +913,16 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return innertubeResult;
         }
 
+        // Try Cobalt API as fallback (highly reliable, returns proxied/tunnel URL)
+        console.log(`[YouTubeService] Innertube failed, trying Cobalt API for ${videoId}...`);
+        const cobaltResult = await extractUrlWithCobalt(videoId, quality);
+        if (cobaltResult) {
+          streamUrlCache.set(cacheKey, { data: cobaltResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return cobaltResult;
+        }
+
         // Try Invidious + Piped proxy APIs as fallback
-        console.log(`[YouTubeService] Innertube failed, trying proxy APIs for ${videoId}...`);
+        console.log(`[YouTubeService] Cobalt failed, trying proxy APIs for ${videoId}...`);
         const proxyResult = await extractUrlWithProxy(videoId, quality);
         if (proxyResult) {
           streamUrlCache.set(cacheKey, { data: proxyResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
