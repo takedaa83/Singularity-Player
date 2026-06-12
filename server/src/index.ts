@@ -63,10 +63,22 @@ app.use(cors({
       return;
     }
     
-    const isAllowed = allowedOrigins.includes('*') || 
-                      allowedOrigins.includes(origin) || 
-                      origin.startsWith('http://localhost') || 
-                      origin.startsWith('capacitor://localhost');
+    let isAllowed = allowedOrigins.includes('*') || 
+                    allowedOrigins.includes(origin) || 
+                    origin.startsWith('http://localhost') || 
+                    origin.startsWith('capacitor://localhost');
+                    
+    // Automatically allow any Render subdomains in production
+    if (!isAllowed) {
+      try {
+        const hostname = new URL(origin).hostname;
+        if (hostname === 'onrender.com' || hostname.endsWith('.onrender.com')) {
+          isAllowed = true;
+        }
+      } catch (e) {
+        // Ignore parsing errors for non-standard origins
+      }
+    }
                       
     if (isAllowed) {
       callback(null, true);
