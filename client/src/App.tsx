@@ -20,9 +20,6 @@ import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyti
 import { useSettingsStore } from './stores/settingsStore';
 import { api } from './utils/api';
 import { initDB } from './lib/db';
-import { Capacitor } from '@capacitor/core';
-import { App as CapApp } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
 
 // Lazy-load heavy pages for code splitting
 const HomePage = lazy(() => import('./components/home/HomePage').then(m => ({ default: m.HomePage })));
@@ -142,34 +139,7 @@ export const App: React.FC = () => {
   // Keyboard shortcuts — seek is now stable (useCallback-memoized)
   useKeyboardShortcuts(seek);
 
-  // Native Mobile optimizations (Capacitor status bar & hardware back button)
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
 
-    // 1. Intercept Android hardware back button for browser history navigation
-    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
-      if (canGoBack) {
-        window.history.back();
-      } else {
-        CapApp.exitApp();
-      }
-    });
-
-    // 2. Configure StatusBar background color and icon styling matching the dark layout
-    const setupStatusBar = async () => {
-      try {
-        await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: '#09090b' }); // matches zinc-950 dark theme
-      } catch (err) {
-        console.warn('StatusBar configuration not supported on this platform', err);
-      }
-    };
-    setupStatusBar();
-
-    return () => {
-      backButtonListener.then((listener) => listener.remove());
-    };
-  }, []);
 
   // Playback session analytics tracking
   // handled via <PlaybackAnalyticsTracker /> in render

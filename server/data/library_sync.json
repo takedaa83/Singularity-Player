@@ -146,6 +146,22 @@
       "totalListenDuration": 139
     },
     {
+      "id": "yt--gztlYsjRUg",
+      "title": "Keu Jaane Naa",
+      "artist": "Arijit Singh",
+      "album": "Raavan",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zpUeuWz_48xTV9cBQEEaPUBpInQiwtJX1Ygtt7s1QlUn7SKLFkVPA6XGZytj0sHDnespoM-EBvUZgd-7=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/-gztlYsjRUg",
+      "videoId": "-gztlYsjRUg",
+      "addedAt": 1781206230338,
+      "playCount": 1,
+      "skipCount": 0,
+      "lastPlayedAt": 1781206511363,
+      "totalListenDuration": 2
+    },
+    {
       "id": "yt--kOteJfOG7Q",
       "title": "Kinginichar",
       "artist": "M.H.R, JOKER390P",
@@ -750,6 +766,18 @@
       "addedAt": 1781078346507
     },
     {
+      "id": "yt-5MvAmztKkzw",
+      "title": "Bhalobashar Morshum (Duet) (From X=Prem) (Original Motion Picture Soundtrack)",
+      "artist": "Saptak Sanai Das, Arijit Singh, Shreya Ghoshal",
+      "album": "Bhalobashar Morshum (Duet) (From X=Prem) (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ZytURrPOTlIEEYUdtpnHDaTHVX-7LZZyQNCiPxOEE9gE0XRKgONYEtj0H4kzul6-aUvM-vXuH0kCe9g3=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/5MvAmztKkzw",
+      "videoId": "5MvAmztKkzw",
+      "addedAt": 1781206230338
+    },
+    {
       "id": "yt-5T3gO0PkAlA",
       "title": "BACKSTREETS (feat. Teezo Touchdown)",
       "artist": "Don Toliver",
@@ -898,6 +926,18 @@
       "addedAt": 1781008998695
     },
     {
+      "id": "yt-6r4qTcvl01Y",
+      "title": "Jodi Abar",
+      "artist": "Angel Noor",
+      "album": "Jodi Abar",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Jj_JfDNrppo4thxaVkcGLrjeg9G1CDeEfDBmDxTcXlRLViMx-QnI54UILq5Hy9Mf5Xx8fJCCgZfS0t_L=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/6r4qTcvl01Y",
+      "videoId": "6r4qTcvl01Y",
+      "addedAt": 1781206230338
+    },
+    {
       "id": "yt-73XdHut8Kl0",
       "title": "Main tera ho gaya",
       "artist": "Karneast, Riya, Simon Vikram",
@@ -944,6 +984,18 @@
       "streamUrl": "/api/yt/stream/7ikAPDVbMmE",
       "videoId": "7ikAPDVbMmE",
       "addedAt": 1781096259557
+    },
+    {
+      "id": "yt-7pilZn2EfBI",
+      "title": "Ore Manwa Re",
+      "artist": "Arijit Singh, Akriti Kakkar",
+      "album": "Game - He Plays To Win",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zEOr2q7B032csEZXz5vJxJdvSDq78fM9h1u7Ux0yurz71uX1t1jucSPLEz3TznwN9sWNhJHO-wbQdvA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/7pilZn2EfBI",
+      "videoId": "7pilZn2EfBI",
+      "addedAt": 1781206230338
     },
     {
       "id": "yt-80FMWMuquAI",
@@ -1442,6 +1494,22 @@
       "addedAt": 1781077767463
     },
     {
+      "id": "yt-ChlLOXkRJtg",
+      "title": "Egiye De",
+      "artist": "Arindom",
+      "album": "Shudhu Tomari Jonyo (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/uT72ryBbGXbFVR5ugBfOMHnechEUHsxX_GM8YZiltBoSs5da6_XzdrGSHcHrjfmCw3XO918_x3nRA2uy1g=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ChlLOXkRJtg",
+      "videoId": "ChlLOXkRJtg",
+      "addedAt": 1781206512186,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1781206736083,
+      "totalListenDuration": 57
+    },
+    {
       "id": "yt-CjjV8fD9D2c",
       "title": "In My Room",
       "artist": "Frank Ocean",
@@ -1612,6 +1680,18 @@
       "streamUrl": "/api/yt/stream/Ef6gbxG9bzs",
       "videoId": "Ef6gbxG9bzs",
       "addedAt": 1781018010758
+    },
+    {
+      "id": "yt-El3LOIZbIgw",
+      "title": "Hote Paare Na (Original Motion Picture Soundtrack)",
+      "artist": "Arindom, Prashmita Paul",
+      "album": "Bolo Dugga Maiki (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/NcfTkDojLJ19jaQSpMaS4zebHhoTsIOkb52u7iB_YfnP6Cgxs89E4Ln84Simf5HLC1SHQTPrXTt3XNgm=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/El3LOIZbIgw",
+      "videoId": "El3LOIZbIgw",
+      "addedAt": 1781206230338
     },
     {
       "id": "yt-EtjoZ-TWo4o",
@@ -1960,6 +2040,22 @@
       "streamUrl": "/api/yt/stream/HQjdMo09K14",
       "videoId": "HQjdMo09K14",
       "addedAt": 1781078346507
+    },
+    {
+      "id": "yt-Hdrf2M6QV5Y",
+      "title": "Thik Emon Ebhabe",
+      "artist": "Arijit Singh",
+      "album": "Arijit Singh Romantic Hits",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/dYVUTVTn-0YVMOX3i_92ra4j6xa4c2rSxM0tAfJIyEoRCQboUcBY8K9jxvxGWNAdhC-LzaAzqCYMTTRc=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Hdrf2M6QV5Y",
+      "videoId": "Hdrf2M6QV5Y",
+      "addedAt": 1781206230338,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1781206508448,
+      "totalListenDuration": 6
     },
     {
       "id": "yt-He2BoEcTFvo",
@@ -2338,6 +2434,18 @@
       "addedAt": 1781096257193
     },
     {
+      "id": "yt-KmTugtAZNHg",
+      "title": "Parbona",
+      "artist": "Arijit Singh, Prashmita Paul, Arindom",
+      "album": "Borbaad (Original Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/X7KjPGcVa5uOra82-m6JwGKEzsBr9GHsPd9NRQi0aKMe2aNdVtNS-AO8iDct41FbPmqiw0_Y_Chw8MyC=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/KmTugtAZNHg",
+      "videoId": "KmTugtAZNHg",
+      "addedAt": 1781206230338
+    },
+    {
       "id": "yt-Kok4yyWMbSg",
       "title": "Junoon",
       "artist": "Mitraz",
@@ -2528,6 +2636,18 @@
       "streamUrl": "/api/yt/stream/MfTWob5Ii9k",
       "videoId": "MfTWob5Ii9k",
       "addedAt": 1780989041684
+    },
+    {
+      "id": "yt-MhoK1VijKgI",
+      "title": "Ei Bhalo Ei Kharap",
+      "artist": "Arijit Singh, Monali Thakur",
+      "album": "Golpo Holeo Shotti (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/CcMKkBxdJevqRNk44ZxGXcIe93a_EhLNBIpiroqaLbeQbJFbxPwBMbm6RTNaQhh6K2aDTmDjr3ymVBDt=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/MhoK1VijKgI",
+      "videoId": "MhoK1VijKgI",
+      "addedAt": 1781206230338
     },
     {
       "id": "yt-MiQ5uAuatdY",
@@ -3662,6 +3782,22 @@
       "addedAt": 1781078346507
     },
     {
+      "id": "yt-WGG5yllqgo4",
+      "title": "Tomake Chai Title Track",
+      "artist": "Arijit Singh",
+      "album": "Tomake Chai (Original Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Flyg2_HmeqIHt5Wy9Xc8HOfQgEFzj9HpGcbQmxvhs0i2ppPyZoR8RgLyUu92vpTr0K2FEPEFns7iimps=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/WGG5yllqgo4",
+      "videoId": "WGG5yllqgo4",
+      "addedAt": 1781206230338,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1781206531956,
+      "totalListenDuration": 12
+    },
+    {
       "id": "yt-WSy0sjZiO8I",
       "title": "Haseen",
       "artist": "Talwiinder, NDS, Rippy Grewal",
@@ -4663,6 +4799,18 @@
       "addedAt": 1781202866596
     },
     {
+      "id": "yt-e-BUE_yd4jQ",
+      "title": "Gaane Gaane (From \"Dhumketu\")",
+      "artist": "Arijit Singh, Shreya Ghoshal, Anupam Roy",
+      "album": "Gaane Gaane (From \"Dhumketu\")",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Gg_WchD9rq8a8_srLrBgLZl25Rk35Keajjhxr5fAIiv8dg9EH9ou35A6I9cdwyq7FPKpWJnLMIdJFJq2=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/e-BUE_yd4jQ",
+      "videoId": "e-BUE_yd4jQ",
+      "addedAt": 1781206512186
+    },
+    {
       "id": "yt-eBLfCp6M2To",
       "title": "What Did I Miss?",
       "artist": "Drake",
@@ -4673,6 +4821,18 @@
       "streamUrl": "/api/yt/stream/eBLfCp6M2To",
       "videoId": "eBLfCp6M2To",
       "addedAt": 1780990731154
+    },
+    {
+      "id": "yt-eLpLWNHkofY",
+      "title": "Jodi Abar",
+      "artist": "Angel Noor",
+      "album": "Jodi Abar",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/-l7bkuzMyvHzt5qU1eiJhll8l1ZSJpxg4-LGxK7BuD2q6TTTqoiYdQkJP999hkvEQSPJK0Sn8Rf2ySmy=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/eLpLWNHkofY",
+      "videoId": "eLpLWNHkofY",
+      "addedAt": 1781206230338
     },
     {
       "id": "yt-eN5fLqJ38ec",
@@ -5207,6 +5367,18 @@
       "addedAt": 1780992468282
     },
     {
+      "id": "yt-igWPsrb_T4I",
+      "title": "Bojhena Shey Bojhena",
+      "artist": "Arijit Singh, Indraadip Dasgupta",
+      "album": "Bojhena Shey Bojhena (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/qa0sSpUsVlkpBCZS7qfFPbZSzuIF8R2TNix4_LMH096clt2oFX0YjyoZjwzV5aPosVX8pOHKDzv6pBo=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/igWPsrb_T4I",
+      "videoId": "igWPsrb_T4I",
+      "addedAt": 1781206512186
+    },
+    {
       "id": "yt-ipvpoJZT6uY",
       "title": "Pal Pal (Trending Version)",
       "artist": "Afusic, AliSoomroMusic",
@@ -5711,6 +5883,18 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-ny3oWUnm2Mk",
+      "title": "Tomake Chai",
+      "artist": "Arijit Singh, Arindom",
+      "album": "Gangster (Original Motion Picture Soundtrack)",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Sh9Wjm0J-_C4pJY8eO4ev8JsNYra7nTluh4s9tY2w1y65RkVw5AYkgZI6az_ninfC-e4NY7-Y425nS_i=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ny3oWUnm2Mk",
+      "videoId": "ny3oWUnm2Mk",
+      "addedAt": 1781206230338
+    },
+    {
       "id": "yt-nyyE6NQSaRU",
       "title": "Ek Tarfa - Reprise",
       "artist": "Darshan Raval",
@@ -6013,6 +6197,18 @@
       "streamUrl": "/api/yt/stream/qCDIWvF9Lh8",
       "videoId": "qCDIWvF9Lh8",
       "addedAt": 1781076423554
+    },
+    {
+      "id": "yt-qRsPt81VLNs",
+      "title": "Thik Emon Ebhabe",
+      "artist": "Arijit Singh",
+      "album": "Bengali Hits",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PM75ZJhqaLfpFMqx_rJdOnshUdE5IPfko7RYkIXe__rRZlwxKXfAA5P_Zifqx_uu8V-WBSJSCpInAFpa=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/qRsPt81VLNs",
+      "videoId": "qRsPt81VLNs",
+      "addedAt": 1781206230338
     },
     {
       "id": "yt-qU9mHegkTc4",
@@ -6575,6 +6771,18 @@
       "addedAt": 1780990731154
     },
     {
+      "id": "yt-whMjhE-cWNE",
+      "title": "Prem Jeno Purno Holo",
+      "artist": "Rupak Tiary, Trishna Sharma",
+      "album": "Prem Jeno Purno Holo",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cBqaERl4qXfgE9ohmuBXnevyKgsSWBy8f1iW_9dRdE_9MjgC8MuQj6jumMA8kBC_2atmvL1pBB-oy4Rsaw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/whMjhE-cWNE",
+      "videoId": "whMjhE-cWNE",
+      "addedAt": 1781206230338
+    },
+    {
       "id": "yt-wkVFYwbrL6Y",
       "title": "Hoor",
       "artist": "Lost Stories, JAI DHIR",
@@ -6867,6 +7075,18 @@
       "addedAt": 1781030922569
     },
     {
+      "id": "yt-zt1z2epLJic",
+      "title": "Karone Okarone",
+      "artist": "Minar Rahman",
+      "album": "Karone Okarone",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/HPuDRvXEbSKpo3MeW_ULMp-XnQnDLZ_XzMtgXGyWKEarvS4Cci8XFEbGfKpLqhQzKpBZlWOQkwfqqPQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/zt1z2epLJic",
+      "videoId": "zt1z2epLJic",
+      "addedAt": 1781206512186
+    },
+    {
       "id": "yt-zw2oGtn02I0",
       "title": "Treat You Better",
       "artist": "Boyce Avenue",
@@ -6891,56 +7111,6 @@
     }
   ],
   "history": [
-    {
-      "trackId": "yt-kyqJ_FId-_w",
-      "playedAt": 1781015606724,
-      "id": 179
-    },
-    {
-      "trackId": "yt-U_nAFr9tLYg",
-      "playedAt": 1781015620823,
-      "id": 180
-    },
-    {
-      "trackId": "yt-PZtSnQBsBW0",
-      "playedAt": 1781015623436,
-      "id": 181
-    },
-    {
-      "trackId": "yt-4BrziEPQrOQ",
-      "playedAt": 1781015853623,
-      "id": 182
-    },
-    {
-      "trackId": "yt-aYnrl1c1_U0",
-      "playedAt": 1781015855282,
-      "id": 183
-    },
-    {
-      "trackId": "yt-n0kh1gSdPFc",
-      "playedAt": 1781015861325,
-      "id": 184
-    },
-    {
-      "trackId": "yt-Mc1MZkvMvCk",
-      "playedAt": 1781015862817,
-      "id": 185
-    },
-    {
-      "trackId": "yt-N7jDUBRVQVA",
-      "playedAt": 1781015864622,
-      "id": 186
-    },
-    {
-      "trackId": "yt-gZ0vHQKfNH8",
-      "playedAt": 1781015866297,
-      "id": 187
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781016038390,
-      "id": 188
-    },
     {
       "trackId": "yt-a-HEb1vJhQ0",
       "playedAt": 1781016208540,
@@ -7890,6 +8060,56 @@
       "trackId": "yt-DqO1lLavWGo",
       "playedAt": 1781205763200,
       "id": 378
+    },
+    {
+      "trackId": "yt--4Gnv7rdWAk",
+      "playedAt": 1781206229714,
+      "id": 379
+    },
+    {
+      "trackId": "yt-Hdrf2M6QV5Y",
+      "playedAt": 1781206502259,
+      "id": 380
+    },
+    {
+      "trackId": "yt--gztlYsjRUg",
+      "playedAt": 1781206508389,
+      "id": 381
+    },
+    {
+      "trackId": "yt-MhoK1VijKgI",
+      "playedAt": 1781206511314,
+      "id": 382
+    },
+    {
+      "trackId": "yt-WGG5yllqgo4",
+      "playedAt": 1781206512931,
+      "id": 383
+    },
+    {
+      "trackId": "yt-qRsPt81VLNs",
+      "playedAt": 1781206531811,
+      "id": 384
+    },
+    {
+      "trackId": "yt-ChlLOXkRJtg",
+      "playedAt": 1781206533214,
+      "id": 385
+    },
+    {
+      "trackId": "yt-QzYfeAWAROQ",
+      "playedAt": 1781206736005,
+      "id": 386
+    },
+    {
+      "trackId": "yt--4Gnv7rdWAk",
+      "playedAt": 1781206967674,
+      "id": 387
+    },
+    {
+      "trackId": "yt-Hdrf2M6QV5Y",
+      "playedAt": 1781207245193,
+      "id": 388
     }
   ],
   "playSessions": [
@@ -9260,39 +9480,57 @@
       "completed": true,
       "skipped": false,
       "id": 171
+    },
+    {
+      "trackId": "yt--4Gnv7rdWAk",
+      "startTime": 1781206229708,
+      "duration": 82,
+      "completed": false,
+      "skipped": false,
+      "id": 172
+    },
+    {
+      "trackId": "yt-Hdrf2M6QV5Y",
+      "startTime": 1781206502241,
+      "duration": 6,
+      "completed": false,
+      "skipped": true,
+      "id": 173
+    },
+    {
+      "trackId": "yt--gztlYsjRUg",
+      "startTime": 1781206508378,
+      "duration": 2,
+      "completed": true,
+      "skipped": false,
+      "id": 174
+    },
+    {
+      "trackId": "yt-WGG5yllqgo4",
+      "startTime": 1781206512922,
+      "duration": 12,
+      "completed": false,
+      "skipped": true,
+      "id": 175
+    },
+    {
+      "trackId": "yt-ChlLOXkRJtg",
+      "startTime": 1781206533203,
+      "duration": 57,
+      "completed": false,
+      "skipped": true,
+      "id": 176
+    },
+    {
+      "trackId": "yt-QzYfeAWAROQ",
+      "startTime": 1781206735995,
+      "duration": 8,
+      "completed": true,
+      "skipped": false,
+      "id": 177
     }
   ],
   "searchHistory": [
-    {
-      "query": "janiye",
-      "timestamp": 1781006655637,
-      "id": 86
-    },
-    {
-      "query": "piche",
-      "timestamp": 1781006911054,
-      "id": 87
-    },
-    {
-      "query": "d",
-      "timestamp": 1781008975298,
-      "id": 88
-    },
-    {
-      "query": "dmbo",
-      "timestamp": 1781008976483,
-      "id": 89
-    },
-    {
-      "query": "du",
-      "timestamp": 1781008977497,
-      "id": 90
-    },
-    {
-      "query": "high",
-      "timestamp": 1781008980680,
-      "id": 91
-    },
     {
       "query": "highest",
       "timestamp": 1781008984074,
@@ -9512,6 +9750,36 @@
       "query": "trea you better",
       "timestamp": 1781202875626,
       "id": 135
+    },
+    {
+      "query": "jeno tomari kache",
+      "timestamp": 1781206227259,
+      "id": 136
+    },
+    {
+      "query": "jeno tomari kache",
+      "timestamp": 1781206227578,
+      "id": 137
+    },
+    {
+      "query": "arz",
+      "timestamp": 1781206722461,
+      "id": 138
+    },
+    {
+      "query": "trea you better",
+      "timestamp": 1781206727760,
+      "id": 139
+    },
+    {
+      "query": "trea you better",
+      "timestamp": 1781206731051,
+      "id": 140
+    },
+    {
+      "query": "trea you bette",
+      "timestamp": 1781206733090,
+      "id": 141
     }
   ],
   "settings": [
@@ -9585,9 +9853,9 @@
     "lyricsFontSize": 16,
     "enableRecommendations": true,
     "autoSync": true,
-    "lastSyncTimestamp": 1781205745452
+    "lastSyncTimestamp": 1781215158242
   },
   "version": "2.0.0",
-  "exportedAt": 1781205945454,
-  "syncedAt": 1781205945467
+  "exportedAt": 1781215338353,
+  "syncedAt": 1781215338374
 }

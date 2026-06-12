@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Singularity Player</string>
-    <string name="title_activity_main">Singularity Player</string>
-    <string name="package_name">com.singularity.music</string>
-    <string name="custom_url_scheme">com.singularity.music</string>
-</resources>
