@@ -735,62 +735,76 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
   filesize: number;
 } | null> {
   const cobaltBackends = [
-    'https://cobaltapi.kittycat.boo/',
-    'https://rue-cobalt.xenon.zone/'
+    'https://rue-cobalt.xenon.zone/',
+    'https://cobaltapi.kittycat.boo/'
   ];
 
-  const payload = {
-    url: `https://www.youtube.com/watch?v=${videoId}`,
-    downloadMode: 'audio',
-    audioFormat: 'best',
-    audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
-  };
-
   for (const backend of cobaltBackends) {
-    try {
-      console.log(`[Cobalt] Trying ${backend} for ${videoId}...`);
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
-      
-      const response = await fetch(backend, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
+    const formatsToTry: ('mp3' | 'best')[] = ['mp3', 'best'];
+    
+    for (const formatToTry of formatsToTry) {
+      const payload = {
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        downloadMode: 'audio',
+        audioFormat: formatToTry,
+        audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
+      };
 
-      if (!response.ok) {
-        console.warn(`[Cobalt] ${backend} returned status ${response.status}`);
-        continue;
-      }
+      try {
+        console.log(`[Cobalt] Trying ${backend} for ${videoId} (format: ${formatToTry})...`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        
+        const response = await fetch(backend, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
 
-      const data = await response.json() as any;
-      if (data && data.url) {
-        const filename = data.filename || '';
-        const cleanFilename = filename.replace(/\.[^/.]+$/, "");
-        const parts = cleanFilename.split(' - ');
-        const title = parts[0] || 'Unknown';
-        const artist = parts[1] || 'Unknown Artist';
-        const contentType = filename.endsWith('.m4a') ? 'audio/mp4' : 'audio/webm';
-        
-        console.log(`[Cobalt] ✓ Extracted stream from ${backend} for ${videoId}: ${contentType}`);
-        
-        return {
-          url: data.url,
-          contentType,
-          title,
-          artist,
-          duration: 0,
-          filesize: 0
-        };
+        if (!response.ok) {
+          console.warn(`[Cobalt] ${backend} (format: ${formatToTry}) returned status ${response.status}`);
+          continue;
+        }
+
+        const data = await response.json() as any;
+        if (data && data.url) {
+          const filename = data.filename || '';
+          const cleanFilename = filename.replace(/\.[^/.]+$/, "");
+          const parts = cleanFilename.split(' - ');
+          const title = parts[0] || 'Unknown';
+          const artist = parts[1] || 'Unknown Artist';
+          
+          let contentType = 'audio/mp4'; // default
+          if (filename.endsWith('.mp3')) {
+            contentType = 'audio/mpeg';
+          } else if (filename.endsWith('.m4a')) {
+            contentType = 'audio/mp4';
+          } else if (filename.endsWith('.webm') || filename.endsWith('.opus')) {
+            contentType = 'audio/webm';
+          } else if (filename.endsWith('.ogg')) {
+            contentType = 'audio/ogg';
+          }
+          
+          console.log(`[Cobalt] ✓ Extracted stream from ${backend} (format: ${formatToTry}) for ${videoId}: ${contentType}`);
+          
+          return {
+            url: data.url,
+            contentType,
+            title,
+            artist,
+            duration: 0,
+            filesize: 0
+          };
+        }
+      } catch (err: any) {
+        console.warn(`[Cobalt] ${backend} (format: ${formatToTry}) failed for ${videoId}: ${err.message || err}`);
       }
-    } catch (err: any) {
-      console.warn(`[Cobalt] ${backend} failed for ${videoId}: ${err.message || err}`);
     }
   }
 
