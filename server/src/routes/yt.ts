@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getClient, YT_DLP_PATH } from '../services/youtubeService';
 import { ytdlpPool } from '../services/processPool';
-import https from 'https';
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
@@ -240,63 +239,53 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
         fetchHeaders['Range'] = rangeHeader;
       }
 
-      const parsedUrl = new URL(url);
-      const options = {
-        hostname: parsedUrl.hostname,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: 'GET',
+      console.log(`[YT Route] Proxy fetching via fetch: ${url}`);
+      const response = await fetch(url, {
         headers: fetchHeaders
-      };
+      });
 
-      const upstreamReq = https.request(options, (upstreamRes) => {
-        if (upstreamRes.statusCode !== 200 && upstreamRes.statusCode !== 206) {
-          if (upstreamRes.statusCode === 416) {
-            // Forward 416 Range Not Satisfiable correctly to the browser instead of falling back to full stream pipe
-            res.writeHead(416, {
-              'Content-Range': upstreamRes.headers['content-range'] || `bytes */${filesize}`,
-              'Content-Type': contentType || 'audio/mp4',
-            });
-            upstreamRes.pipe(res);
-            return;
+      if (!response.ok && response.status !== 206) {
+        if (response.status === 416) {
+          // Forward 416 Range Not Satisfiable correctly to the browser
+          res.writeHead(416, {
+            'Content-Range': response.headers.get('content-range') || `bytes */${filesize}`,
+            'Content-Type': contentType || 'audio/mp4',
+          });
+          if (response.body) {
+            Readable.fromWeb(response.body as any).pipe(res);
+          } else {
+            res.end();
           }
-
-          // URL might be expired, fall through to Strategy 2
-          console.warn(`[YT Route] Proxy fetch failed (${upstreamRes.statusCode}), falling back to direct pipe`);
-          streamViaPipe(videoId, res, req, selectedQuality);
           return;
         }
 
-        // Set response headers
-        const headers: Record<string, string> = {
-          'Content-Type': contentType || 'audio/mp4',
-          'Accept-Ranges': 'bytes',
-          'Cache-Control': 'public, max-age=1800',
-        };
+        // URL might be expired, fall through to Strategy 2
+        console.warn(`[YT Route] Proxy fetch failed (${response.status}), falling back to direct pipe`);
+        streamViaPipe(videoId, res, req, selectedQuality);
+        return;
+      }
 
-        const upstreamContentRange = upstreamRes.headers['content-range'];
-        const upstreamContentLength = upstreamRes.headers['content-length'];
+      // Set response headers
+      const headers: Record<string, string> = {
+        'Content-Type': contentType || 'audio/mp4',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=1800',
+      };
 
-        if (upstreamContentRange) headers['Content-Range'] = upstreamContentRange as string;
-        if (upstreamContentLength) headers['Content-Length'] = upstreamContentLength as string;
-        else if (filesize > 0 && !rangeHeader) headers['Content-Length'] = filesize.toString();
+      const upstreamContentRange = response.headers.get('content-range');
+      const upstreamContentLength = response.headers.get('content-length');
 
-        res.writeHead(upstreamRes.statusCode === 206 ? 206 : 200, headers);
-        
-        upstreamRes.pipe(res);
-      });
+      if (upstreamContentRange) headers['Content-Range'] = upstreamContentRange;
+      if (upstreamContentLength) headers['Content-Length'] = upstreamContentLength;
+      else if (filesize > 0 && !rangeHeader) headers['Content-Length'] = filesize.toString();
 
-      upstreamReq.on('error', (err) => {
-        console.error('[YT Route] Upstream proxy request error:', err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: 'Stream failed' });
-        }
-      });
-
-      req.on('close', () => {
-        upstreamReq.destroy();
-      });
-
-      upstreamReq.end();
+      res.writeHead(response.status === 206 ? 206 : 200, headers);
+      
+      if (response.body) {
+        Readable.fromWeb(response.body as any).pipe(res);
+      } else {
+        res.end();
+      }
     } else {
       if (res.destroyed || res.writableEnded) return;
       // Strategy 2: Direct pipe from yt-dlp stdout
@@ -397,30 +386,22 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
         res.setHeader('Content-Length', streamInfo.filesize.toString());
       }
       
-      const parsedUrl = new URL(streamInfo.url);
-      const options = {
-        hostname: parsedUrl.hostname,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: 'GET',
+      console.log(`[YT Download] Proxy fetching via fetch: ${streamInfo.url}`);
+      const response = await fetch(streamInfo.url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
-      };
-
-      const upstreamReq = https.request(options, (upstreamRes) => {
-        upstreamRes.pipe(res);
       });
 
-      upstreamReq.on('error', (err) => {
-        console.error('[YT Download] Upstream proxy request error:', err);
-        if (!res.headersSent) res.status(500).json({ error: 'Download failed' });
-      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch download stream: ${response.status}`);
+      }
 
-      req.on('close', () => {
-        upstreamReq.destroy();
-      });
-
-      upstreamReq.end();
+      if (response.body) {
+        Readable.fromWeb(response.body as any).pipe(res);
+      } else {
+        res.end();
+      }
       return;
     }
   } catch (err) {
