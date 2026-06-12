@@ -178,8 +178,8 @@ async function extractUrlWithInnertube(videoId: string, quality: 'high' | 'mediu
 } | null> {
   try {
     const yt = await getClient();
-    console.log(`[Innertube] Fetching basic info for ${videoId}...`);
-    const info = await yt.getBasicInfo(videoId);
+    console.log(`[Innertube] Fetching full info (iOS client) for ${videoId}...`);
+    const info = await yt.getInfo(videoId, { client: 'IOS' });
     
     const format = info.chooseFormat({
       type: 'audio',
@@ -231,7 +231,8 @@ async function getVideoInfoWithInnertube(videoId: string): Promise<{
 } | null> {
   try {
     const yt = await getClient();
-    const info = await yt.getBasicInfo(videoId);
+    console.log(`[Innertube] Fetching video info (iOS client) for ${videoId}...`);
+    const info = await yt.getInfo(videoId, { client: 'IOS' });
     
     const title = info.basic_info.title || 'Unknown';
     const artist = info.basic_info.author || 'Unknown Artist';
