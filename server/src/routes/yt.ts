@@ -245,6 +245,15 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
       });
 
       if (!response.ok && response.status !== 206) {
+        let errText = '';
+        try {
+          errText = await response.text();
+        } catch (e: any) {
+          errText = `(failed to read body: ${e.message})`;
+        }
+        
+        console.warn(`[YT Route] Proxy fetch failed (${response.status}) for ${url}. Response body: ${errText.substring(0, 500)}. Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+
         if (response.status === 416) {
           // Forward 416 Range Not Satisfiable correctly to the browser
           res.writeHead(416, {
@@ -260,7 +269,6 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
         }
 
         // URL might be expired, fall through to Strategy 2
-        console.warn(`[YT Route] Proxy fetch failed (${response.status}), falling back to direct pipe`);
         streamViaPipe(videoId, res, req, selectedQuality);
         return;
       }
