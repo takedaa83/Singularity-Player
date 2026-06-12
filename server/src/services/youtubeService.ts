@@ -158,11 +158,102 @@ export async function getClient(): Promise<Innertube> {
     innertubeClient = await Innertube.create({
       lang: 'en',
       location: 'US',
-      retrieve_player: false, // Don't need player for search
+      retrieve_player: true, // Crucial for deciphering signature cipher URLs!
       cache: new UniversalCache(true, path.join(__dirname, '..', '..', '.cache')),
     });
   }
   return innertubeClient;
+}
+
+/**
+ * Extract streaming URL using youtubei.js
+ */
+async function extractUrlWithInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+  url: string;
+  contentType: string;
+  title: string;
+  artist: string;
+  duration: number;
+  filesize: number;
+} | null> {
+  try {
+    const yt = await getClient();
+    console.log(`[Innertube] Fetching basic info for ${videoId}...`);
+    const info = await yt.getBasicInfo(videoId);
+    
+    const format = info.chooseFormat({
+      type: 'audio',
+      quality: quality === 'low' ? 'low' : 'best'
+    });
+    
+    if (!format) {
+      throw new Error('No audio format found in Innertube');
+    }
+    
+    console.log(`[Innertube] Deciphering signature for ${videoId}...`);
+    const url = await format.decipher(yt.session.player);
+    if (!url) {
+      throw new Error('Innertube decipher failed to return a URL');
+    }
+
+    const title = info.basic_info.title || 'Unknown';
+    const artist = info.basic_info.author || 'Unknown Artist';
+    const duration = info.basic_info.duration || 0;
+    const filesize = format.content_length || 0;
+    const mimeType = format.mime_type || 'audio/mp4';
+    const contentType = mimeType.split(';')[0].trim();
+
+    console.log(`[Innertube] Successfully extracted stream URL for ${videoId}: ${contentType}`);
+    
+    return {
+      url,
+      contentType,
+      title,
+      artist,
+      duration,
+      filesize,
+    };
+  } catch (err: any) {
+    console.error(`[Innertube] Failed to extract stream for ${videoId}:`, err?.message || err);
+    return null;
+  }
+}
+
+/**
+ * Extract video metadata using youtubei.js
+ */
+async function getVideoInfoWithInnertube(videoId: string): Promise<{
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  coverArtUrl: string | null;
+} | null> {
+  try {
+    const yt = await getClient();
+    const info = await yt.getBasicInfo(videoId);
+    
+    const title = info.basic_info.title || 'Unknown';
+    const artist = info.basic_info.author || 'Unknown Artist';
+    const duration = info.basic_info.duration || 0;
+    
+    let coverArtUrl: string | null = null;
+    if (info.basic_info.thumbnail && info.basic_info.thumbnail.length > 0) {
+      const sorted = [...info.basic_info.thumbnail].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
+      coverArtUrl = sorted[0]?.url || null;
+    }
+    
+    return {
+      title,
+      artist,
+      album: 'YouTube',
+      duration,
+      coverArtUrl,
+    };
+  } catch (err: any) {
+    console.error(`[Innertube] Failed to get video info for ${videoId}:`, err?.message || err);
+    return null;
+  }
 }
 
 /**
@@ -274,6 +365,17 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           console.error(`[yt-dlp] Invalid video ID format: ${videoId}`);
           return null;
         }
+
+        // Try extracting via Innertube (youtubei.js) first to bypass VPS blocks
+        console.log(`[YouTubeService] Attempting Innertube stream extraction for ${videoId}...`);
+        const innertubeResult = await extractUrlWithInnertube(videoId, quality);
+        if (innertubeResult) {
+          // Cache the result
+          streamUrlCache.set(cacheKey, { data: innertubeResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return innertubeResult;
+        }
+
+        console.log(`[YouTubeService] Innertube failed or bypassed, falling back to yt-dlp for ${videoId}`);
 
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
@@ -429,6 +531,21 @@ export async function getVideoInfo(videoId: string): Promise<{
       console.error(`[yt-dlp] Invalid video ID format: ${videoId}`);
       return null;
     }
+
+    // Try extracting via Innertube (youtubei.js) first to bypass VPS blocks
+    console.log(`[YouTubeService] Attempting Innertube video info fetch for ${videoId}...`);
+    const innertubeResult = await getVideoInfoWithInnertube(videoId);
+    if (innertubeResult) {
+      // Cache the result
+      if (videoInfoCache.size >= MAX_CACHE_SIZE) {
+        const oldest = videoInfoCache.keys().next().value;
+        if (oldest) videoInfoCache.delete(oldest);
+      }
+      videoInfoCache.set(videoId, { data: innertubeResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
+      return innertubeResult;
+    }
+
+    console.log(`[YouTubeService] Innertube video info fetch failed, falling back to yt-dlp for ${videoId}`);
 
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
     

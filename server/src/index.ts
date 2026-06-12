@@ -26,6 +26,9 @@ import { ytdlpPool } from './services/processPool';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust reverse proxy (Render) for correct rate limiting IP validation
+app.set('trust proxy', 1);
+
 // Ensure uploads folders exist
 const uploadsTracksDir = path.join(__dirname, '..', 'uploads', 'tracks');
 const uploadsCoversDir = path.join(__dirname, '..', 'uploads', 'covers');

@@ -344,6 +344,51 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
+  const safeName = downloadName.replace(/[<>:"/\\|?*]/g, '_');
+
+  // Try to download using deciphered streaming URL via proxy-fetch first (bypasses yt-dlp blocks on Render)
+  try {
+    const streamInfo = await getAudioStreamUrl(videoId, 'high');
+    if (streamInfo && streamInfo.url) {
+      const ext = streamInfo.contentType.includes('webm') ? 'webm' : 'm4a';
+      const fileName = `${safeName}.${ext}`;
+      
+      res.setHeader('Content-Type', streamInfo.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      if (streamInfo.filesize > 0) {
+        res.setHeader('Content-Length', streamInfo.filesize.toString());
+      }
+      
+      const parsedUrl = new URL(streamInfo.url);
+      const options = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+      };
+
+      const upstreamReq = https.request(options, (upstreamRes) => {
+        upstreamRes.pipe(res);
+      });
+
+      upstreamReq.on('error', (err) => {
+        console.error('[YT Download] Upstream proxy request error:', err);
+        if (!res.headersSent) res.status(500).json({ error: 'Download failed' });
+      });
+
+      req.on('close', () => {
+        upstreamReq.destroy();
+      });
+
+      upstreamReq.end();
+      return;
+    }
+  } catch (err) {
+    console.error('[YT Download] Proxy download failed, falling back to yt-dlp:', err);
+  }
+
   let poolHandle;
   try {
     poolHandle = await ytdlpPool.acquire();
@@ -361,7 +406,6 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
   };
 
   try {
-    const safeName = downloadName.replace(/[<>:"/\\|?*]/g, '_');
     const fileName = `${safeName}.m4a`;
 
     // Pipe yt-dlp output directly — most reliable approach
