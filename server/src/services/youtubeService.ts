@@ -364,6 +364,143 @@ async function getVideoInfoWithInnertube(videoId: string): Promise<{
  * Search YouTube Music for tracks matching the query.
  * Uses youtubei.js InnerTube API (search works fine, only stream deciphering is broken).
  */
+// ─── Piped API Fallback ──────────────────────────────────────────────────
+// Piped is an open-source YouTube frontend with its own infrastructure
+// that handles YouTube's anti-bot measures. We use it as a fallback
+// when Innertube fails on datacenter IPs.
+// ─────────────────────────────────────────────────────────────────────────
+
+const PIPED_INSTANCES = [
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.r4fo.com',
+  'https://api.piped.privacydev.net',
+  'https://pipedapi.in.projectsegfau.lt',
+];
+
+/**
+ * Extract streaming URL using Piped API as a fallback.
+ * Tries multiple Piped instances for redundancy.
+ */
+async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+  url: string;
+  contentType: string;
+  title: string;
+  artist: string;
+  duration: number;
+  filesize: number;
+} | null> {
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const apiUrl = `${instance}/streams/${videoId}`;
+      console.log(`[Piped] Trying ${instance} for ${videoId}...`);
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(apiUrl, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      clearTimeout(timeout);
+      
+      if (!response.ok) {
+        console.warn(`[Piped] ${instance} returned ${response.status}`);
+        continue;
+      }
+      
+      const data = await response.json() as any;
+      
+      if (!data.audioStreams || data.audioStreams.length === 0) {
+        console.warn(`[Piped] ${instance} returned no audio streams for ${videoId}`);
+        continue;
+      }
+      
+      // Sort by bitrate descending and pick based on quality preference
+      const streams = data.audioStreams
+        .filter((s: any) => s.url && s.mimeType)
+        .sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
+      
+      if (streams.length === 0) {
+        console.warn(`[Piped] ${instance} has no usable audio streams for ${videoId}`);
+        continue;
+      }
+      
+      let selected;
+      if (quality === 'low') {
+        selected = streams[streams.length - 1]; // lowest bitrate
+      } else if (quality === 'medium') {
+        selected = streams[Math.floor(streams.length / 2)]; // middle
+      } else {
+        selected = streams[0]; // highest bitrate
+      }
+      
+      const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
+      
+      console.log(`[Piped] Successfully extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
+      
+      return {
+        url: selected.url,
+        contentType,
+        title: data.title || 'Unknown',
+        artist: data.uploader || 'Unknown Artist',
+        duration: data.duration || 0,
+        filesize: selected.contentLength || 0,
+      };
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn(`[Piped] ${instance} timed out for ${videoId}`);
+      } else {
+        console.warn(`[Piped] ${instance} failed for ${videoId}: ${err.message || err}`);
+      }
+      continue;
+    }
+  }
+  
+  console.error(`[Piped] All instances failed for ${videoId}`);
+  return null;
+}
+
+/**
+ * Get video metadata using Piped API as a fallback.
+ */
+async function getVideoInfoWithPiped(videoId: string): Promise<{
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  coverArtUrl: string | null;
+} | null> {
+  for (const instance of PIPED_INSTANCES) {
+    try {
+      const apiUrl = `${instance}/streams/${videoId}`;
+      
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(apiUrl, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      });
+      clearTimeout(timeout);
+      
+      if (!response.ok) continue;
+      
+      const data = await response.json() as any;
+      
+      return {
+        title: data.title || 'Unknown',
+        artist: data.uploader || 'Unknown Artist',
+        album: 'YouTube',
+        duration: data.duration || 0,
+        coverArtUrl: data.thumbnailUrl || null,
+      };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export async function searchYouTube(query: string): Promise<YouTubeTrack[]> {
   try {
     const yt = await getClient();
@@ -470,7 +607,7 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return null;
         }
 
-        // Try extracting via Innertube (youtubei.js) first to bypass VPS blocks
+        // Try extracting via Innertube (youtubei.js) first
         console.log(`[YouTubeService] Attempting Innertube stream extraction for ${videoId}...`);
         const innertubeResult = await extractUrlWithInnertube(videoId, quality);
         if (innertubeResult) {
@@ -479,7 +616,15 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return innertubeResult;
         }
 
-        console.log(`[YouTubeService] Innertube failed or bypassed, falling back to yt-dlp for ${videoId}`);
+        // Try Piped API as fallback (handles bot detection on its own infra)
+        console.log(`[YouTubeService] Innertube failed, trying Piped API for ${videoId}...`);
+        const pipedResult = await extractUrlWithPiped(videoId, quality);
+        if (pipedResult) {
+          streamUrlCache.set(cacheKey, { data: pipedResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return pipedResult;
+        }
+
+        console.log(`[YouTubeService] Piped also failed, falling back to yt-dlp for ${videoId}`);
 
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         
@@ -636,7 +781,7 @@ export async function getVideoInfo(videoId: string): Promise<{
       return null;
     }
 
-    // Try extracting via Innertube (youtubei.js) first to bypass VPS blocks
+    // Try extracting via Innertube (youtubei.js) first
     console.log(`[YouTubeService] Attempting Innertube video info fetch for ${videoId}...`);
     const innertubeResult = await getVideoInfoWithInnertube(videoId);
     if (innertubeResult) {
@@ -649,7 +794,19 @@ export async function getVideoInfo(videoId: string): Promise<{
       return innertubeResult;
     }
 
-    console.log(`[YouTubeService] Innertube video info fetch failed, falling back to yt-dlp for ${videoId}`);
+    // Try Piped API as fallback
+    console.log(`[YouTubeService] Innertube failed, trying Piped API for video info ${videoId}...`);
+    const pipedResult = await getVideoInfoWithPiped(videoId);
+    if (pipedResult) {
+      if (videoInfoCache.size >= MAX_CACHE_SIZE) {
+        const oldest = videoInfoCache.keys().next().value;
+        if (oldest) videoInfoCache.delete(oldest);
+      }
+      videoInfoCache.set(videoId, { data: pipedResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
+      return pipedResult;
+    }
+
+    console.log(`[YouTubeService] Piped also failed, falling back to yt-dlp for ${videoId}`);
 
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
     
