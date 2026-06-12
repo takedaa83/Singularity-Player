@@ -5,8 +5,10 @@ import path from 'path';
 import fs from 'fs';
 import { Readable } from 'stream';
 import { ytdlpPool } from './processPool';
+import { JSDOM, VirtualConsole } from 'jsdom';
 
 const execFileAsync = promisify(execFile);
+
 
 /**
  * Executes yt-dlp through the process pool to restrict concurrency
@@ -72,6 +74,7 @@ export interface YouTubeTrack {
 }
 
 let innertubeClient: Innertube | null = null;
+let isPoTokenAvailable = false;
 
 // Cache extracted stream URLs — they're valid for ~30 minutes
 const streamUrlCache = new Map<string, { data: any; expiry: number; lastAccessed: number }>();
@@ -151,14 +154,114 @@ export async function ensureYtDlpBinary(): Promise<string> {
 }
 
 /**
+ * Safely generates a YouTube Proof of Origin (poToken) and visitorData using JSDOM.
+ * Has a strict timeout and checks validity to prevent the server from hanging on startup.
+ */
+async function generatePoTokenSafe(): Promise<{ poToken: string; visitorData: string } | null> {
+  try {
+    console.log('[PO Token] Starting safe PO token generation...');
+    
+    // Resolve absolute path to the package directory
+    const pkgPath = path.dirname(require.resolve('youtube-po-token-generator/package.json'));
+    
+    // Dynamically require functions/consts from the library
+    const { fetchVisitorData } = require(path.join(pkgPath, 'lib', 'workflow'));
+    const { url, userAgent } = require(path.join(pkgPath, 'lib', 'consts'));
+    
+    const visitorData = await fetchVisitorData();
+    console.log(`[PO Token] Fetched visitor data: ${visitorData}`);
+    
+    const domContent = await fs.promises.readFile(path.join(pkgPath, 'vendor', 'index.html'), 'utf-8');
+    const baseContent = await fs.promises.readFile(path.join(pkgPath, 'vendor', 'base.js'), 'utf-8');
+    const baseAppendContent = await fs.promises.readFile(path.join(pkgPath, 'lib', 'inject.js'), 'utf-8');
+    
+    // Run JSDOM evaluation with a timeout
+    const result = await new Promise<{ poToken: string } | null>((resolve, reject) => {
+      let windowClosed = false;
+      
+      const virtualConsole = new VirtualConsole();
+      // Suppress JSDOM log noise by default
+      
+      const { window } = new JSDOM(domContent, {
+        url,
+        pretendToBeVisual: true,
+        runScripts: 'dangerously',
+        virtualConsole,
+      });
+      
+      const cleanUp = () => {
+        if (!windowClosed) {
+          windowClosed = true;
+          window.close();
+        }
+      };
+      
+      // Safety timeout: 15 seconds max
+      const timeout = setTimeout(() => {
+        cleanUp();
+        reject(new Error('JSDOM token generation timed out after 15s'));
+      }, 15000);
+      
+      Object.defineProperty(window.navigator, 'userAgent', { value: userAgent, writable: false });
+      (window as any).visitorData = visitorData;
+      (window as any).onPoToken = (poToken: string) => {
+        clearTimeout(timeout);
+        cleanUp();
+        resolve({ poToken });
+      };
+      
+      try {
+        window.eval(baseContent.replace(/}\s*\)\(_yt_player\);\s*$/, (matched) => `;${baseAppendContent};${matched}`));
+      } catch (err: any) {
+        clearTimeout(timeout);
+        cleanUp();
+        reject(new Error(`Failed to evaluate base player script: ${err.message}`));
+      }
+    });
+    
+    if (result && result.poToken) {
+      const isError = result.poToken.includes('Error') || result.poToken.includes('Invalid') || result.poToken.length > 200;
+      if (isError) {
+        console.warn(`[PO Token] Warning: Generated token is an error/invalid format (length ${result.poToken.length}): ${result.poToken.substring(0, 100)}...`);
+        // Try decoding it to print a helpful error message if it's base64 encoded
+        try {
+          const decoded = Buffer.from(result.poToken, 'base64').toString('utf-8');
+          console.warn(`[PO Token] Decoded error message: ${decoded.substring(0, 500)}`);
+        } catch (e) {}
+        return null;
+      }
+      console.log(`[PO Token] Success! Generated valid PO token of length ${result.poToken.length}`);
+      return { poToken: result.poToken, visitorData };
+    }
+    
+    return null;
+  } catch (err: any) {
+    console.error(`[PO Token] Safe PO token generation failed: ${err.message || err}`);
+    return null;
+  }
+}
+
+/**
  * Get or create a singleton Innertube client.
  */
 export async function getClient(): Promise<Innertube> {
   if (!innertubeClient) {
-    innertubeClient = await Innertube.create({
+    const options: any = {
       retrieve_player: true, // Crucial for deciphering signature cipher URLs!
       cache: new UniversalCache(true, path.join(__dirname, '..', '..', '.cache')),
-    });
+    };
+
+    const tokenResult = await generatePoTokenSafe();
+    if (tokenResult) {
+      options.po_token = tokenResult.poToken;
+      options.visitor_data = tokenResult.visitorData;
+      isPoTokenAvailable = true;
+      console.log('[YouTubeService] Innertube initialized with Proof of Origin (poToken).');
+    } else {
+      console.warn('[YouTubeService] Proceeding without poToken. Streaming might be blocked on VPS IPs.');
+    }
+
+    innertubeClient = await Innertube.create(options);
   }
   return innertubeClient;
 }
@@ -176,8 +279,9 @@ async function extractUrlWithInnertube(videoId: string, quality: 'high' | 'mediu
 } | null> {
   try {
     const yt = await getClient();
-    console.log(`[Innertube] Fetching full info (iOS client) for ${videoId}...`);
-    const info = await yt.getInfo(videoId, { client: 'IOS' });
+    const client = isPoTokenAvailable ? 'WEB' : 'IOS';
+    console.log(`[Innertube] Fetching full info (${client} client) for ${videoId}...`);
+    const info = await yt.getInfo(videoId, { client: client as any });
     
     const format = info.chooseFormat({
       type: 'audio',
@@ -229,8 +333,9 @@ async function getVideoInfoWithInnertube(videoId: string): Promise<{
 } | null> {
   try {
     const yt = await getClient();
-    console.log(`[Innertube] Fetching video info (iOS client) for ${videoId}...`);
-    const info = await yt.getInfo(videoId, { client: 'IOS' });
+    const client = isPoTokenAvailable ? 'WEB' : 'IOS';
+    console.log(`[Innertube] Fetching video info (${client} client) for ${videoId}...`);
+    const info = await yt.getInfo(videoId, { client: client as any });
     
     const title = info.basic_info.title || 'Unknown';
     const artist = info.basic_info.author || 'Unknown Artist';
