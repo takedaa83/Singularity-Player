@@ -230,6 +230,14 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     if (streamInfo && streamInfo.url) {
       const { url, contentType, filesize } = streamInfo;
 
+      // If the URL is not a direct YouTube URL (e.g. Cobalt tunnel stream), redirect the client directly.
+      // This leverages the client's residential IP to bypass server-side datacenter blocks.
+      if (!url.includes('googlevideo.com') && !url.includes('youtube.com')) {
+        console.log(`[YT Route] Redirecting client directly to Cobalt/tunnel stream URL: ${url}`);
+        res.redirect(302, url);
+        return;
+      }
+
       const rangeHeader = req.headers.range;
 
       const fetchHeaders: Record<string, string> = {
@@ -386,6 +394,14 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
   try {
     const streamInfo = await getAudioStreamUrl(videoId, 'high');
     if (streamInfo && streamInfo.url) {
+      // If the URL is not a direct YouTube URL (e.g. Cobalt tunnel stream), redirect the client directly.
+      // This leverages the client's residential IP to bypass server-side datacenter blocks.
+      if (!streamInfo.url.includes('googlevideo.com') && !streamInfo.url.includes('youtube.com')) {
+        console.log(`[YT Download] Redirecting client directly to Cobalt/tunnel stream URL for download: ${streamInfo.url}`);
+        res.redirect(302, streamInfo.url);
+        return;
+      }
+
       const ext = streamInfo.contentType.includes('webm') ? 'webm' : 'm4a';
       const fileName = `${safeName}.${ext}`;
       

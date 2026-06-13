@@ -332,7 +332,9 @@ async function refreshCobaltInstances(): Promise<void> {
 refreshCobaltInstances().catch(() => {});
 
 async function validateMediaUrl(url: string): Promise<boolean> {
-  if (url.includes('googlevideo.com')) {
+  // Skip server-side validation for non-googlevideo URLs (e.g. Cobalt tunnel URLs).
+  // These will be redirected directly to the client browser, avoiding datacenter IP Turnstile blocks on Render.
+  if (!url.includes('googlevideo.com')) {
     return true;
   }
   try {
