@@ -11,6 +11,8 @@ export interface InnerTubeClient {
   osVersion?: string;
   deviceMake?: string;
   deviceModel?: string;
+  androidSdkVersion?: string;
+  isEmbedded?: boolean;
 }
 
 const clients: Record<string, InnerTubeClient> = {
@@ -30,6 +32,31 @@ const clients: Record<string, InnerTubeClient> = {
     origin: "https://music.youtube.com",
     referer: "https://music.youtube.com/"
   },
+  WEB_CREATOR: {
+    clientName: "WEB_CREATOR",
+    clientVersion: "1.20260213.00.00",
+    clientId: "62",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  TVHTML5: {
+    clientName: "TVHTML5",
+    clientVersion: "7.20260213.00.00",
+    clientId: "7",
+    userAgent: "Mozilla/5.0(SMART-TV; Linux; Tizen 4.0.0.2) AppleWebkit/605.1.15 (KHTML, like Gecko) SamsungBrowser/9.2 TV Safari/605.1.15",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  TVHTML5_SIMPLY_EMBEDDED_PLAYER: {
+    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    clientVersion: "2.0",
+    clientId: "85",
+    userAgent: "Mozilla/5.0 (PlayStation; PlayStation 4/12.02) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/",
+    isEmbedded: true
+  },
   IOS: {
     clientName: "IOS",
     clientVersion: "21.03.1",
@@ -41,6 +68,77 @@ const clients: Record<string, InnerTubeClient> = {
     deviceModel: "iPhone16,2",
     origin: "https://www.youtube.com",
     referer: "https://www.youtube.com/"
+  },
+  IPADOS: {
+    clientName: "IOS",
+    clientVersion: "21.03.3",
+    clientId: "5",
+    userAgent: "com.google.ios.youtube/21.03.3 (iPad7,6; U; CPU iPadOS 17_7_10 like Mac OS X; en-US)",
+    osName: "iPadOS",
+    osVersion: "17.7.10.21H450",
+    deviceMake: "Apple",
+    deviceModel: "iPad7,6",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  ANDROID: {
+    clientName: "ANDROID",
+    clientVersion: "21.03.38",
+    clientId: "3",
+    userAgent: "com.google.android.youtube/21.03.38 (Linux; U; Android 14) gzip",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  ANDROID_VR: {
+    clientName: "ANDROID_VR",
+    clientVersion: "1.61.48",
+    clientId: "28",
+    userAgent: "com.google.android.apps.youtube.vr.oculus/1.61.48 (Linux; U; Android 12; en_US; Quest 3; Build/SQ3A.220605.009.A1; Cronet/132.0.6808.3)",
+    osName: "Android",
+    osVersion: "12",
+    deviceMake: "Oculus",
+    deviceModel: "Quest 3",
+    androidSdkVersion: "32",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  ANDROID_VR_1_43: {
+    clientName: "ANDROID_VR",
+    clientVersion: "1.43.32",
+    clientId: "28",
+    userAgent: "com.google.android.apps.youtube.vr.oculus/1.43.32 (Linux; U; Android 12; en_US; Quest 3; Build/SQ3A.220605.009.A1; Cronet/107.0.5284.2)",
+    osName: "Android",
+    osVersion: "12",
+    deviceMake: "Oculus",
+    deviceModel: "Quest 3",
+    androidSdkVersion: "32",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  ANDROID_CREATOR: {
+    clientName: "ANDROID_CREATOR",
+    clientVersion: "25.03.101",
+    clientId: "14",
+    userAgent: "com.google.android.apps.youtube.creator/25.03.101 (Linux; U; Android 15; en_US; Pixel 9 Pro Fold; Build/AP3A.241005.015.A2; Cronet/132.0.6779.0)",
+    osName: "Android",
+    osVersion: "15",
+    deviceMake: "Google",
+    deviceModel: "Pixel 9 Pro Fold",
+    androidSdkVersion: "35",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
+  },
+  VISIONOS: {
+    clientName: "VISIONOS",
+    clientVersion: "0.1",
+    clientId: "101",
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+    osName: "visionOS",
+    osVersion: "1.3.21O771",
+    deviceMake: "Apple",
+    deviceModel: "RealityDevice14,1",
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/"
   }
 };
 
@@ -50,7 +148,7 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
     throw new Error(`Unknown InnerTube client: ${clientKey}`);
   }
   
-  const domain = forceDomain || (clientKey === "IOS" ? "www.youtube.com" : "music.youtube.com");
+  const domain = forceDomain || (clientKey === "WEB_REMIX" ? "music.youtube.com" : "www.youtube.com");
   const url = `https://${domain}/youtubei/v1/${endpoint}?prettyPrint=false${extraParams}`;
   
   const context: any = {
@@ -66,6 +164,13 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
   if (client.osVersion) context.client.osVersion = client.osVersion;
   if (client.deviceMake) context.client.deviceMake = client.deviceMake;
   if (client.deviceModel) context.client.deviceModel = client.deviceModel;
+  if (client.androidSdkVersion) context.client.androidSdkVersion = client.androidSdkVersion;
+  
+  if (client.isEmbedded && payload.videoId) {
+    context.thirdParty = {
+      embedUrl: `https://www.youtube.com/watch?v=${payload.videoId}`
+    };
+  }
   
   const body = {
     context,
@@ -199,32 +304,63 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
 /**
  * Resolves track metadata and available audio formats using the IOS client.
  */
-export async function customPlayer(videoId: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
-  const data = await requestInnerTube("player", "IOS", {
-    videoId
-  });
+export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
+  const clientKeysToTry = clientKey ? [clientKey] : [
+    "VISIONOS",
+    "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    "TVHTML5",
+    "ANDROID_VR",
+    "ANDROID_VR_1_43",
+    "IOS",
+    "IPADOS",
+    "ANDROID_CREATOR",
+    "ANDROID",
+    "WEB"
+  ];
 
-  const playability = data.playabilityStatus?.status;
-  if (playability !== "OK") {
-    throw new Error(`Video playability status is ${playability}: ${data.playabilityStatus?.reason || "unknown reason"}`);
+  let lastError: any = null;
+  for (const key of clientKeysToTry) {
+    try {
+      console.log(`[customInnertube] Trying client ${key} for video ${videoId}...`);
+      const data = await requestInnerTube("player", key, { videoId });
+      
+      const playabilityStatus = data.playabilityStatus?.status;
+      if (playabilityStatus !== "OK") {
+        throw new Error(`Playability status is ${playabilityStatus}: ${data.playabilityStatus?.reason || "unknown reason"}`);
+      }
+
+      if (!data.streamingData || !data.streamingData.adaptiveFormats) {
+        throw new Error("Response is missing streamingData/adaptiveFormats");
+      }
+
+      const basicInfo = {
+        title: data.videoDetails?.title || "Unknown",
+        artist: data.videoDetails?.author || "Unknown Artist",
+        album: "YouTube",
+        duration: parseInt(data.videoDetails?.lengthSeconds, 10) || 0,
+        coverArtUrl: data.videoDetails?.thumbnail?.thumbnails?.sort((a: any, b: any) => b.width - a.width)?.[0]?.url || null
+      };
+
+      const adaptiveFormats = data.streamingData.adaptiveFormats || [];
+      const audioFormats = adaptiveFormats.filter((f: any) => f.mimeType?.startsWith("audio/"));
+
+      if (audioFormats.length === 0) {
+        throw new Error("No audio formats found in streamingData");
+      }
+
+      console.log(`[customInnertube] Successfully resolved video ${videoId} with client ${key}`);
+      return {
+        basicInfo,
+        audioFormats,
+        rawData: data
+      };
+    } catch (err: any) {
+      console.warn(`[customInnertube] Client ${key} failed for video ${videoId}:`, err.message || err);
+      lastError = err;
+    }
   }
 
-  const basicInfo = {
-    title: data.videoDetails?.title || "Unknown",
-    artist: data.videoDetails?.author || "Unknown Artist",
-    album: "YouTube",
-    duration: parseInt(data.videoDetails?.lengthSeconds, 10) || 0,
-    coverArtUrl: data.videoDetails?.thumbnail?.thumbnails?.sort((a: any, b: any) => b.width - a.width)?.[0]?.url || null
-  };
-
-  const adaptiveFormats = data.streamingData?.adaptiveFormats || [];
-  const audioFormats = adaptiveFormats.filter((f: any) => f.mimeType?.startsWith("audio/"));
-
-  return {
-    basicInfo,
-    audioFormats,
-    rawData: data // Return the full response in case captions or other fields are needed
-  };
+  throw lastError || new Error(`All InnerTube clients failed to resolve video ${videoId}`);
 }
 
 /**
@@ -344,10 +480,29 @@ export async function customGetRelated(videoId: string): Promise<any[]> {
  */
 export async function customGetTranscript(videoId: string): Promise<any> {
   try {
-    const playData = await customPlayer(videoId);
+    let playData: any = null;
+    const captionClients = ["IOS", "IPADOS", "ANDROID", "WEB"];
+    for (const clientKey of captionClients) {
+      try {
+        console.log(`[customInnertube] Trying client ${clientKey} for captions of ${videoId}...`);
+        const data = await customPlayer(videoId, clientKey);
+        if (data.rawData?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
+          playData = data;
+          break;
+        }
+      } catch (e: any) {
+        console.warn(`[customInnertube] Client ${clientKey} failed to get captions for ${videoId}:`, e.message || e);
+      }
+    }
+
+    if (!playData) {
+      console.warn(`[customInnertube] All caption clients failed to get player response for ${videoId}`);
+      return null;
+    }
+
     const captionTracks = playData.rawData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    
     if (!captionTracks || captionTracks.length === 0) {
+      console.warn(`[customInnertube] No caption tracks found in player response of ${videoId}`);
       return null;
     }
     

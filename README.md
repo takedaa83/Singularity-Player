@@ -58,7 +58,7 @@ Singularity Player is a two-part system — a **React frontend** that runs in yo
 
 When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) and YouTube Music to find matching tracks with cover art, album info, and preview URLs. To query YouTube Music search and recommendation feeds reliably on hosted environments (like Render or VPS servers), the backend features a custom, lightweight InnerTube client (`WEB_REMIX`). 
 
-For streaming playback, the player bypasses bot-guard sign-in challenges and signature deciphering blocks by querying playback metadata via the YouTube `IOS` client context. This returns direct, pre-deciphered audio URLs without requiring proof-of-origin tokens. The backend also acts as a streaming proxy, allowing the browser to seek instantly using standard HTTP bytes-range requests.
+For streaming playback, the player bypasses bot-guard sign-in challenges by executing a client-fallback stack query (`VISIONOS`, `TVHTML5`, `ANDROID_VR`, `IOS`, etc.) to find a client that does not trigger bot-detection blocks on cloud hosting providers. Once resolved, the backend acts as a streaming proxy—both for direct Google Video URLs and public fallback proxies—routing all media data through standard HTTP bytes-range requests. This guarantees that the browser never encounters CORS, hotlinking, or referer demuxer failures during playback.
 
 ### Prefetching & Zero-Wait Playback
 
