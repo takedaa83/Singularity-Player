@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getClient, YT_DLP_PATH } from '../services/youtubeService';
+import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getRelatedTracks, YT_DLP_PATH } from '../services/youtubeService';
 import { ytdlpPool } from '../services/processPool';
 import path from 'path';
 import fs from 'fs';
@@ -544,8 +544,6 @@ router.get('/radio', async (req: Request, res: Response) => {
   const artist = req.query.artist as string;
 
   try {
-    const yt = await getClient();
-
     if (!videoId && title && artist) {
       console.log(`[YT Route] Resolving videoId for similar mix: ${artist} - ${title}`);
       const searchResults = await searchYouTube(`${artist} ${title}`);
@@ -573,47 +571,7 @@ router.get('/radio', async (req: Request, res: Response) => {
     }
 
     console.log(`[YT Route] Fetching radio recommendations for videoId: ${videoId}`);
-    const related = await (yt.music as any).getRelated(videoId);
-    const tracks: any[] = [];
-
-    if (related && Array.isArray(related.contents)) {
-      for (const shelf of related.contents) {
-        if (shelf.type === 'MusicCarouselShelf' && Array.isArray(shelf.contents)) {
-          for (const item of shelf.contents) {
-            if (item.type === 'MusicResponsiveListItem' && item.id && item.title) {
-              const itemTitle = item.title;
-              let itemArtist = 'Unknown Artist';
-              if (item.artists && Array.isArray(item.artists)) {
-                itemArtist = item.artists.map((a: any) => a.name).join(', ');
-              } else if (item.author && item.author.name) {
-                itemArtist = item.author.name;
-              }
-              
-              let coverUrl = null;
-              if (item.thumbnails && Array.isArray(item.thumbnails) && item.thumbnails.length > 0) {
-                const sorted = [...item.thumbnails].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
-                coverUrl = sorted[0]?.url || null;
-              }
-
-              if (!tracks.some(t => t.videoId === item.id)) {
-                tracks.push({
-                  id: `yt-${item.id}`,
-                  title: itemTitle,
-                  artist: itemArtist,
-                  album: item.album?.name || 'Single',
-                  duration: item.duration?.seconds || 0,
-                  coverArtUrl: coverUrl,
-                  source: 'youtube',
-                  streamUrl: `/api/yt/stream/${item.id}`,
-                  videoId: item.id,
-                  addedAt: Date.now()
-                });
-              }
-            }
-          }
-        }
-      }
-    }
+    const tracks = await getRelatedTracks(videoId);
 
     console.log(`[YT Route] Found ${tracks.length} radio recommendations for videoId: ${videoId}`);
     res.json(tracks);
@@ -650,35 +608,7 @@ router.post('/prefetch', (req: Request, res: Response) => {
  * Diagnostic endpoint to test all InnerTube clients on Render
  */
 router.get('/test-clients', async (req: Request, res: Response) => {
-  const videoId = (req.query.videoId as string) || '5U5Ru0nTiUM';
-  const clients = ['WEB', 'ANDROID', 'YTMUSIC', 'YTMUSIC_ANDROID', 'TV', 'IOS'];
-  const results: Record<string, any> = {};
-
-  try {
-    const yt = await getClient();
-    for (const clientName of clients) {
-      try {
-        const info = await yt.getInfo(videoId, { client: clientName as any });
-        const format = info.chooseFormat({ type: 'audio', quality: 'best' });
-        if (format) {
-          const url = await format.decipher(yt.session.player);
-          results[clientName] = {
-            success: !!url,
-            mime_type: format.mime_type,
-            has_url: !!format.url,
-            has_cipher: !!format.signature_cipher || !!format.cipher
-          };
-        } else {
-          results[clientName] = { success: false, error: 'No audio format found' };
-        }
-      } catch (err: any) {
-        results[clientName] = { success: false, error: err.message || err };
-      }
-    }
-    res.json(results);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || err });
-  }
+  res.json({ message: "youtubei.js has been replaced by custom lightweight InnerTube integration" });
 });
 
 export default router;

@@ -56,7 +56,9 @@ Singularity Player is a two-part system — a **React frontend** that runs in yo
 
 ### The Search & Streaming Pipeline
 
-When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) to find matching tracks with cover art, album info, and preview URLs. If you choose to play a track that comes from YouTube, the backend uses [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) — a powerful open-source media extractor — to resolve a direct audio stream URL in real time. That URL is then proxied through the backend as a standard HTTP audio stream with full support for range requests, meaning the browser can seek to any position in the song instantly without re-downloading the entire file.
+When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) and YouTube Music to find matching tracks with cover art, album info, and preview URLs. To query YouTube Music search and recommendation feeds reliably on hosted environments (like Render or VPS servers), the backend features a custom, lightweight InnerTube client (`WEB_REMIX`). 
+
+For streaming playback, the player bypasses bot-guard sign-in challenges and signature deciphering blocks by querying playback metadata via the YouTube `IOS` client context. This returns direct, pre-deciphered audio URLs without requiring proof-of-origin tokens. The backend also acts as a streaming proxy, allowing the browser to seek instantly using standard HTTP bytes-range requests.
 
 ### Prefetching & Zero-Wait Playback
 
@@ -461,6 +463,7 @@ singularity-player/
 │   │   │   └── upload.ts            # File upload handling
 │   │   ├── services/
 │   │   │   ├── youtubeService.ts     # yt-dlp integration, caching, coalescing
+│   │   │   ├── customInnertube.ts    # Lightweight native fetch InnerTube client
 │   │   │   ├── searchService.ts      # Deezer/iTunes API aggregation
 │   │   │   ├── lyricsService.ts      # Lyrics API integration
 │   │   │   ├── downloadManager.ts    # Download queue and file management

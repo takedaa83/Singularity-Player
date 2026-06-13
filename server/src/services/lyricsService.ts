@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getClient, searchYouTube } from './youtubeService';
+import { getYouTubeTranscript, searchYouTube } from './youtubeService';
 
 export interface LyricsResult {
   syncedLyrics: string | null;  // LRC format with timestamps
@@ -604,11 +604,9 @@ async function fetchYouTubeCaptions(trackName: string, artistName: string): Prom
     if (!videoId) return null;
 
     console.log(`[LyricsService] Fetching YouTube captions/transcript for videoId: ${videoId}`);
-    const yt = await getClient();
-    const info = await yt.getInfo(videoId);
 
     try {
-      const transcriptData = await info.getTranscript();
+      const transcriptData = await getYouTubeTranscript(videoId);
       const segments = transcriptData?.transcript?.content?.body?.initial_segments;
       
       if (!segments || !Array.isArray(segments) || segments.length === 0) {

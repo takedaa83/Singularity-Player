@@ -1,59 +1,12 @@
-import Innertube, { UniversalCache } from 'youtubei.js';
 import { execFile, spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
 import { Readable } from 'stream';
 import { ytdlpPool } from './processPool';
-import { JSDOM, VirtualConsole } from 'jsdom';
+import { customSearch, customPlayer, customGetRelated, customGetTranscript } from './customInnertube';
 
 const execFileAsync = promisify(execFile);
-
-
-/**
- * Executes yt-dlp through the process pool to restrict concurrency
- * and prevent unbounded child processes.
- */
-function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: string; stderr: string }> {
-  return new Promise(async (resolve, reject) => {
-    let poolHandle;
-    try {
-      poolHandle = await ytdlpPool.acquire();
-    } catch (err) {
-      return reject(err);
-    }
-
-    let finished = false;
-    const release = () => {
-      if (!finished) {
-        finished = true;
-        poolHandle.release();
-      }
-    };
-
-    const child = execFile(YT_DLP_PATH, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
-      release();
-      if (error) {
-        reject(Object.assign(error, { stdout, stderr }));
-      } else {
-        resolve({ stdout, stderr });
-      }
-    });
-
-    poolHandle.registerProcess(child);
-
-    if (timeoutMs > 0) {
-      const timeout = setTimeout(() => {
-        if (!finished && child.exitCode === null) {
-          child.kill('SIGKILL');
-          reject(new Error('Process timed out'));
-        }
-      }, timeoutMs);
-
-      child.on('exit', () => clearTimeout(timeout));
-    }
-  });
-}
 
 // Strict YouTube video ID validation: exactly 11 alphanumeric / dash / underscore chars
 const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
@@ -72,9 +25,6 @@ export interface YouTubeTrack {
   source: 'youtube';
   quality: string;
 }
-
-let innertubeClient: Innertube | null = null;
-let isPoTokenAvailable = false;
 
 // Cache extracted stream URLs — they're valid for ~30 minutes
 const streamUrlCache = new Map<string, { data: any; expiry: number; lastAccessed: number }>();
@@ -146,7 +96,6 @@ export async function ensureYtDlpBinary(): Promise<string> {
     return localPath;
   } catch (error) {
     console.error('[youtubeService] Failed to download yt-dlp:', error);
-    // Fallback to system-wide command
     console.log('[youtubeService] Falling back to system-wide "yt-dlp" command from PATH.');
     YT_DLP_PATH = 'yt-dlp';
     return 'yt-dlp';
@@ -154,122 +103,9 @@ export async function ensureYtDlpBinary(): Promise<string> {
 }
 
 /**
- * Safely generates a YouTube Proof of Origin (poToken) and visitorData using JSDOM.
- * Has a strict timeout and checks validity to prevent the server from hanging on startup.
+ * Custom InnerTube stream URL extraction using the IOS client.
  */
-async function generatePoTokenSafe(): Promise<{ poToken: string; visitorData: string } | null> {
-  try {
-    console.log('[PO Token] Starting safe PO token generation...');
-    
-    // Resolve absolute path to the package directory
-    const pkgPath = path.dirname(require.resolve('youtube-po-token-generator/package.json'));
-    
-    // Dynamically require functions/consts from the library
-    const { fetchVisitorData } = require(path.join(pkgPath, 'lib', 'workflow'));
-    const { url, userAgent } = require(path.join(pkgPath, 'lib', 'consts'));
-    
-    const visitorData = await fetchVisitorData();
-    console.log(`[PO Token] Fetched visitor data: ${visitorData}`);
-    
-    const domContent = await fs.promises.readFile(path.join(pkgPath, 'vendor', 'index.html'), 'utf-8');
-    const baseContent = await fs.promises.readFile(path.join(pkgPath, 'vendor', 'base.js'), 'utf-8');
-    const baseAppendContent = await fs.promises.readFile(path.join(pkgPath, 'lib', 'inject.js'), 'utf-8');
-    
-    // Run JSDOM evaluation with a timeout
-    const result = await new Promise<{ poToken: string } | null>((resolve, reject) => {
-      let windowClosed = false;
-      
-      const virtualConsole = new VirtualConsole();
-      // Suppress JSDOM log noise by default
-      
-      const { window } = new JSDOM(domContent, {
-        url,
-        pretendToBeVisual: true,
-        runScripts: 'dangerously',
-        virtualConsole,
-      });
-      
-      const cleanUp = () => {
-        if (!windowClosed) {
-          windowClosed = true;
-          window.close();
-        }
-      };
-      
-      // Safety timeout: 15 seconds max
-      const timeout = setTimeout(() => {
-        cleanUp();
-        reject(new Error('JSDOM token generation timed out after 15s'));
-      }, 15000);
-      
-      Object.defineProperty(window.navigator, 'userAgent', { value: userAgent, writable: false });
-      (window as any).visitorData = visitorData;
-      (window as any).onPoToken = (poToken: string) => {
-        clearTimeout(timeout);
-        cleanUp();
-        resolve({ poToken });
-      };
-      
-      try {
-        window.eval(baseContent.replace(/}\s*\)\(_yt_player\);\s*$/, (matched) => `;${baseAppendContent};${matched}`));
-      } catch (err: any) {
-        clearTimeout(timeout);
-        cleanUp();
-        reject(new Error(`Failed to evaluate base player script: ${err.message}`));
-      }
-    });
-    
-    if (result && result.poToken) {
-      const isError = result.poToken.includes('Error') || result.poToken.includes('Invalid') || result.poToken.length > 200;
-      if (isError) {
-        console.warn(`[PO Token] Warning: Generated token is an error/invalid format (length ${result.poToken.length}): ${result.poToken.substring(0, 100)}...`);
-        // Try decoding it to print a helpful error message if it's base64 encoded
-        try {
-          const decoded = Buffer.from(result.poToken, 'base64').toString('utf-8');
-          console.warn(`[PO Token] Decoded error message: ${decoded.substring(0, 500)}`);
-        } catch (e) {}
-        return null;
-      }
-      console.log(`[PO Token] Success! Generated valid PO token of length ${result.poToken.length}`);
-      return { poToken: result.poToken, visitorData };
-    }
-    
-    return null;
-  } catch (err: any) {
-    console.error(`[PO Token] Safe PO token generation failed: ${err.message || err}`);
-    return null;
-  }
-}
-
-/**
- * Get or create a singleton Innertube client.
- */
-export async function getClient(): Promise<Innertube> {
-  if (!innertubeClient) {
-    const options: any = {
-      retrieve_player: true, // Crucial for deciphering signature cipher URLs!
-      cache: new UniversalCache(true, path.join(__dirname, '..', '..', '.cache')),
-    };
-
-    const tokenResult = await generatePoTokenSafe();
-    if (tokenResult) {
-      options.po_token = tokenResult.poToken;
-      options.visitor_data = tokenResult.visitorData;
-      isPoTokenAvailable = true;
-      console.log('[YouTubeService] Innertube initialized with Proof of Origin (poToken).');
-    } else {
-      console.warn('[YouTubeService] Proceeding without poToken. Streaming might be blocked on VPS IPs.');
-    }
-
-    innertubeClient = await Innertube.create(options);
-  }
-  return innertubeClient;
-}
-
-/**
- * Extract streaming URL using youtubei.js
- */
-async function extractUrlWithInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
+async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
   url: string;
   contentType: string;
   title: string;
@@ -278,53 +114,52 @@ async function extractUrlWithInnertube(videoId: string, quality: 'high' | 'mediu
   filesize: number;
 } | null> {
   try {
-    const yt = await getClient();
-    const client = isPoTokenAvailable ? 'WEB' : 'IOS';
-    console.log(`[Innertube] Fetching full info (${client} client) for ${videoId}...`);
-    const info = await yt.getInfo(videoId, { client: client as any });
-    
-    const format = info.chooseFormat({
-      type: 'audio',
-      quality: quality === 'low' ? 'low' : 'best'
-    });
-    
-    if (!format) {
-      throw new Error('No audio format found in Innertube');
-    }
-    
-    console.log(`[Innertube] Deciphering signature for ${videoId}...`);
-    const url = await format.decipher(yt.session.player);
-    if (!url) {
-      throw new Error('Innertube decipher failed to return a URL');
+    console.log(`[youtubeService] Attempting custom InnerTube player extraction for ${videoId}...`);
+    const { basicInfo, audioFormats } = await customPlayer(videoId);
+    if (!audioFormats || audioFormats.length === 0) {
+      throw new Error('No audio formats returned by custom player');
     }
 
-    const title = info.basic_info.title || 'Unknown';
-    const artist = info.basic_info.author || 'Unknown Artist';
-    const duration = info.basic_info.duration || 0;
-    const filesize = format.content_length || 0;
-    const mimeType = format.mime_type || 'audio/mp4';
+    // Sort formats by bitrate descending
+    const sortedFormats = [...audioFormats].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
+    
+    let selectedFormat: any;
+    if (quality === 'low') {
+      selectedFormat = sortedFormats[sortedFormats.length - 1]; // Lowest bitrate
+    } else if (quality === 'medium') {
+      selectedFormat = sortedFormats[Math.floor(sortedFormats.length / 2)] || sortedFormats[0];
+    } else {
+      selectedFormat = sortedFormats[0]; // Highest bitrate
+    }
+
+    if (!selectedFormat || !selectedFormat.url) {
+      throw new Error('Selected format has no direct URL');
+    }
+
+    const mimeType = selectedFormat.mimeType || 'audio/mp4';
     const contentType = mimeType.split(';')[0].trim();
+    const filesize = parseInt(selectedFormat.contentLength || selectedFormat.content_length || '0', 10) || 0;
 
-    console.log(`[Innertube] Successfully extracted stream URL for ${videoId}: ${contentType}`);
-    
+    console.log(`[youtubeService] Custom InnerTube successfully resolved stream for ${videoId}: ${contentType}`);
+
     return {
-      url,
+      url: selectedFormat.url,
       contentType,
-      title,
-      artist,
-      duration,
-      filesize,
+      title: basicInfo.title,
+      artist: basicInfo.artist,
+      duration: basicInfo.duration,
+      filesize
     };
   } catch (err: any) {
-    console.error(`[Innertube] Failed to extract stream for ${videoId}:`, err?.message || err);
+    console.warn(`[youtubeService] Custom InnerTube player extraction failed for ${videoId}:`, err.message || err);
     return null;
   }
 }
 
 /**
- * Extract video metadata using youtubei.js
+ * Custom InnerTube video info extraction.
  */
-async function getVideoInfoWithInnertube(videoId: string): Promise<{
+async function getVideoInfoWithCustomInnertube(videoId: string): Promise<{
   title: string;
   artist: string;
   album: string;
@@ -332,46 +167,63 @@ async function getVideoInfoWithInnertube(videoId: string): Promise<{
   coverArtUrl: string | null;
 } | null> {
   try {
-    const yt = await getClient();
-    const client = isPoTokenAvailable ? 'WEB' : 'IOS';
-    console.log(`[Innertube] Fetching video info (${client} client) for ${videoId}...`);
-    const info = await yt.getInfo(videoId, { client: client as any });
-    
-    const title = info.basic_info.title || 'Unknown';
-    const artist = info.basic_info.author || 'Unknown Artist';
-    const duration = info.basic_info.duration || 0;
-    
-    let coverArtUrl: string | null = null;
-    if (info.basic_info.thumbnail && info.basic_info.thumbnail.length > 0) {
-      const sorted = [...info.basic_info.thumbnail].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
-      coverArtUrl = sorted[0]?.url || null;
-    }
-    
+    console.log(`[youtubeService] Attempting custom InnerTube video info fetch for ${videoId}...`);
+    const { basicInfo } = await customPlayer(videoId);
     return {
-      title,
-      artist,
+      title: basicInfo.title,
+      artist: basicInfo.artist,
       album: 'YouTube',
-      duration,
-      coverArtUrl,
+      duration: basicInfo.duration,
+      coverArtUrl: basicInfo.coverArtUrl
     };
   } catch (err: any) {
-    console.error(`[Innertube] Failed to get video info for ${videoId}:`, err?.message || err);
+    console.warn(`[youtubeService] Custom InnerTube video info fetch failed for ${videoId}:`, err.message || err);
     return null;
   }
 }
 
 /**
- * Search YouTube Music for tracks matching the query.
- * Uses youtubei.js InnerTube API (search works fine, only stream deciphering is broken).
+ * Search YouTube Music using the custom InnerTube client.
  */
-// ─── Invidious + Piped API Fallback ──────────────────────────────────────
-// When Innertube fails (datacenter IP blocked), we try third-party YouTube
-// frontends that handle bot detection on their own infrastructure.
-// Invidious is tried first (more stable API), then Piped as a backup.
-// Instance lists are fetched dynamically on startup for freshness.
-// ─────────────────────────────────────────────────────────────────────────
+export async function searchYouTube(query: string): Promise<YouTubeTrack[]> {
+  try {
+    return await customSearch(query);
+  } catch (error) {
+    console.error('[youtubeService] Search error:', error);
+    return [];
+  }
+}
 
-// Hardcoded fallback instances (used if dynamic fetch fails)
+/**
+ * Recommended tracks / radio from custom InnerTube.
+ */
+export async function getRelatedTracks(videoId: string): Promise<any[]> {
+  try {
+    return await customGetRelated(videoId);
+  } catch (error) {
+    console.error('[youtubeService] GetRelatedTracks error:', error);
+    return [];
+  }
+}
+
+/**
+ * TIMED transcripts helper.
+ */
+export async function getYouTubeTranscript(videoId: string): Promise<any> {
+  try {
+    return await customGetTranscript(videoId);
+  } catch (error) {
+    console.error('[youtubeService] GetYouTubeTranscript error:', error);
+    return null;
+  }
+}
+
+export async function preWarmClient(): Promise<void> {
+  // No-op compatibility export
+  console.log('[youtubeService] InnerTube client pre-warm (custom client, instant start)');
+}
+
+// ─── Proxy Fallback Implementations ──────────────────────────────────────
 const FALLBACK_INVIDIOUS_INSTANCES = [
   'https://inv.nadeko.net',
   'https://invidious.nerdvpn.de',
@@ -388,32 +240,23 @@ const FALLBACK_PIPED_INSTANCES = [
   'https://api.piped.privacydev.net',
 ];
 
-// Dynamic instance lists (populated on startup)
 let invidiousInstances: string[] = [...FALLBACK_INVIDIOUS_INSTANCES];
 let pipedInstances: string[] = [...FALLBACK_PIPED_INSTANCES];
 let instancesLastFetched = 0;
 const INSTANCE_REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 
-/**
- * Fetch and cache working Invidious instances from the official API.
- */
 async function refreshInvidiousInstances(): Promise<void> {
   if (Date.now() - instancesLastFetched < INSTANCE_REFRESH_INTERVAL) return;
-  
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
-    
     const response = await fetch('https://api.invidious.io/instances.json?sort_by=type,health', {
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    
     if (!response.ok) return;
-    
     const data = await response.json() as any[];
     const working: string[] = [];
-    
     for (const [, info] of data) {
       if (
         info?.type === 'https' &&
@@ -423,9 +266,8 @@ async function refreshInvidiousInstances(): Promise<void> {
       ) {
         working.push(info.uri);
       }
-      if (working.length >= 8) break; // limit to top 8
+      if (working.length >= 8) break;
     }
-    
     if (working.length > 0) {
       invidiousInstances = working;
       instancesLastFetched = Date.now();
@@ -436,12 +278,8 @@ async function refreshInvidiousInstances(): Promise<void> {
   }
 }
 
-// Refresh instances on module load
 refreshInvidiousInstances().catch(() => {});
 
-/**
- * Helper: make a fetch request with timeout
- */
 async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -458,10 +296,6 @@ async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise
   }
 }
 
-/**
- * Extract streaming URL using Invidious API.
- * Uses /api/v1/videos/:id endpoint and picks from adaptiveFormats.
- */
 async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
   url: string;
   contentType: string;
@@ -470,51 +304,26 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
   duration: number;
   filesize: number;
 } | null> {
-  // Refresh instances if stale
   refreshInvidiousInstances().catch(() => {});
-  
   for (const instance of invidiousInstances) {
     try {
       const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`;
       console.log(`[Invidious] Trying ${instance} for ${videoId}...`);
-      
       const response = await fetchWithTimeout(apiUrl, 12000);
-      
-      if (!response.ok) {
-        console.warn(`[Invidious] ${instance} returned ${response.status}`);
-        continue;
-      }
-      
+      if (!response.ok) continue;
       const data = await response.json() as any;
-      
-      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) {
-        console.warn(`[Invidious] ${instance} returned no adaptive formats for ${videoId}`);
-        continue;
-      }
-      
-      // Filter for audio-only streams
+      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) continue;
       const audioStreams = data.adaptiveFormats
         .filter((s: any) => s.type && s.type.startsWith('audio/') && s.url)
         .sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
-      
-      if (audioStreams.length === 0) {
-        console.warn(`[Invidious] ${instance} has no audio streams for ${videoId}`);
-        continue;
-      }
-      
-      let selected;
+      if (audioStreams.length === 0) continue;
+      let selected = audioStreams[0];
       if (quality === 'low') {
         selected = audioStreams[audioStreams.length - 1];
       } else if (quality === 'medium') {
         selected = audioStreams[Math.floor(audioStreams.length / 2)];
-      } else {
-        selected = audioStreams[0];
       }
-      
       const contentType = (selected.type || 'audio/mp4').split(';')[0].trim();
-      
-      console.log(`[Invidious] ✓ Extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
-      
       return {
         url: selected.url,
         contentType,
@@ -524,19 +333,12 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
         filesize: parseInt(selected.clen) || 0,
       };
     } catch (err: any) {
-      const reason = err.name === 'AbortError' ? 'timed out' : (err.message || err);
-      console.warn(`[Invidious] ${instance} failed for ${videoId}: ${reason}`);
       continue;
     }
   }
-  
-  console.warn(`[Invidious] All instances failed for ${videoId}`);
   return null;
 }
 
-/**
- * Get video metadata using Invidious API.
- */
 async function getVideoInfoWithInvidious(videoId: string): Promise<{
   title: string;
   artist: string;
@@ -548,18 +350,13 @@ async function getVideoInfoWithInvidious(videoId: string): Promise<{
     try {
       const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails`;
       const response = await fetchWithTimeout(apiUrl, 10000);
-      
       if (!response.ok) continue;
-      
       const data = await response.json() as any;
-      
-      // Pick the best thumbnail
       let coverArtUrl: string | null = null;
       if (data.videoThumbnails && data.videoThumbnails.length > 0) {
         const maxres = data.videoThumbnails.find((t: any) => t.quality === 'maxresdefault' || t.quality === 'maxres');
         coverArtUrl = maxres?.url || data.videoThumbnails[0]?.url || null;
       }
-      
       return {
         title: data.title || 'Unknown',
         artist: data.author || 'Unknown Artist',
@@ -574,10 +371,6 @@ async function getVideoInfoWithInvidious(videoId: string): Promise<{
   return null;
 }
 
-/**
- * Extract streaming URL using Piped API as secondary fallback.
- * Tries multiple Piped instances for redundancy.
- */
 async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
   url: string;
   contentType: string;
@@ -590,44 +383,21 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
       console.log(`[Piped] Trying ${instance} for ${videoId}...`);
-      
       const response = await fetchWithTimeout(apiUrl, 10000);
-      
-      if (!response.ok) {
-        console.warn(`[Piped] ${instance} returned ${response.status}`);
-        continue;
-      }
-      
+      if (!response.ok) continue;
       const data = await response.json() as any;
-      
-      if (!data.audioStreams || data.audioStreams.length === 0) {
-        console.warn(`[Piped] ${instance} returned no audio streams for ${videoId}`);
-        continue;
-      }
-      
-      // Sort by bitrate descending and pick based on quality preference
+      if (!data.audioStreams || data.audioStreams.length === 0) continue;
       const streams = data.audioStreams
         .filter((s: any) => s.url && s.mimeType)
         .sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-      
-      if (streams.length === 0) {
-        console.warn(`[Piped] ${instance} has no usable audio streams for ${videoId}`);
-        continue;
-      }
-      
-      let selected;
+      if (streams.length === 0) continue;
+      let selected = streams[0];
       if (quality === 'low') {
         selected = streams[streams.length - 1];
       } else if (quality === 'medium') {
         selected = streams[Math.floor(streams.length / 2)];
-      } else {
-        selected = streams[0];
       }
-      
       const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
-      
-      console.log(`[Piped] ✓ Extracted stream from ${instance} for ${videoId}: ${contentType} @ ${selected.bitrate || '?'}bps`);
-      
       return {
         url: selected.url,
         contentType,
@@ -637,19 +407,12 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
         filesize: selected.contentLength || 0,
       };
     } catch (err: any) {
-      const reason = err.name === 'AbortError' ? 'timed out' : (err.message || err);
-      console.warn(`[Piped] ${instance} failed for ${videoId}: ${reason}`);
       continue;
     }
   }
-  
-  console.warn(`[Piped] All instances failed for ${videoId}`);
   return null;
 }
 
-/**
- * Get video metadata using Piped API as secondary fallback.
- */
 async function getVideoInfoWithPiped(videoId: string): Promise<{
   title: string;
   artist: string;
@@ -660,13 +423,9 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
   for (const instance of pipedInstances) {
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
-      
       const response = await fetchWithTimeout(apiUrl, 10000);
-      
       if (!response.ok) continue;
-      
       const data = await response.json() as any;
-      
       return {
         title: data.title || 'Unknown',
         artist: data.uploader || 'Unknown Artist',
@@ -681,9 +440,6 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
   return null;
 }
 
-/**
- * Combined proxy fallback: tries Invidious first, then Piped.
- */
 async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
   url: string;
   contentType: string;
@@ -692,20 +448,11 @@ async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' |
   duration: number;
   filesize: number;
 } | null> {
-  // Try Invidious first (more stable API)
   const invResult = await extractUrlWithInvidious(videoId, quality);
   if (invResult) return invResult;
-  
-  // Fall back to Piped
-  const pipedResult = await extractUrlWithPiped(videoId, quality);
-  if (pipedResult) return pipedResult;
-  
-  return null;
+  return await extractUrlWithPiped(videoId, quality);
 }
 
-/**
- * Combined proxy fallback for video info.
- */
 async function getVideoInfoWithProxy(videoId: string): Promise<{
   title: string;
   artist: string;
@@ -715,17 +462,9 @@ async function getVideoInfoWithProxy(videoId: string): Promise<{
 } | null> {
   const invResult = await getVideoInfoWithInvidious(videoId);
   if (invResult) return invResult;
-  
-  const pipedResult = await getVideoInfoWithPiped(videoId);
-  if (pipedResult) return pipedResult;
-  
-  return null;
+  return await getVideoInfoWithPiped(videoId);
 }
 
-/**
- * Extract streaming URL using Cobalt API.
- * Uses a list of active community Cobalt backends that return proxied/tunnel URLs.
- */
 async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
   url: string;
   contentType: string;
@@ -738,10 +477,8 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
     'https://rue-cobalt.xenon.zone/',
     'https://cobaltapi.kittycat.boo/'
   ];
-
   for (const backend of cobaltBackends) {
     const formatsToTry: ('mp3' | 'best')[] = ['mp3', 'best'];
-    
     for (const formatToTry of formatsToTry) {
       const payload = {
         url: `https://www.youtube.com/watch?v=${videoId}`,
@@ -749,12 +486,10 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
         audioFormat: formatToTry,
         audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
       };
-
       try {
         console.log(`[Cobalt] Trying ${backend} for ${videoId} (format: ${formatToTry})...`);
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 12000);
-        
         const response = await fetch(backend, {
           method: 'POST',
           headers: {
@@ -766,12 +501,7 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
           signal: controller.signal
         });
         clearTimeout(timeout);
-
-        if (!response.ok) {
-          console.warn(`[Cobalt] ${backend} (format: ${formatToTry}) returned status ${response.status}`);
-          continue;
-        }
-
+        if (!response.ok) continue;
         const data = await response.json() as any;
         if (data && data.url) {
           const filename = data.filename || '';
@@ -779,20 +509,11 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
           const parts = cleanFilename.split(' - ');
           const title = parts[0] || 'Unknown';
           const artist = parts[1] || 'Unknown Artist';
-          
-          let contentType = 'audio/mp4'; // default
-          if (filename.endsWith('.mp3')) {
-            contentType = 'audio/mpeg';
-          } else if (filename.endsWith('.m4a')) {
-            contentType = 'audio/mp4';
-          } else if (filename.endsWith('.webm') || filename.endsWith('.opus')) {
-            contentType = 'audio/webm';
-          } else if (filename.endsWith('.ogg')) {
-            contentType = 'audio/ogg';
-          }
-          
-          console.log(`[Cobalt] ✓ Extracted stream from ${backend} (format: ${formatToTry}) for ${videoId}: ${contentType}`);
-          
+          let contentType = 'audio/mp4';
+          if (filename.endsWith('.mp3')) contentType = 'audio/mpeg';
+          else if (filename.endsWith('.m4a')) contentType = 'audio/mp4';
+          else if (filename.endsWith('.webm') || filename.endsWith('.opus')) contentType = 'audio/webm';
+          else if (filename.endsWith('.ogg')) contentType = 'audio/ogg';
           return {
             url: data.url,
             contentType,
@@ -803,93 +524,51 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
           };
         }
       } catch (err: any) {
-        console.warn(`[Cobalt] ${backend} (format: ${formatToTry}) failed for ${videoId}: ${err.message || err}`);
+        continue;
       }
     }
   }
-
-  console.warn(`[Cobalt] All instances failed for ${videoId}`);
   return null;
 }
 
-export async function searchYouTube(query: string): Promise<YouTubeTrack[]> {
-  try {
-    const yt = await getClient();
-    const results = await yt.music.search(query, { type: 'song' });
-
-    const tracks: YouTubeTrack[] = [];
-
-    if (results.songs && results.songs.contents) {
-      for (const item of results.songs.contents) {
-        try {
-          const videoId = item.id;
-          if (!videoId) continue;
-
-          const title = item.title || 'Unknown Title';
-          
-          let artist = 'Unknown Artist';
-          if (item.artists && item.artists.length > 0) {
-            artist = item.artists.map((a: any) => a.name).join(', ');
-          }
-
-          let album = 'Single';
-          if (item.album && item.album.name) {
-            album = item.album.name;
-          }
-
-          let duration = 0;
-          if (item.duration && item.duration.seconds) {
-            duration = item.duration.seconds;
-          }
-
-          let coverArtUrl: string | null = null;
-          if (item.thumbnails && item.thumbnails.length > 0) {
-            const sorted = [...item.thumbnails].sort((a: any, b: any) => (b.width || 0) - (a.width || 0));
-            coverArtUrl = sorted[0]?.url || null;
-          }
-
-          tracks.push({
-            videoId,
-            title,
-            artist,
-            album,
-            duration,
-            coverArtUrl,
-            source: 'youtube',
-            quality: 'YouTube Audio',
-          });
-        } catch (e) {
-          continue;
-        }
-      }
+// ─── Pooled yt-dlp Execution Helper ──────────────────────────────────────
+function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: string; stderr: string }> {
+  return new Promise(async (resolve, reject) => {
+    let poolHandle;
+    try {
+      poolHandle = await ytdlpPool.acquire();
+    } catch (err) {
+      return reject(err);
     }
-
-    return tracks;
-  } catch (error) {
-    console.error('[YouTubeService] Search error:', error);
-    return [];
-  }
+    let finished = false;
+    const release = () => {
+      if (!finished) {
+        finished = true;
+        poolHandle.release();
+      }
+    };
+    const child = execFile(YT_DLP_PATH, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+      release();
+      if (error) {
+        reject(Object.assign(error, { stdout, stderr }));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+    poolHandle.registerProcess(child);
+    if (timeoutMs > 0) {
+      const timeout = setTimeout(() => {
+        if (!finished && child.exitCode === null) {
+          child.kill('SIGKILL');
+          reject(new Error('Process timed out'));
+        }
+      }, timeoutMs);
+      child.on('exit', () => clearTimeout(timeout));
+    }
+  });
 }
 
-export async function preWarmClient(): Promise<void> {
-  try {
-    await getClient();
-    console.log('[YouTubeService] InnerTube client pre-warmed successfully');
-  } catch (e) {
-    console.error('[YouTubeService] Failed to pre-warm client:', e);
-  }
-}
-
-// ─── yt-dlp Integration ──────────────────────────────────────────────────
-// yt-dlp is the gold standard for YouTube extraction. It's constantly
-// updated to handle YouTube's anti-bot measures and always works.
-// We use it for stream URL extraction and direct audio piping.
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Extract the direct audio stream URL from YouTube using yt-dlp.
- * Returns the URL, content type, and metadata.
- */
+// ─── Main Audio stream resolver ──────────────────────────────────────────
 export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medium' | 'low' = 'high', bypassCache: boolean = false): Promise<{
   url: string;
   contentType: string;
@@ -899,7 +578,6 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
   filesize: number;
 } | null> {
   const cacheKey = `${videoId}-${quality}`;
-  // Check stream URL cache first (skip if bypassCache is true)
   if (!bypassCache) {
     const cached = streamUrlCache.get(cacheKey);
     if (cached && cached.expiry > Date.now()) {
@@ -908,51 +586,41 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
     }
   }
 
-  // Check if there is an extraction already in progress for this videoId
   let pending = pendingExtractions.get(cacheKey);
   if (!pending) {
     pending = (async () => {
       try {
         if (!isValidVideoId(videoId)) {
-          console.error(`[yt-dlp] Invalid video ID format: ${videoId}`);
+          console.error(`[youtubeService] Invalid video ID format: ${videoId}`);
           return null;
         }
 
-        // Try extracting via Innertube (youtubei.js) first
-        console.log(`[YouTubeService] Attempting Innertube stream extraction for ${videoId}...`);
-        const innertubeResult = await extractUrlWithInnertube(videoId, quality);
-        if (innertubeResult) {
-          // Cache the result
-          streamUrlCache.set(cacheKey, { data: innertubeResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-          return innertubeResult;
+        // Try extracting via custom InnerTube IOS client context
+        const customResult = await extractUrlWithCustomInnertube(videoId, quality);
+        if (customResult) {
+          streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return customResult;
         }
 
-        // Try Cobalt API as fallback (highly reliable, returns proxied/tunnel URL)
-        console.log(`[YouTubeService] Innertube failed, trying Cobalt API for ${videoId}...`);
+        // Fallback to Cobalt API
+        console.log(`[youtubeService] Custom InnerTube failed, trying Cobalt API for ${videoId}...`);
         const cobaltResult = await extractUrlWithCobalt(videoId, quality);
         if (cobaltResult) {
           streamUrlCache.set(cacheKey, { data: cobaltResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
           return cobaltResult;
         }
 
-        // Try Invidious + Piped proxy APIs as fallback
-        console.log(`[YouTubeService] Cobalt failed, trying proxy APIs for ${videoId}...`);
+        // Fallback to Invidious / Piped proxies
+        console.log(`[youtubeService] Cobalt failed, trying proxy APIs for ${videoId}...`);
         const proxyResult = await extractUrlWithProxy(videoId, quality);
         if (proxyResult) {
           streamUrlCache.set(cacheKey, { data: proxyResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
           return proxyResult;
         }
 
-        console.log(`[YouTubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
-
+        // Final fallback: local pooled yt-dlp execution
+        console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        
-        // Use optimized yt-dlp flags: print only required fields to avoid huge JSON generation overhead
-        // Format priority: best available audio (highest bitrate), then
-        // specific known-good IDs as fallbacks.  'bestaudio' alone lets
-        // yt-dlp pick the highest bitrate stream YouTube offers — which
-        // can be Opus @ 256 kbps when available.
-        // Quality-aware format selectors
         const formatMap: Record<string, string> = {
           high: 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
           medium: '140/bestaudio[acodec=aac]/bestaudio',
@@ -982,7 +650,7 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
         const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr, abrStr] = lines;
 
         if (!url || url === 'NA') {
-          throw new Error('No valid URL extracted');
+          throw new Error('No valid URL extracted by yt-dlp');
         }
 
         const cleanStr = (val: string | undefined) => (!val || val === 'NA' ? '' : val);
@@ -990,10 +658,6 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
         const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
         const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
         const duration = parseFloat(durationStr || '') || 0;
-        const abr = parseFloat(abrStr || '') || 0;
-        if (abr > 0) {
-          console.log(`[yt-dlp] Selected audio: ${ext} @ ${abr}kbps for ${videoId}`);
-        }
 
         const result = {
           url,
@@ -1004,10 +668,9 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           filesize,
         };
 
-        // Cache the result
         streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
 
-        // Prune cache if too large — evict entry with oldest expiry
+        // Cache eviction
         if (streamUrlCache.size > MAX_CACHE_SIZE) {
           let oldestKey: string | null = null;
           let oldestExpiry = Infinity;
@@ -1022,13 +685,7 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
 
         return result;
       } catch (error: any) {
-        console.error(`[yt-dlp] URL extraction failed for ${videoId}:`, {
-          message: error?.message || error,
-          code: error?.code,
-          signal: error?.signal,
-          stderr: error?.stderr,
-          stdout: error?.stdout?.substring(0, 1000)
-        });
+        console.error(`[youtubeService] Stream URL extraction failed for ${videoId}:`, error?.message || error);
         return null;
       } finally {
         pendingExtractions.delete(cacheKey);
@@ -1040,11 +697,6 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
   return pending;
 }
 
-/**
- * Spawn yt-dlp to pipe audio data directly to stdout (Readable stream).
- * This avoids extracting a URL and fetching it separately.
- * Returns a Readable stream that can be piped to an HTTP response.
- */
 export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | 'low' = 'high'): {
   stream: Readable;
   process: ChildProcess;
@@ -1052,35 +704,27 @@ export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | '
   if (!isValidVideoId(videoId)) {
     throw new Error(`Invalid video ID format: ${videoId}`);
   }
-
   const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  
   const child = spawn(YT_DLP_PATH, [
     '--no-warnings',
     '--no-playlist',
     '-f', quality === 'low' ? '249/250/bestaudio/140' : quality === 'medium' ? '140/bestaudio[acodec=aac]/bestaudio' : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
-    '-o', '-', // Output to stdout
+    '-o', '-',
     ytUrl
   ], {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-
-  // Log stderr for debugging
   child.stderr?.on('data', (data: Buffer) => {
     const msg = data.toString().trim();
     if (msg) console.log(`[yt-dlp stderr] ${msg}`);
   });
-
   return {
     stream: child.stdout as Readable,
     process: child,
   };
 }
 
-/**
- * Get video metadata using yt-dlp (title, artist, thumbnail, duration).
- */
 export async function getVideoInfo(videoId: string): Promise<{
   title: string;
   artist: string;
@@ -1088,7 +732,6 @@ export async function getVideoInfo(videoId: string): Promise<{
   duration: number;
   coverArtUrl: string | null;
 } | null> {
-  // Check cache first
   const cached = videoInfoCache.get(videoId);
   if (cached && cached.expiry > Date.now()) {
     return cached.data;
@@ -1096,25 +739,23 @@ export async function getVideoInfo(videoId: string): Promise<{
 
   try {
     if (!isValidVideoId(videoId)) {
-      console.error(`[yt-dlp] Invalid video ID format: ${videoId}`);
+      console.error(`[youtubeService] Invalid video ID format: ${videoId}`);
       return null;
     }
 
-    // Try extracting via Innertube (youtubei.js) first
-    console.log(`[YouTubeService] Attempting Innertube video info fetch for ${videoId}...`);
-    const innertubeResult = await getVideoInfoWithInnertube(videoId);
-    if (innertubeResult) {
-      // Cache the result
+    // Try custom InnerTube player info fetch
+    const customResult = await getVideoInfoWithCustomInnertube(videoId);
+    if (customResult) {
       if (videoInfoCache.size >= MAX_CACHE_SIZE) {
         const oldest = videoInfoCache.keys().next().value;
         if (oldest) videoInfoCache.delete(oldest);
       }
-      videoInfoCache.set(videoId, { data: innertubeResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
-      return innertubeResult;
+      videoInfoCache.set(videoId, { data: customResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
+      return customResult;
     }
 
-    // Try Invidious + Piped proxy APIs as fallback
-    console.log(`[YouTubeService] Innertube failed, trying proxy APIs for video info ${videoId}...`);
+    // Fallback to proxy APIs
+    console.log(`[youtubeService] Custom InnerTube failed, trying proxy APIs for video info ${videoId}...`);
     const proxyResult = await getVideoInfoWithProxy(videoId);
     if (proxyResult) {
       if (videoInfoCache.size >= MAX_CACHE_SIZE) {
@@ -1125,11 +766,9 @@ export async function getVideoInfo(videoId: string): Promise<{
       return proxyResult;
     }
 
-    console.log(`[YouTubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
-
+    // Fallback to yt-dlp info query
+    console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for video info of ${videoId}`);
     const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    
-    // Print only the necessary fields to skip JSON formatting overhead and check certificate/formats speedups
     const { stdout } = await runYtDlpPooled([
       '--no-warnings',
       '--no-playlist',
@@ -1146,14 +785,8 @@ export async function getVideoInfo(videoId: string): Promise<{
 
     const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
     const [title, artist, album, durationStr, coverArtUrl] = lines;
-
-    const cleanStr = (val: string | undefined, defaultVal: string = '') => {
-      return !val || val === 'NA' ? defaultVal : val;
-    };
-
-    const cleanUrl = (val: string | undefined): string | null => {
-      return !val || val === 'NA' ? null : val;
-    };
+    const cleanStr = (val: string | undefined, defaultVal: string = '') => (!val || val === 'NA' ? defaultVal : val);
+    const cleanUrl = (val: string | undefined): string | null => (!val || val === 'NA' ? null : val);
 
     const result = {
       title: cleanStr(title) || 'Unknown',
@@ -1163,22 +796,14 @@ export async function getVideoInfo(videoId: string): Promise<{
       coverArtUrl: cleanUrl(coverArtUrl),
     };
 
-    // Cache the result
     if (videoInfoCache.size >= MAX_CACHE_SIZE) {
       const oldest = videoInfoCache.keys().next().value;
       if (oldest) videoInfoCache.delete(oldest);
     }
     videoInfoCache.set(videoId, { data: result, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
-
     return result;
   } catch (error: any) {
-    console.error(`[yt-dlp] Video info error for ${videoId}:`, {
-      message: error?.message || error,
-      code: error?.code,
-      signal: error?.signal,
-      stderr: error?.stderr,
-      stdout: error?.stdout?.substring(0, 1000)
-    });
+    console.error(`[youtubeService] Video info fetch failed for ${videoId}:`, error?.message || error);
     return null;
   }
 }
