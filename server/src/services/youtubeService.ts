@@ -280,6 +280,78 @@ async function refreshInvidiousInstances(): Promise<void> {
 
 refreshInvidiousInstances().catch(() => {});
 
+const FALLBACK_COBALT_INSTANCES = [
+  'https://rue-cobalt.xenon.zone',
+  'https://cobaltapi.kittycat.boo',
+  'https://api.cobalt.tools',
+];
+
+let cobaltInstances: string[] = [...FALLBACK_COBALT_INSTANCES];
+let cobaltInstancesLastFetched = 0;
+
+async function refreshCobaltInstances(): Promise<void> {
+  if (Date.now() - cobaltInstancesLastFetched < INSTANCE_REFRESH_INTERVAL) return;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    console.log('[Proxy] Fetching Cobalt instances list from instances.cobalt.best...');
+    const response = await fetch('https://instances.cobalt.best/api/instances.json', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!response.ok) return;
+    const data = await response.json() as any[];
+    const working: string[] = [];
+    for (const item of data) {
+      if (
+        item.url &&
+        item.monitoring?.status === 'up' &&
+        item.trust >= 80 &&
+        item.cors === 1
+      ) {
+        working.push(item.url.replace(/\/$/, ''));
+      }
+      if (working.length >= 12) break;
+    }
+    if (working.length > 0) {
+      cobaltInstances = working;
+      cobaltInstancesLastFetched = Date.now();
+      console.log(`[Proxy] Refreshed Cobalt instances: ${working.length} found`);
+    }
+  } catch (err: any) {
+    console.warn(`[Proxy] Failed to refresh Cobalt instances: ${err.message || err}`);
+  }
+}
+
+refreshCobaltInstances().catch(() => {});
+
+async function validateMediaUrl(url: string): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const testRes = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Range': 'bytes=0-1',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (testRes.status === 403 || testRes.status === 401) {
+      return false;
+    }
+    const contentType = testRes.headers.get('content-type') || '';
+    if (contentType.includes('text/html')) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
 async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -324,6 +396,13 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
         selected = audioStreams[Math.floor(audioStreams.length / 2)];
       }
       const contentType = (selected.type || 'audio/mp4').split(';')[0].trim();
+      console.log(`[Invidious] Validating stream URL: ${selected.url}`);
+      const isValid = await validateMediaUrl(selected.url);
+      if (!isValid) {
+        console.warn(`[Invidious] Stream URL validation failed for ${selected.url}. Trying next...`);
+        continue;
+      }
+      console.log(`[Invidious] Stream URL validation passed!`);
       return {
         url: selected.url,
         contentType,
@@ -398,6 +477,13 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
         selected = streams[Math.floor(streams.length / 2)];
       }
       const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
+      console.log(`[Piped] Validating stream URL: ${selected.url}`);
+      const isValid = await validateMediaUrl(selected.url);
+      if (!isValid) {
+        console.warn(`[Piped] Stream URL validation failed for ${selected.url}. Trying next...`);
+        continue;
+      }
+      console.log(`[Piped] Stream URL validation passed!`);
       return {
         url: selected.url,
         contentType,
@@ -473,11 +559,9 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
   duration: number;
   filesize: number;
 } | null> {
-  const cobaltBackends = [
-    'https://rue-cobalt.xenon.zone/',
-    'https://cobaltapi.kittycat.boo/'
-  ];
-  for (const backend of cobaltBackends) {
+  refreshCobaltInstances().catch(() => {});
+  // Use dynamically resolved list of instances
+  for (const backend of cobaltInstances) {
     const formatsToTry: ('mp3' | 'best')[] = ['mp3', 'best'];
     for (const formatToTry of formatsToTry) {
       const payload = {
@@ -504,6 +588,14 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
         if (!response.ok) continue;
         const data = await response.json() as any;
         if (data && data.url) {
+          console.log(`[Cobalt] Validating resolved URL from ${backend}: ${data.url}`);
+          const isValid = await validateMediaUrl(data.url);
+          if (!isValid) {
+            console.warn(`[Cobalt] Stream URL from ${backend} failed validation (blocked or Turnstile challenged). Trying next...`);
+            continue;
+          }
+          console.log(`[Cobalt] Stream URL from ${backend} passed validation!`);
+
           const filename = data.filename || '';
           const cleanFilename = filename.replace(/\.[^/.]+$/, "");
           const parts = cleanFilename.split(' - ');
@@ -524,6 +616,7 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
           };
         }
       } catch (err: any) {
+        console.warn(`[Cobalt] Failed to query ${backend} for ${videoId}:`, err.message || err);
         continue;
       }
     }
