@@ -120,8 +120,14 @@ async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 
       throw new Error('No audio formats returned by custom player');
     }
 
+    // Prioritize audio/mp4 (AAC) over audio/webm (Opus) for universal playback support
+    let filteredFormats = audioFormats.filter((f: any) => (f.mimeType || '').includes('audio/mp4'));
+    if (filteredFormats.length === 0) {
+      filteredFormats = audioFormats;
+    }
+
     // Sort formats by bitrate descending
-    const sortedFormats = [...audioFormats].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
+    const sortedFormats = [...filteredFormats].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
     
     let selectedFormat: any;
     if (quality === 'low') {
@@ -388,9 +394,15 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
       if (!response.ok) continue;
       const data = await response.json() as any;
       if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) continue;
-      const audioStreams = data.adaptiveFormats
-        .filter((s: any) => s.type && s.type.startsWith('audio/') && s.url)
-        .sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
+      let audioStreams = data.adaptiveFormats.filter((s: any) => s.type && s.type.startsWith('audio/') && s.url);
+      
+      // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
+      const mp4Streams = audioStreams.filter((s: any) => s.type.includes('audio/mp4'));
+      if (mp4Streams.length > 0) {
+        audioStreams = mp4Streams;
+      }
+      
+      audioStreams.sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
       if (audioStreams.length === 0) continue;
       let selected = audioStreams[0];
       if (quality === 'low') {
@@ -469,9 +481,15 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
       if (!response.ok) continue;
       const data = await response.json() as any;
       if (!data.audioStreams || data.audioStreams.length === 0) continue;
-      const streams = data.audioStreams
-        .filter((s: any) => s.url && s.mimeType)
-        .sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
+      let streams = data.audioStreams.filter((s: any) => s.url && s.mimeType);
+      
+      // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
+      const mp4Streams = streams.filter((s: any) => s.mimeType.includes('audio/mp4'));
+      if (mp4Streams.length > 0) {
+        streams = mp4Streams;
+      }
+      
+      streams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
       if (streams.length === 0) continue;
       let selected = streams[0];
       if (quality === 'low') {
@@ -718,9 +736,9 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
         console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
         const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const formatMap: Record<string, string> = {
-          high: 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
+          high: '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
           medium: '140/bestaudio[acodec=aac]/bestaudio',
-          low: '249/250/bestaudio/140',
+          low: '140/249/250/bestaudio',
         };
         const formatSelector = formatMap[quality] || formatMap.high;
 
@@ -804,7 +822,7 @@ export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | '
   const child = spawn(YT_DLP_PATH, [
     '--no-warnings',
     '--no-playlist',
-    '-f', quality === 'low' ? '249/250/bestaudio/140' : quality === 'medium' ? '140/bestaudio[acodec=aac]/bestaudio' : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140',
+    '-f', quality === 'low' ? '140/249/250/bestaudio' : quality === 'medium' ? '140/bestaudio[acodec=aac]/bestaudio' : '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
     '-o', '-',
     ytUrl

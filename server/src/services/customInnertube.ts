@@ -464,10 +464,16 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
       };
 
       const adaptiveFormats = data.streamingData.adaptiveFormats || [];
-      const audioFormats = adaptiveFormats.filter((f: any) => f.mimeType?.startsWith("audio/"));
+      const rawAudioFormats = adaptiveFormats.filter((f: any) => f.mimeType?.startsWith("audio/"));
 
-      if (audioFormats.length === 0) {
+      if (rawAudioFormats.length === 0) {
         throw new Error("No audio formats found in streamingData");
+      }
+
+      // Prioritize audio/mp4 (AAC) over audio/webm (Opus) for universal browser playback support
+      let audioFormats = rawAudioFormats.filter((f: any) => f.mimeType?.includes('audio/mp4'));
+      if (audioFormats.length === 0) {
+        audioFormats = rawAudioFormats;
       }
 
       // Decipher and n-transform formats
