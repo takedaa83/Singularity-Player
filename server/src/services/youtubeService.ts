@@ -326,6 +326,9 @@ async function refreshCobaltInstances(): Promise<void> {
 refreshCobaltInstances().catch(() => {});
 
 async function validateMediaUrl(url: string): Promise<boolean> {
+  if (url.includes('googlevideo.com')) {
+    return true;
+  }
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);

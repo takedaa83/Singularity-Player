@@ -230,6 +230,11 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     if (streamInfo && streamInfo.url) {
       const { url, contentType, filesize } = streamInfo;
 
+      if (url.includes('googlevideo.com')) {
+        console.log(`[YT Route] Redirecting client directly to Google Video URL: ${url}`);
+        res.redirect(302, url);
+        return;
+      }
 
       const rangeHeader = req.headers.range;
 
@@ -387,6 +392,11 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
   try {
     const streamInfo = await getAudioStreamUrl(videoId, 'high');
     if (streamInfo && streamInfo.url) {
+      if (streamInfo.url.includes('googlevideo.com')) {
+        console.log(`[YT Download] Redirecting client directly to Google Video URL: ${streamInfo.url}`);
+        res.redirect(302, streamInfo.url);
+        return;
+      }
 
       const ext = streamInfo.contentType.includes('webm') ? 'webm' : 'm4a';
       const fileName = `${safeName}.${ext}`;
