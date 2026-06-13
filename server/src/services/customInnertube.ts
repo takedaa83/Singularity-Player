@@ -1,4 +1,6 @@
 import { YouTubeTrack } from './youtubeService';
+import { getSignatureTimestamp, deobfuscateSignature, transformNParamInUrl } from './cipherDeobfuscator';
+import crypto from 'crypto';
 
 export interface InnerTubeClient {
   clientName: string;
@@ -13,6 +15,80 @@ export interface InnerTubeClient {
   deviceModel?: string;
   androidSdkVersion?: string;
   isEmbedded?: boolean;
+  loginSupported?: boolean;
+}
+
+const YOUTUBE_COOKIE = process.env.YOUTUBE_COOKIE || '';
+
+interface CookieMap {
+  [key: string]: string;
+}
+
+function parseCookie(cookieStr: string): CookieMap {
+  const map: CookieMap = {};
+  cookieStr.split(';').forEach(pair => {
+    const parts = pair.split('=');
+    if (parts.length >= 2) {
+      map[parts[0].trim()] = parts.slice(1).join('=').trim();
+    }
+  });
+  return map;
+}
+
+const cookieMap = YOUTUBE_COOKIE ? parseCookie(YOUTUBE_COOKIE) : {};
+
+function getSapisidHash(sapisid: string, origin: string): string {
+  const currentTime = Math.floor(Date.now() / 1000);
+  const data = `${currentTime} ${sapisid} ${origin}`;
+  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
+  return `${currentTime}_${sha1}`;
+}
+
+let cachedVisitorData: string | null = null;
+let lastVisitorDataFetch = 0;
+const VISITOR_DATA_TTL = 30 * 60 * 1000; // 30 minutes
+
+async function getVisitorData(): Promise<string | null> {
+  if (cachedVisitorData && (Date.now() - lastVisitorDataFetch < VISITOR_DATA_TTL)) {
+    return cachedVisitorData;
+  }
+  
+  try {
+    const res = await fetch('https://music.youtube.com/sw.js_data');
+    if (!res.ok) return null;
+    const text = await res.text();
+    const jsonStr = text.substring(5); // Skip )]}'\n
+    const data = JSON.parse(jsonStr);
+    
+    const findVisitorId = (val: any): string | null => {
+      if (typeof val === 'string' && /^Cg[t|s]/.test(val)) {
+        return val;
+      }
+      if (Array.isArray(val)) {
+        for (const item of val) {
+          const res = findVisitorId(item);
+          if (res) return res;
+        }
+      } else if (typeof val === 'object' && val !== null) {
+        for (const key of Object.keys(val)) {
+          const res = findVisitorId(val[key]);
+          if (res) return res;
+        }
+      }
+      return null;
+    };
+
+    const visitorId = findVisitorId(data);
+    if (visitorId) {
+      cachedVisitorData = visitorId;
+      lastVisitorDataFetch = Date.now();
+      console.log(`[customInnertube] Dynamically resolved visitorData: ${visitorId}`);
+      return visitorId;
+    }
+  } catch (err: any) {
+    console.warn(`[customInnertube] Failed to fetch visitorData:`, err.message);
+  }
+  return null;
 }
 
 const clients: Record<string, InnerTubeClient> = {
@@ -22,7 +98,8 @@ const clients: Record<string, InnerTubeClient> = {
     clientId: "1",
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   },
   WEB_REMIX: {
     clientName: "WEB_REMIX",
@@ -30,7 +107,8 @@ const clients: Record<string, InnerTubeClient> = {
     clientId: "67",
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
     origin: "https://music.youtube.com",
-    referer: "https://music.youtube.com/"
+    referer: "https://music.youtube.com/",
+    loginSupported: true
   },
   WEB_CREATOR: {
     clientName: "WEB_CREATOR",
@@ -38,7 +116,8 @@ const clients: Record<string, InnerTubeClient> = {
     clientId: "62",
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: true
   },
   TVHTML5: {
     clientName: "TVHTML5",
@@ -46,7 +125,8 @@ const clients: Record<string, InnerTubeClient> = {
     clientId: "7",
     userAgent: "Mozilla/5.0(SMART-TV; Linux; Tizen 4.0.0.2) AppleWebkit/605.1.15 (KHTML, like Gecko) SamsungBrowser/9.2 TV Safari/605.1.15",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: true
   },
   TVHTML5_SIMPLY_EMBEDDED_PLAYER: {
     clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
@@ -55,7 +135,8 @@ const clients: Record<string, InnerTubeClient> = {
     userAgent: "Mozilla/5.0 (PlayStation; PlayStation 4/12.02) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15",
     origin: "https://www.youtube.com",
     referer: "https://www.youtube.com/",
-    isEmbedded: true
+    isEmbedded: true,
+    loginSupported: true
   },
   IOS: {
     clientName: "IOS",
@@ -67,7 +148,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceMake: "Apple",
     deviceModel: "iPhone16,2",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   },
   IPADOS: {
     clientName: "IOS",
@@ -79,7 +161,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceMake: "Apple",
     deviceModel: "iPad7,6",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   },
   ANDROID: {
     clientName: "ANDROID",
@@ -87,7 +170,8 @@ const clients: Record<string, InnerTubeClient> = {
     clientId: "3",
     userAgent: "com.google.android.youtube/21.03.38 (Linux; U; Android 14) gzip",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: true
   },
   ANDROID_VR: {
     clientName: "ANDROID_VR",
@@ -100,7 +184,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceModel: "Quest 3",
     androidSdkVersion: "32",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   },
   ANDROID_VR_1_43: {
     clientName: "ANDROID_VR",
@@ -113,7 +198,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceModel: "Quest 3",
     androidSdkVersion: "32",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   },
   ANDROID_CREATOR: {
     clientName: "ANDROID_CREATOR",
@@ -126,7 +212,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceModel: "Pixel 9 Pro Fold",
     androidSdkVersion: "35",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: true
   },
   VISIONOS: {
     clientName: "VISIONOS",
@@ -138,7 +225,8 @@ const clients: Record<string, InnerTubeClient> = {
     deviceMake: "Apple",
     deviceModel: "RealityDevice14,1",
     origin: "https://www.youtube.com",
-    referer: "https://www.youtube.com/"
+    referer: "https://www.youtube.com/",
+    loginSupported: false
   }
 };
 
@@ -177,7 +265,7 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
     ...payload
   };
 
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent": client.userAgent,
     "X-Goog-Api-Format-Version": "1",
@@ -186,6 +274,23 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
     "X-Origin": client.origin,
     "Referer": client.referer
   };
+
+  try {
+    const visitorId = await getVisitorData();
+    if (visitorId) {
+      headers["X-Goog-Visitor-Id"] = visitorId;
+    }
+  } catch (err: any) {
+    // Ignore visitorId errors
+  }
+
+  if (client.loginSupported && YOUTUBE_COOKIE) {
+    headers["Cookie"] = YOUTUBE_COOKIE;
+    if (cookieMap["SAPISID"]) {
+      const sapisidHash = getSapisidHash(cookieMap["SAPISID"], client.origin);
+      headers["Authorization"] = `SAPISIDHASH ${sapisidHash}`;
+    }
+  }
 
   const res = await fetch(url, {
     method: "POST",
@@ -318,11 +423,28 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
     "WEB"
   ];
 
+  let sts: number | null = null;
+  try {
+    sts = await getSignatureTimestamp();
+  } catch (err: any) {
+    console.warn(`[customInnertube] Failed to get signatureTimestamp:`, err.message);
+  }
+
   let lastError: any = null;
   for (const key of clientKeysToTry) {
     try {
       console.log(`[customInnertube] Trying client ${key} for video ${videoId}...`);
-      const data = await requestInnerTube("player", key, { videoId });
+      
+      const payload: any = { videoId };
+      if (sts && (key.startsWith("WEB") || key.startsWith("TVHTML5") || key.startsWith("VISIONOS"))) {
+        payload.playbackContext = {
+          contentPlaybackContext: {
+            signatureTimestamp: sts
+          }
+        };
+      }
+
+      const data = await requestInnerTube("player", key, payload);
       
       const playabilityStatus = data.playabilityStatus?.status;
       if (playabilityStatus !== "OK") {
@@ -348,7 +470,46 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
         throw new Error("No audio formats found in streamingData");
       }
 
-      console.log(`[customInnertube] Successfully resolved video ${videoId} with client ${key}`);
+      // Decipher and n-transform formats
+      let bestFormat: any = null;
+      for (const format of audioFormats) {
+        let url = format.url;
+        const cipherText = format.signatureCipher || format.cipher;
+        if (!url && cipherText) {
+          try {
+            url = await deobfuscateSignature(cipherText, videoId);
+          } catch (err: any) {
+            console.warn(`[customInnertube] Signature deobfuscation failed for format itag ${format.itag} with client ${key}:`, err.message);
+          }
+        }
+        
+        if (url) {
+          if (key.startsWith("WEB") || key.startsWith("TVHTML5") || key.startsWith("VISIONOS")) {
+            try {
+              url = await transformNParamInUrl(url);
+            } catch (err: any) {
+              console.warn(`[customInnertube] N-transform failed for format itag ${format.itag} with client ${key}:`, err.message);
+            }
+          }
+          format.url = url;
+        }
+        
+        if (url && (!bestFormat || (format.bitrate || 0) > (bestFormat.bitrate || 0))) {
+          bestFormat = format;
+        }
+      }
+
+      if (!bestFormat || !bestFormat.url) {
+        throw new Error("No formats with valid URLs resolved");
+      }
+
+      console.log(`[customInnertube] Validating resolved stream URL for client ${key}...`);
+      const isValid = await validateUrl(bestFormat.url);
+      if (!isValid) {
+        throw new Error(`Stream URL validation failed (Turnstile challenged or blocked)`);
+      }
+
+      console.log(`[customInnertube] Successfully resolved and validated video ${videoId} with client ${key}`);
       return {
         basicInfo,
         audioFormats,
@@ -537,5 +698,32 @@ export async function customGetTranscript(videoId: string): Promise<any> {
   } catch (error) {
     console.error("[InnerTube Transcript] Error:", error);
     return null;
+  }
+}
+
+async function validateUrl(url: string): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Range": "bytes=0-1",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    
+    if (res.status === 200 || res.status === 206) {
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  } catch (err) {
+    return false;
   }
 }

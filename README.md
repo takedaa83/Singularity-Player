@@ -56,9 +56,15 @@ Singularity Player is a two-part system — a **React frontend** that runs in yo
 
 ### The Search & Streaming Pipeline
 
-When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) and YouTube Music to find matching tracks with cover art, album info, and preview URLs. To query YouTube Music search and recommendation feeds reliably on hosted environments (like Render or VPS servers), the backend features a custom, lightweight InnerTube client (`WEB_REMIX`). 
+When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) and YouTube Music to find matching tracks with cover art, album info, and preview URLs. To query YouTube Music search and recommendation feeds reliably on hosted environments (like Render or VPS servers), the backend features a custom, lightweight InnerTube client (`WEB_REMIX`).
 
-For streaming playback, the player bypasses bot-guard sign-in challenges by executing a client-fallback stack query (`VISIONOS`, `TVHTML5`, `ANDROID_VR`, `IOS`, etc.) to find a client that does not trigger bot-detection blocks on cloud hosting providers. Once resolved, the backend acts as a streaming proxy—both for direct Google Video URLs and public fallback proxies—routing all media data through standard HTTP bytes-range requests. This guarantees that the browser never encounters CORS, hotlinking, or referer demuxer failures during playback.
+For streaming playback, the player bypasses bot-guard sign-in challenges by:
+1. **Dynamic Visitor Session Resolution**: Fetching valid `visitorData` parameters dynamically from YouTube's `sw.js_data` to authenticate all InnerTube request headers.
+2. **V8 VM Deobfuscation Sandbox**: Bootstrapping a V8 Virtual Machine sandbox to compile and execute YouTube's `base.js` player script at runtime, dynamically extracting signature deciphering and `n`-parameter transform functions (supporting expressions like `mP`, `$9`, `Jf`, and `v0` found in recent players).
+3. **Client-Fallback Stack**: Cycling through a client stack (`VISIONOS`, `TVHTML5_SIMPLY_EMBEDDED_PLAYER`, `TVHTML5`, `ANDROID_VR`, `IOS`, etc.) to resolve playable audio streams.
+4. **Cookie & SAPISID Authentication**: Authenticating web clients via an optional `YOUTUBE_COOKIE` environment variable, parsing it to construct SHA1-hashed `SAPISIDHASH` Authorization headers to bypass age-restricted or premium content checks.
+
+Once resolved, the backend acts as a streaming proxy—routing the media stream through standard HTTP byte-range requests to eliminate CORS, hotlinking, or browser demuxer failures during playback.
 
 ### Prefetching & Zero-Wait Playback
 
@@ -420,6 +426,7 @@ Copy `.env.example` to `.env` and customize as needed:
 | `ALLOWED_ORIGINS` | CORS-allowed origins (comma-separated) | `http://localhost:5173,http://127.0.0.1:5173` |
 | `NODE_ENV` | Environment (`development` / `production`) | `development` |
 | `VITE_API_URL` | Backend URL for the frontend to connect to | `http://localhost:3001` |
+| `YOUTUBE_COOKIE` | Optional YouTube login cookie string (required for premium/age-restricted content and bypassing bot checks on certain hosting environments) | `""` |
 
 ---
 
