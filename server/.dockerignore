@@ -1,0 +1,9 @@
+node_modules
+dist
+yt-dlp.exe
+uploads
+.env
+.env.*
+.git
+.github
+*.log
