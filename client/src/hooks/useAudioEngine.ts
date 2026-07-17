@@ -340,8 +340,8 @@ export class AudioEngine {
       this.syncPreAmpGain();
 
       activePlayerInstance.play().catch((e) => {
-        console.warn('Playback failed or interrupted:', e);
-        if (e.name !== 'AbortError') {
+        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+          console.warn('Playback failed or interrupted:', e);
           usePlayerStore.getState().setPlaying(false);
           usePlayerStore.getState().setBuffering(false);
           this.showToast('Playback failed. Please check your network or try another track.', 'error');
