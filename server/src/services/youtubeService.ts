@@ -711,15 +711,24 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return null;
         }
 
-        // Try extracting via custom InnerTube IOS client context
-        const customResult = await extractUrlWithCustomInnertube(videoId, quality);
-        if (customResult) {
-          streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-          return customResult;
+        const isCloudHosting = (process.env.RENDER === 'true' || 
+                                process.env.FLY_APP_NAME || 
+                                process.env.CLOUD_HOSTING === 'true') &&
+                                process.env.FORCE_DIRECT_STREAMS !== 'true';
+
+        if (!isCloudHosting) {
+          // Try extracting via custom InnerTube IOS client context
+          const customResult = await extractUrlWithCustomInnertube(videoId, quality);
+          if (customResult) {
+            streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+            return customResult;
+          }
+        } else {
+          console.log(`[youtubeService] Cloud hosting detected (Render/Fly). Bypassing direct GoogleVideo extraction to prevent datacenter IP blocks.`);
         }
 
         // Fallback to Cobalt API
-        console.log(`[youtubeService] Custom InnerTube failed, trying Cobalt API for ${videoId}...`);
+        console.log(`[youtubeService] Direct extraction bypassed or failed, trying Cobalt API for ${videoId}...`);
         const cobaltResult = await extractUrlWithCobalt(videoId, quality);
         if (cobaltResult) {
           streamUrlCache.set(cacheKey, { data: cobaltResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
