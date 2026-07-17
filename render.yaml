@@ -3,7 +3,7 @@ services:
   - type: web
     name: singularity-player-backend
     env: docker
-    dockerfilePath: Dockerfile
+    dockerfilePath: server/Dockerfile
     dockerContext: server
     plan: free
     envVars:
