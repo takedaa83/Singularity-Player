@@ -40,6 +40,8 @@ import {
   Spa as SpaIcon,
   Celebration as CelebrationIcon,
   NightsStay as NightsStayIcon,
+  ChevronLeft as ChevronLeft,
+  ChevronRight as ChevronRight,
 } from '@mui/icons-material';
 import { tokens } from '../../theme/muiTheme';
 import { formatDuration } from '../../utils/formatDuration';
@@ -53,6 +55,8 @@ import { PlaylistGenerator, VibeType, VIBE_CONFIGS } from '../../services/playli
 import { useDownloadStore } from '../../stores/downloadStore';
 import { useBatchStore } from '../../stores/batchStore';
 import { TrackContextMenu } from '../ui/TrackContextMenu';
+import { useAudioEngine } from '../../hooks/useAudioEngine';
+import { AudioVisualizer } from '../player/AudioVisualizer';
 
 // ─── Props ────────────────────────────────────────────────────────────
 
@@ -110,11 +114,11 @@ const trackCardVariants = {
 
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 6) return 'Good Night';
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  if (h < 21) return 'Good Evening';
-  return 'Good Night';
+  if (h < 6) return 'Good Night \u{1F319}';
+  if (h < 12) return 'Good Morning \u{2615}';
+  if (h < 17) return 'Good Afternoon \u{2600}';
+  if (h < 21) return 'Good Evening \u{1F305}';
+  return 'Good Night \u{1F319}';
 }
 
 // ─── Genre Definitions ────────────────────────────────────────────────
@@ -275,7 +279,8 @@ export const TrackScrollRowItem: React.FC<{
         onMouseLeave={handleMouseLeave}
         sx={{
           flexShrink: 0,
-          width: 155,
+          scrollSnapAlign: 'start',
+          width: 180,
           p: `${tokens.spacing.md}px`,
           borderRadius: `${tokens.radius.xl}px`,
           bgcolor: tokens.colors.surface,
@@ -290,8 +295,8 @@ export const TrackScrollRowItem: React.FC<{
             bgcolor: tokens.colors.surfaceVariant,
             transform: 'translateY(-4px)',
             boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
-            '& .play-overlay': { opacity: 1, transform: 'scale(1)' },
-            '& .track-cover-img': { transform: 'scale(1.06)' },
+            '& .play-overlay': { opacity: 1, transform: 'scale(1) translateY(0)' },
+            '& .track-cover-img': { transform: 'scale(1.05)' },
           },
         }}
       >
@@ -340,25 +345,36 @@ export const TrackScrollRowItem: React.FC<{
               <MusicNoteIcon sx={{ fontSize: 32, color: tokens.colors.textTertiary }} />
             </Box>
           )}
-          {/* Play overlay */}
+          {/* Hover overlay with Spotify-style floating play button */}
           <Box
             className="play-overlay"
             sx={{
               position: 'absolute',
-              inset: 0,
-              bgcolor: 'rgba(0,0,0,0.5)',
+              bottom: 8,
+              right: 8,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              bgcolor: tokens.colors.primary,
+              color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              opacity: isActive && isPlaying ? 1 : 0,
-              transform: isActive && isPlaying ? 'scale(1)' : 'scale(0.9)',
-              transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+              opacity: isActive ? 1 : 0,
+              transform: isActive ? 'scale(1) translateY(0)' : 'scale(0.6) translateY(8px)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              zIndex: 2,
+              '&:hover': {
+                transform: 'scale(1.1) !important',
+                bgcolor: tokens.colors.primaryLight,
+              }
             }}
           >
             {isActive && isPlaying ? (
-              <PauseIcon sx={{ fontSize: 36, color: '#fff' }} />
+              <PauseIcon sx={{ fontSize: 22, color: '#fff' }} />
             ) : (
-              <PlayArrowIcon sx={{ fontSize: 36, color: '#fff' }} />
+              <PlayArrowIcon sx={{ fontSize: 22, color: '#fff', ml: 0.2 }} />
             )}
           </Box>
         </Box>
@@ -503,59 +519,53 @@ export const QuickPlayGridItem: React.FC<{
         onContextMenu={handleContextMenu}
         onMouseEnter={() => setHoveredId(item.id)}
         onMouseLeave={() => setHoveredId(null)}
+        className={isFeatured && item.id === 'liked-songs' ? 'mesh-gradient-animated gsap-tilt' : 'gsap-tilt'}
         sx={{
           display: 'flex',
           flexDirection: isFeatured ? 'column' : 'row',
           alignItems: isFeatured ? 'flex-start' : 'center',
           justifyContent: 'space-between',
-          height: isFeatured ? { xs: 56, sm: 128 } : 56,
-          bgcolor: 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '12px',
+          height: isFeatured ? { xs: 56, sm: 220 } : 56,
+          background: isFeatured 
+            ? 'none' 
+            : 'rgba(255, 255, 255, 0.04)',
+          borderRadius: '16px',
           overflow: 'hidden',
           cursor: 'pointer',
-          transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
-          p: isFeatured ? { xs: 0, sm: 2.5 } : 0,
-          pr: isFeatured ? { xs: 3, sm: 2.5 } : 3,
-          boxShadow: isFeatured ? '0 10px 25px rgba(0,0,0,0.15)' : 'none',
-          border: isFeatured ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          p: isFeatured ? { xs: 1.5, sm: 3 } : 0,
+          pr: isFeatured ? { xs: 3, sm: 3 } : 3,
+          boxShadow: isFeatured ? '0 12px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
+          border: isFeatured ? '1px solid rgba(255,255,255,0.08)' : 'none',
           '&:hover': {
-            bgcolor: 'rgba(255, 255, 255, 0.08)',
-            transform: 'translateY(-2px)',
-            boxShadow: isFeatured ? '0 15px 35px rgba(0,0,0,0.25)' : '0 4px 12px rgba(0,0,0,0.1)',
+            bgcolor: isFeatured ? undefined : 'rgba(255, 255, 255, 0.08)',
+            transform: 'translateY(-4px) scale(1.01)',
+            boxShadow: isFeatured ? '0 20px 45px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2)' : '0 4px 12px rgba(0,0,0,0.1)',
             '& .quick-play-btn': {
               opacity: 1,
               transform: 'scale(1)',
             }
           },
           '&:active': {
-            transform: 'scale(0.985)',
+            transform: 'scale(0.98)',
           }
         }}
       >
         {isFeatured ? (
           <>
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background: item.gradient,
-                opacity: 0.15,
-                zIndex: 0,
-                pointerEvents: 'none',
-              }}
-            />
             <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'row', gap: 3, alignItems: 'center', width: '100%', zIndex: 1 }}>
               <Box
                 sx={{
                   width: 80,
                   height: 80,
-                  background: item.gradient,
+                  background: 'rgba(255, 255, 255, 0.12)',
+                  backdropFilter: 'blur(10px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 24px rgba(168, 85, 247, 0.4)',
+                  borderRadius: '16px',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   flexShrink: 0,
                 }}
               >
@@ -566,31 +576,33 @@ export const QuickPlayGridItem: React.FC<{
                   variant="subtitle1"
                   sx={{
                     fontWeight: 900,
-                    color: tokens.colors.textPrimary,
-                    fontSize: 20,
+                    color: '#fff',
+                    fontSize: 22,
                     letterSpacing: '-0.02em',
+                    fontFamily: tokens.fontFamily,
                   }}
                 >
                   {item.title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: tokens.colors.textSecondary }}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontFamily: tokens.fontFamily }}>
                   {item.tracks?.length || 0} songs saved
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1 }}>
+            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1, pl: 1.5 }}>
               <Box
                 sx={{
-                  width: 56,
-                  height: 56,
+                  width: 36,
+                  height: 36,
                   background: item.gradient,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  borderRadius: '8px',
                   flexShrink: 0,
                 }}
               >
-                <FavoriteIcon sx={{ color: '#fff', fontSize: 22 }} />
+                <FavoriteIcon sx={{ color: '#fff', fontSize: 18 }} />
               </Box>
               <Typography
                 variant="body2"
@@ -599,6 +611,7 @@ export const QuickPlayGridItem: React.FC<{
                   fontWeight: 700,
                   color: tokens.colors.textPrimary,
                   fontSize: 13,
+                  fontFamily: tokens.fontFamily,
                 }}
               >
                 {item.title}
@@ -608,28 +621,28 @@ export const QuickPlayGridItem: React.FC<{
               className="quick-play-btn"
               sx={{
                 position: 'absolute',
-                bottom: 16,
-                right: 16,
+                bottom: 24,
+                right: 24,
                 opacity: 0,
                 transform: 'scale(0.8)',
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 borderRadius: '50%',
                 bgcolor: '#fff',
                 color: '#000',
                 display: { xs: 'none', sm: 'flex' },
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
-                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 zIndex: 2,
                 '&:hover': {
-                  bgcolor: '#eeeeee',
+                  bgcolor: '#ffffff',
                   transform: 'scale(1.1) !important',
                 }
               }}
             >
-              <PlayArrowIcon sx={{ fontSize: 28, ml: 0.3, color: '#000' }} />
+              <PlayArrowIcon sx={{ fontSize: 32, ml: 0.35, color: '#000' }} />
             </Box>
             <Box
               className="quick-play-btn"
@@ -658,35 +671,37 @@ export const QuickPlayGridItem: React.FC<{
           </>
         ) : (
           <>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1, pl: 1.5 }}>
               {item.type === 'favorites' ? (
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    width: 40,
+                    height: 40,
                     background: item.gradient,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    borderRadius: '8px',
                     boxShadow: '0 4px 12px rgba(168, 85, 247, 0.35)',
                     flexShrink: 0,
                   }}
                 >
-                  <FavoriteIcon sx={{ color: '#fff', fontSize: 22 }} />
+                  <FavoriteIcon sx={{ color: '#fff', fontSize: 18 }} />
                 </Box>
               ) : item.type === 'vibe' ? (
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    width: 40,
+                    height: 40,
                     background: item.gradient,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    borderRadius: '8px',
                     flexShrink: 0,
                   }}
                 >
-                  <MusicNoteIcon sx={{ color: '#fff', fontSize: 20 }} />
+                  <MusicNoteIcon sx={{ color: '#fff', fontSize: 18 }} />
                 </Box>
               ) : item.image ? (
                 <Box
@@ -694,8 +709,9 @@ export const QuickPlayGridItem: React.FC<{
                   src={item.image}
                   alt=""
                   sx={{
-                    width: 56,
-                    height: 56,
+                    width: 40,
+                    height: 40,
+                    borderRadius: '8px',
                     objectFit: 'cover',
                     flexShrink: 0,
                   }}
@@ -703,8 +719,9 @@ export const QuickPlayGridItem: React.FC<{
               ) : (
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    width: 40,
+                    height: 40,
+                    borderRadius: '8px',
                     bgcolor: tokens.colors.surfaceElevated,
                     display: 'flex',
                     alignItems: 'center',
@@ -712,7 +729,7 @@ export const QuickPlayGridItem: React.FC<{
                     flexShrink: 0,
                   }}
                 >
-                  <MusicNoteIcon sx={{ fontSize: 20, color: tokens.colors.textTertiary }} />
+                  <MusicNoteIcon sx={{ fontSize: 18, color: tokens.colors.textTertiary }} />
                 </Box>
               )}
               <Typography
@@ -722,6 +739,7 @@ export const QuickPlayGridItem: React.FC<{
                   fontWeight: 700,
                   color: tokens.colors.textPrimary,
                   fontSize: 13,
+                  fontFamily: tokens.fontFamily,
                 }}
               >
                 {item.title}
@@ -743,6 +761,7 @@ export const QuickPlayGridItem: React.FC<{
                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                 transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 zIndex: 2,
+                mr: 0.5,
                 '&:hover': {
                   bgcolor: tokens.colors.primaryLight,
                   transform: 'scale(1.08) !important',
@@ -789,31 +808,97 @@ QuickPlayGridItem.displayName = 'QuickPlayGridItem';
 const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
   ({ tracks, currentTrack, isPlaying, onPlay }) => {
     const [hoveredTrackId, setHoveredTrackId] = useState<string | null>(null);
+    const [showArrows, setShowArrows] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const handleScroll = (direction: 'left' | 'right') => {
+      if (!scrollRef.current) return;
+      const container = scrollRef.current;
+      const scrollAmount = 360; // scroll by about 2 cards
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    };
+
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          gap: `${tokens.spacing.md}px`,
-          overflowX: 'auto',
-          pb: 1,
-          mx: -0.5,
-          px: 0.5,
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
+      <Box 
+        onMouseEnter={() => setShowArrows(true)}
+        onMouseLeave={() => setShowArrows(false)}
+        sx={{ position: 'relative', width: '100%' }}
       >
-        {tracks.map((track, idx) => (
-          <TrackScrollRowItem
-            key={track.id}
-            track={track}
-            idx={idx}
-            currentTrack={currentTrack}
-            isPlaying={isPlaying}
-            onPlay={onPlay}
-            hoveredTrackId={hoveredTrackId}
-            setHoveredTrackId={setHoveredTrackId}
-          />
-        ))}
+        {/* Left Arrow */}
+        <IconButton
+          onClick={() => handleScroll('left')}
+          sx={{
+            position: 'absolute',
+            left: -16,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+            bgcolor: 'rgba(0, 0, 0, 0.65)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff',
+            opacity: showArrows ? 1 : 0,
+            visibility: showArrows ? 'visible' : 'hidden',
+            transition: 'all 0.3s ease',
+            '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.85)', transform: 'translateY(-50%) scale(1.08)' }
+          }}
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </IconButton>
+
+        {/* Carousel Container */}
+        <Box
+          ref={scrollRef}
+          sx={{
+            display: 'flex',
+            gap: `${tokens.spacing.md}px`,
+            overflowX: 'auto',
+            pb: 1,
+            mx: -0.5,
+            px: 0.5,
+            scrollbarWidth: 'none',
+            scrollSnapType: 'x mandatory',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
+        >
+          {tracks.map((track, idx) => (
+            <TrackScrollRowItem
+              key={track.id}
+              track={track}
+              idx={idx}
+              currentTrack={currentTrack}
+              isPlaying={isPlaying}
+              onPlay={onPlay}
+              hoveredTrackId={hoveredTrackId}
+              setHoveredTrackId={setHoveredTrackId}
+            />
+          ))}
+        </Box>
+
+        {/* Right Arrow */}
+        <IconButton
+          onClick={() => handleScroll('right')}
+          sx={{
+            position: 'absolute',
+            right: -16,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+            bgcolor: 'rgba(0, 0, 0, 0.65)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff',
+            opacity: showArrows ? 1 : 0,
+            visibility: showArrows ? 'visible' : 'hidden',
+            transition: 'all 0.3s ease',
+            '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.85)', transform: 'translateY(-50%) scale(1.08)' }
+          }}
+        >
+          <ChevronRight className="w-5 h-5" />
+        </IconButton>
       </Box>
     );
   }
@@ -907,6 +992,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   const setQueue = usePlayerStore((s) => s.setQueue);
 
   const { toast } = useToast();
+  const { getAnalyser } = useAudioEngine();
 
   // ── Recommendations ───────────────────────────────────────────────
   const recSections = useRecommendationStore((s) => s.sections);
@@ -1395,17 +1481,59 @@ export const HomePage: React.FC<HomePageProps> = ({
   }, [currentTrack, smartRecommendedTracks, recentTracks, favoriteTracks]);
 
   const contextualGreetingSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    
+    // Add listening stats if available
+    if (hoursListened > 0) {
+      const mins = Math.round(hoursListened * 60);
+      parts.push(`You\u2019ve listened to ${mins >= 60 ? `${hoursListened.toFixed(1)} hours` : `${mins} minutes`} of music`);
+    }
+
+    // Add genre-based recommendation
     if (recentTracks.length > 0) {
       const genres = recentTracks.map(t => t.genre).filter(Boolean);
       if (genres.length > 0) {
         const freq: Record<string, number> = {};
         genres.forEach(g => { freq[g] = (freq[g] || 0) + 1; });
         const topGenre = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
-        return `Ready for some ${topGenre}? Here is a mix tailored to your style.`;
+        if (parts.length > 0) {
+          parts.push(`Ready for some ${topGenre}?`);
+        } else {
+          parts.push(`Ready for some ${topGenre}? Here's a mix tailored to your style.`);
+        }
       }
     }
-    return `Welcome back! Dive into your daily recommendations and vibe playlists.`;
-  }, [recentTracks]);
+
+    if (parts.length === 0) {
+      return `Welcome back! Dive into your daily recommendations and vibe playlists.`;
+    }
+    return parts.join('. ') + '.';
+  }, [recentTracks, hoursListened]);
+
+  const moodPills = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) {
+      return [
+        { label: 'Morning Flow ☕', vibe: 'Chill' as VibeType },
+        { label: 'Wake Up Energy ⚡', vibe: 'Workout' as VibeType },
+      ];
+    } else if (h >= 12 && h < 17) {
+      return [
+        { label: 'Focus Flow 🎯', vibe: 'Focus' as VibeType },
+        { label: 'Afternoon Chill 🌤', vibe: 'Chill' as VibeType },
+      ];
+    } else if (h >= 17 && h < 22) {
+      return [
+        { label: 'Evening Relax 🌙', vibe: 'Chill' as VibeType },
+        { label: 'Gym Mode ⚡', vibe: 'Workout' as VibeType },
+      ];
+    } else {
+      return [
+        { label: 'Late Night Drive 🌃', vibe: 'Late Night' as VibeType },
+        { label: 'Midnight Focus 📚', vibe: 'Focus' as VibeType },
+      ];
+    }
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════════
   // ─── Render ─────────────────────────────────────────────────────────
@@ -1422,38 +1550,40 @@ export const HomePage: React.FC<HomePageProps> = ({
           gap: `${tokens.spacing['3xl']}px`,
           pb: `${tokens.spacing['3xl']}px`,
           color: tokens.colors.textPrimary,
-          // Ambient Glow Background
+          // Ambient Glow Background — driven by album art colors
           '&::before': {
             content: '""',
             position: 'absolute',
             top: -100,
             left: '10%',
-            width: '500px',
-            height: '500px',
-            background: `radial-gradient(circle, ${alpha(tokens.colors.primary, 0.08)} 0%, transparent 70%)`,
-            filter: 'blur(80px)',
+            width: '600px',
+            height: '600px',
+            background: 'radial-gradient(circle, var(--ambient-primary, rgba(120, 80, 200, 0.15)) 0%, transparent 70%)',
+            filter: 'blur(100px)',
             pointerEvents: 'none',
             zIndex: 0,
+            transition: 'background 1.5s ease',
           },
           '&::after': {
             content: '""',
             position: 'absolute',
             top: 100,
             right: '5%',
-            width: '400px',
-            height: '400px',
-            background: `radial-gradient(circle, ${alpha(tokens.colors.accent.pink, 0.05)} 0%, transparent 70%)`,
-            filter: 'blur(80px)',
+            width: '500px',
+            height: '500px',
+            background: 'radial-gradient(circle, var(--ambient-secondary, rgba(200, 80, 120, 0.10)) 0%, transparent 70%)',
+            filter: 'blur(100px)',
             pointerEvents: 'none',
             zIndex: 0,
+            transition: 'background 1.5s ease',
           }
         }}
       >
         {/* ─── Dynamic Hero Section ─── */}
         <Box 
-          className="gsap-hero relative overflow-hidden rounded-2xl border border-white/5"
+          className="gsap-hero relative overflow-hidden"
           sx={{ 
-            minHeight: { xs: 260, md: 340 },
+            minHeight: { xs: 280, md: 380 },
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -1461,16 +1591,18 @@ export const HomePage: React.FC<HomePageProps> = ({
             position: 'relative',
             mb: 1,
             zIndex: 1,
-            background: 'rgba(255, 255, 255, 0.01)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            borderRadius: { xs: `${tokens.radius.xl}px`, md: `${tokens.radius['2xl']}px` },
+            background: 'rgba(255, 255, 255, 0.02)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255, 255, 255, 0.04)',
           }}
         >
-          {/* Organic Background Blobs */}
+          {/* Organic Background Blobs — driven by album art ambient colors */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-            <div className="gsap-blob absolute w-64 h-64 rounded-full bg-indigo-600/10 blur-[60px] top-[-20%] left-[10%]" />
-            <div className="gsap-blob absolute w-72 h-72 rounded-full bg-purple-600/10 blur-[80px] bottom-[-20%] right-[15%]" />
-            <div className="gsap-blob absolute w-48 h-48 rounded-full bg-pink-600/5 blur-[50px] top-[30%] right-[40%]" />
+            <div className="gsap-blob absolute w-72 h-72 rounded-full blur-[80px] top-[-20%] left-[10%]" style={{ background: 'var(--ambient-primary, rgba(79, 70, 229, 0.1))', transition: 'background 1.5s ease' }} />
+            <div className="gsap-blob absolute w-80 h-80 rounded-full blur-[100px] bottom-[-20%] right-[15%]" style={{ background: 'var(--ambient-secondary, rgba(147, 51, 234, 0.1))', transition: 'background 1.5s ease' }} />
+            <div className="gsap-blob absolute w-56 h-56 rounded-full blur-[60px] top-[30%] right-[40%]" style={{ background: 'var(--ambient-primary, rgba(236, 72, 153, 0.05))', opacity: 0.6, transition: 'background 1.5s ease' }} />
           </div>
 
           {/* Dynamic Parallax Background Artwork Overlay */}
@@ -1506,13 +1638,14 @@ export const HomePage: React.FC<HomePageProps> = ({
                 className="gsap-type-title"
                 variant="h3"
                 sx={{
-                  fontWeight: 850,
+                  fontWeight: 800,
                   color: '#fff',
-                  letterSpacing: '-0.03em',
-                  fontSize: { xs: 28, sm: 36, md: 44 },
-                  lineHeight: 1.15,
+                  fontFamily: tokens.fontFamily,
+                  letterSpacing: '-0.02em',
+                  fontSize: { xs: 32, sm: 42, md: 56 },
+                  lineHeight: 1.08,
                   mb: 2,
-                  minHeight: { xs: 64, sm: 84, md: 100 }
+                  minHeight: { xs: 72, sm: 92, md: 120 }
                 }}
               >
                 Discover your next favorite song
@@ -1521,37 +1654,53 @@ export const HomePage: React.FC<HomePageProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: tokens.colors.textSecondary,
-                  fontSize: 14,
+                  color: 'rgba(255, 255, 255, 0.75)',
+                  fontSize: 15,
                   mb: 3,
-                  lineHeight: 1.5,
+                  lineHeight: 1.6,
+                  fontFamily: tokens.fontFamily,
                 }}
               >
                 {contextualGreetingSubtitle}
               </Typography>
               
-              {featuredTrack && (
-                <Button
-                  onClick={() => handlePlayTrack(featuredTrack)}
-                  variant="contained"
-                  startIcon={isPlaying && currentTrack?.id === featuredTrack.id ? <PauseIcon /> : <PlayArrowIcon />}
-                  sx={{
-                    background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-                    color: '#fff',
-                    fontWeight: 700,
-                    px: 4,
-                    py: 1.5,
-                    borderRadius: '24px',
-                    textTransform: 'none',
-                    boxShadow: `0 4px 20px ${tokens.colors.primary}40`,
-                    '&:hover': {
-                      boxShadow: `0 8px 30px ${tokens.colors.primary}60`,
-                    }
-                  }}
-                >
-                  {isPlaying && currentTrack?.id === featuredTrack.id ? 'Pause Preview' : 'Play Featured Track'}
-                </Button>
-              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                {featuredTrack && (
+                  <Button
+                    onClick={() => handlePlayTrack(featuredTrack)}
+                    variant="contained"
+                    startIcon={isPlaying && currentTrack?.id === featuredTrack.id ? <PauseIcon /> : <PlayArrowIcon />}
+                    sx={{
+                      background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontFamily: tokens.fontFamily,
+                      fontSize: 15,
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: '24px',
+                      textTransform: 'none',
+                      boxShadow: `0 4px 20px ${tokens.colors.primary}40`,
+                      animation: 'glow-pulse 3s ease-in-out infinite',
+                      '@keyframes glow-pulse': {
+                        '0%, 100%': { boxShadow: `0 4px 20px ${tokens.colors.primary}40` },
+                        '50%': { boxShadow: `0 6px 28px ${tokens.colors.primary}60` },
+                      },
+                      '&:hover': {
+                        boxShadow: `0 8px 30px ${tokens.colors.primary}60`,
+                        animation: 'none',
+                      }
+                    }}
+                  >
+                    {isPlaying && currentTrack?.id === featuredTrack?.id ? 'Pause' : 'Listen Now'}
+                  </Button>
+                )}
+                {isPlaying && currentTrack?.id === featuredTrack?.id && (
+                  <Box sx={{ width: 140, height: 36, borderRadius: '8px', overflow: 'hidden', opacity: 0.85, bgcolor: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <AudioVisualizer getAnalyser={getAnalyser} />
+                  </Box>
+                )}
+              </Box>
             </div>
 
             {/* Rotating Featured Artwork Card */}
@@ -1559,17 +1708,19 @@ export const HomePage: React.FC<HomePageProps> = ({
               <Box
                 className="gsap-tilt shrink-0 self-center md:self-auto"
                 sx={{
-                  width: { xs: 140, sm: 180, md: 220 },
-                  height: { xs: 140, sm: 180, md: 220 },
+                  width: { xs: 180, sm: 240, md: 320 },
+                  height: { xs: 180, sm: 240, md: 320 },
                   borderRadius: `${tokens.radius['2xl']}px`,
                   overflow: 'hidden',
                   position: 'relative',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 24px 56px rgba(0,0,0,0.6), 0 8px 20px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.08)',
                   background: tokens.colors.surfaceElevated,
                   cursor: 'pointer',
+                  transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                   '&:hover': {
                     '& .featured-play-overlay': { opacity: 1 },
+                    transform: 'scale(1.02)',
                   }
                 }}
                 onClick={() => handlePlayTrack(featuredTrack)}
@@ -1602,28 +1753,36 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </Box>
 
-        {/* Filter Pills */}
-        <Box className="gsap-hero" sx={{ mt: 1, px: 0.5 }}>
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 1 }}>
-            {(['all', 'music', 'vibes'] as const).map((filter) => (
+        {/* Filter & Mood Pills */}
+        <Box className="gsap-hero" sx={{ mt: 1, px: 0.5, display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+          {/* Main Filter Tabs */}
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            {[
+              { id: 'all', label: 'All', icon: <ExploreIcon sx={{ fontSize: 16 }} /> },
+              { id: 'music', label: 'Music', icon: <MusicNoteIcon sx={{ fontSize: 16 }} /> },
+              { id: 'vibes', label: 'Vibes', icon: <EqualizerIcon sx={{ fontSize: 16 }} /> },
+            ].map((tab) => (
               <Box
-                key={filter}
+                key={tab.id}
                 component="button"
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => setActiveFilter(tab.id as any)}
                 sx={{
-                  px: 3,
-                  py: 1,
+                  px: 2.5,
+                  py: 0.8,
                   borderRadius: '20px',
-                  fontSize: 12,
-                  fontWeight: 650,
+                  fontSize: 12.5,
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.8,
                   cursor: 'pointer',
                   border: 'none',
-                  textTransform: 'capitalize',
                   transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                  bgcolor: activeFilter === filter ? tokens.colors.primary : 'rgba(255, 255, 255, 0.07)',
-                  color: activeFilter === filter ? '#fff' : tokens.colors.textSecondary,
+                  bgcolor: activeFilter === tab.id ? tokens.colors.primary : 'rgba(255, 255, 255, 0.05)',
+                  color: activeFilter === tab.id ? '#fff' : tokens.colors.textSecondary,
+                  boxShadow: activeFilter === tab.id ? `0 4px 12px ${tokens.colors.primary}40` : 'none',
                   '&:hover': {
-                    bgcolor: activeFilter === filter ? tokens.colors.primaryLight : 'rgba(255, 255, 255, 0.12)',
+                    bgcolor: activeFilter === tab.id ? tokens.colors.primaryLight : 'rgba(255, 255, 255, 0.1)',
                     color: '#fff',
                   },
                   '&:active': {
@@ -1631,7 +1790,45 @@ export const HomePage: React.FC<HomePageProps> = ({
                   }
                 }}
               >
-                {filter}
+                {tab.icon}
+                {tab.label}
+              </Box>
+            ))}
+          </Box>
+
+          {/* Divider */}
+          <Box sx={{ width: '1px', height: '20px', bgcolor: 'rgba(255,255,255,0.1)', display: { xs: 'none', md: 'block' } }} />
+
+          {/* Time-Aware Mood Shortcuts */}
+          <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', py: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+            {moodPills.map((pill, i) => (
+              <Box
+                key={i}
+                component="button"
+                onClick={() => handleGenerateVibe(pill.vibe)}
+                sx={{
+                  px: 2.5,
+                  py: 0.8,
+                  borderRadius: '20px',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  color: tokens.colors.textSecondary,
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    background: 'rgba(255, 255, 255, 0.07)',
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.97)',
+                  }
+                }}
+              >
+                {pill.label}
               </Box>
             ))}
           </Box>
@@ -2111,7 +2308,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                       border: 'none',
                       cursor: 'pointer',
                       p: `${tokens.spacing.xl}px`,
-                      minHeight: 100,
+                      minHeight: 120,
                       display: 'flex',
                       alignItems: 'flex-end',
                       justifyContent: 'flex-start',
@@ -2134,6 +2331,10 @@ export const HomePage: React.FC<HomePageProps> = ({
                         '& .genre-icon-bg': {
                           transform: 'scale(1.25) rotate(25deg)',
                           opacity: 0.18,
+                        },
+                        '& .genre-play-btn': {
+                          opacity: 1,
+                          transform: 'scale(1) translateY(0)',
                         }
                       },
                       '&:active': {
@@ -2156,6 +2357,32 @@ export const HomePage: React.FC<HomePageProps> = ({
                     >
                       <MusicNoteIcon sx={{ fontSize: 90 }} />
                     </Box>
+
+                    {/* Play Button Overlay on Hover */}
+                    <Box
+                      className="genre-play-btn"
+                      sx={{
+                        position: 'absolute',
+                        right: 16,
+                        bottom: 16,
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        bgcolor: '#fff',
+                        color: '#000',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0,
+                        transform: 'scale(0.8) translateY(8px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        zIndex: 3,
+                      }}
+                    >
+                      <PlayArrowIcon sx={{ fontSize: 20, color: '#000', ml: 0.25 }} />
+                    </Box>
+
                     <Typography
                       variant="subtitle1"
                       sx={{
@@ -2166,6 +2393,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                         textShadow: '0 2px 6px rgba(0,0,0,0.3)',
                         fontSize: 16,
                         letterSpacing: '-0.01em',
+                        fontFamily: tokens.fontFamily,
                       }}
                     >
                       {genre.name}
@@ -2282,48 +2510,101 @@ export const HomePage: React.FC<HomePageProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                py: 8,
+                py: 10,
                 textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.04)',
+                px: 4,
+                backdropFilter: 'blur(20px)',
               }}
             >
               <Box
                 sx={{
-                  width: 80,
-                  height: 80,
+                  width: 90,
+                  height: 90,
                   borderRadius: '50%',
-                  bgcolor: tokens.colors.surface,
-                  border: `1px solid ${tokens.colors.surfaceBorder}`,
+                  bgcolor: 'rgba(255,255,255,0.03)',
+                  border: `1px solid rgba(255,255,255,0.06)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   mb: 3,
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+                  animation: 'float-note 4s ease-in-out infinite',
+                  '@keyframes float-note': {
+                    '0%, 100%': { transform: 'translateY(0) scale(1)' },
+                    '50%': { transform: 'translateY(-10px) scale(1.05)' },
+                  }
                 }}
               >
-                <MusicNoteIcon sx={{ fontSize: 40, color: tokens.colors.textTertiary }} />
+                <MusicNoteIcon sx={{ fontSize: 44, color: tokens.colors.primary }} />
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                Start Your Journey
+              
+              <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, fontFamily: tokens.fontFamily, color: '#fff', letterSpacing: '-0.02em' }}>
+                Your Music Oasis is Ready
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: tokens.colors.textTertiary, maxWidth: 360, mb: 3 }}
+                sx={{ color: tokens.colors.textSecondary, maxWidth: 420, mb: 4, lineHeight: 1.6, fontFamily: tokens.fontFamily }}
               >
-                Search for songs, upload your music, or explore the platform. Your recently played
-                tracks and favorites will appear here.
+                Create the perfect backdrop for your day. Search for any song, upload your audio files, or start listening instantly with one of our curated vibes.
               </Typography>
+              
+              {/* Clickable Vibe Chips */}
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center', mb: 4 }}>
+                {[
+                  { label: 'Chill Beats ☕', vibe: 'Chill' as VibeType },
+                  { label: 'Focus Mode 📚', vibe: 'Focus' as VibeType },
+                  { label: 'Workout Energy ⚡', vibe: 'Workout' as VibeType },
+                  { label: 'Late Night Drive 🌃', vibe: 'Late Night' as VibeType },
+                ].map((chip) => (
+                  <Box
+                    key={chip.label}
+                    component="button"
+                    onClick={() => handleGenerateVibe(chip.vibe)}
+                    sx={{
+                      px: 2.5,
+                      py: 1,
+                      borderRadius: '20px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      bgcolor: 'rgba(255, 255, 255, 0.04)',
+                      color: tokens.colors.textPrimary,
+                      transition: 'all 0.25s ease',
+                      '&:hover': {
+                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                        borderColor: tokens.colors.primary,
+                        transform: 'translateY(-2px)',
+                        boxShadow: `0 4px 12px ${tokens.colors.primary}25`,
+                      },
+                      '&:active': {
+                        transform: 'scale(0.97)',
+                      }
+                    }}
+                  >
+                    {chip.label}
+                  </Box>
+                ))}
+              </Box>
+              
               <Button
                 variant="contained"
                 startIcon={<SearchIcon />}
                 onClick={onSearchFocus}
                 sx={{
-                  bgcolor: tokens.colors.textPrimary,
-                  color: tokens.colors.background,
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1.25,
-                  borderRadius: `${tokens.radius.xl}px`,
+                  bgcolor: '#fff',
+                  color: '#000',
+                  fontWeight: 700,
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: '24px',
                   textTransform: 'none',
-                  '&:hover': { bgcolor: tokens.colors.textSecondary },
+                  fontFamily: tokens.fontFamily,
+                  boxShadow: '0 4px 14px rgba(255,255,255,0.15)',
+                  '&:hover': { bgcolor: '#eeeeee', boxShadow: '0 6px 20px rgba(255,255,255,0.25)' },
                 }}
               >
                 Start Searching

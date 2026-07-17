@@ -69,6 +69,7 @@ export const tokens = {
     '3xl': 48,
   },
   // Typography scale (replacing ad-hoc text-[9px]..text-[15px])
+  fontFamily: "'Inter', 'Inter Display', system-ui, -apple-system, sans-serif",
   typography: {
     caption: { size: 11, lineHeight: 1.4, weight: 400 },
     body2: { size: 13, lineHeight: 1.5, weight: 400 },
@@ -81,6 +82,7 @@ export const tokens = {
     h3: { size: 30, lineHeight: 1.2, weight: 700 },
     h2: { size: 36, lineHeight: 1.1, weight: 700 },
     h1: { size: 48, lineHeight: 1.1, weight: 800 },
+    display: { size: 56, lineHeight: 1.05, weight: 800, letterSpacing: '-0.02em' },
   },
   // Z-index scale
   zIndex: {
@@ -155,7 +157,7 @@ export const getMuiTheme = (themeMode: 'light' | 'dark', accentColor: string) =>
       borderRadius: tokens.radius.md,
     },
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica Neue", Arial, sans-serif',
+      fontFamily: tokens.fontFamily,
       caption: {
         fontSize: tokens.typography.caption.size,
         lineHeight: tokens.typography.caption.lineHeight,

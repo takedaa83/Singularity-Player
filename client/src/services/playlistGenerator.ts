@@ -1,6 +1,7 @@
 import { Track, Playlist } from '../types';
 import { initDB } from '../lib/db';
-import { getAudioFeatures, cosineSimilarity, areGenresRelated, hasRealAudioFeatures, isDuplicateTrack, isHighQualityTrack } from './smartQueueService';
+import { areGenresRelated, isDuplicateTrack, isHighQualityTrack } from './smartQueueService';
+import { getAudioFeatures, cosineSimilarity, hasRealAudioFeatures } from '../utils/musicMath';
 import { api } from '../utils/api';
 
 export type VibeType = 'Workout' | 'Focus' | 'Late Night' | 'Chill' | 'Party';

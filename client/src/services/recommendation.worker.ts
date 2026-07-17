@@ -1,5 +1,5 @@
 import { Track, PlaySession, HistoryEntry, RecommendationSection } from '../types';
-import { getAudioFeatures, cosineSimilarity } from './smartQueueService';
+import { getAudioFeatures, cosineSimilarity } from '../utils/musicMath';
 
 // --- HELPERS & DIVERSITY ---
 

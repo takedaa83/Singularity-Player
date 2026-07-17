@@ -5,6 +5,8 @@ import { usePlayerStore } from './playerStore';
 
 interface SettingsStore {
   settings: UserSettings;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   resetSettings: () => void;
 }
@@ -13,6 +15,8 @@ export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
       settings: { ...DEFAULT_USER_SETTINGS },
+      sidebarCollapsed: false,
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
 
       updateSetting: (key, value) => {
         set((state) => ({

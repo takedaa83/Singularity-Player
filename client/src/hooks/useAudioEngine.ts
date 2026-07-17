@@ -547,18 +547,39 @@ export class AudioEngine {
   }
 
   private swapConvolverBuffer(buffer: AudioBuffer, targetWetGain: number) {
-    if (!this.audioContext || !this.convolverNode || !this.reverbGainNode) return;
+    if (!this.audioContext || !this.convolverNode || !this.reverbGainNode || this.eqFilters.length === 0) return;
     const ctx = this.audioContext;
     const now = ctx.currentTime;
+    const eqOutput = this.eqFilters[this.eqFilters.length - 1];
     
     // Smoothly fade out current reverb
     this.reverbGainNode.gain.setTargetAtTime(0.0, now, 0.01);
     
-    // Swap buffer and fade back in after 30ms to prevent glitches without blocking AudioContext
+    // Swap buffer by creating a new ConvolverNode to prevent W3C InvalidStateError in strict browsers
     setTimeout(() => {
-      if (this.convolverNode && this.reverbGainNode && this.audioContext) {
+      if (this.convolverNode && this.reverbGainNode && this.audioContext && this.eqFilters.length > 0) {
         const swapTime = this.audioContext.currentTime;
-        this.convolverNode.buffer = buffer;
+        
+        try {
+          // Disconnect old convolver node from the graph
+          eqOutput.disconnect(this.convolverNode);
+          this.convolverNode.disconnect();
+        } catch (e) {
+          console.warn('[AudioEngine] Error disconnecting convolver node:', e);
+        }
+
+        // Instantiate and configure new convolver
+        const newConvolver = this.audioContext.createConvolver();
+        newConvolver.buffer = buffer;
+
+        // Connect new convolver into the graph
+        eqOutput.connect(newConvolver);
+        newConvolver.connect(this.reverbGainNode);
+
+        // Update the reference
+        this.convolverNode = newConvolver;
+        
+        // Fade back in smoothly
         this.reverbGainNode.gain.setTargetAtTime(targetWetGain, swapTime, 0.01);
       }
     }, 30);
@@ -858,15 +879,32 @@ export class AudioEngine {
       const currentTrack = usePlayerStore.getState().currentTrack;
       if (!currentTrack) return;
       
+      const lastTime = audio.currentTime;
       const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, usePlayerStore.getState().streamingQuality);
       try {
         const freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
-        console.log('[Audio Engine] Attempting stream recovery from:', freshSrc);
+        console.log('[Audio Engine] Attempting stream recovery from:', freshSrc, 'at offset:', lastTime);
+        
         audio.src = freshSrc;
         audio.load();
-        if (usePlayerStore.getState().isPlaying) {
-          await audio.play();
-        }
+        
+        const onCanPlay = async () => {
+          audio.removeEventListener('canplay', onCanPlay);
+          try {
+            // Restore playback position offset
+            if (lastTime > 0 && Math.abs(audio.currentTime - lastTime) > 1) {
+              audio.currentTime = lastTime;
+            }
+            if (usePlayerStore.getState().isPlaying) {
+              await audio.play();
+            }
+          } catch (playErr) {
+            console.error('[Audio Engine] Auto-resume play failed:', playErr);
+          } finally {
+            usePlayerStore.getState().setBuffering(false);
+          }
+        };
+        audio.addEventListener('canplay', onCanPlay);
       } catch (retryErr) {
         console.error('[Audio Engine] Recovery retry failed:', retryErr);
         usePlayerStore.getState().setPlaying(false);

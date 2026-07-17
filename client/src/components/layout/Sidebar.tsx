@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music, Heart, FolderHeart, ListMusic, Plus, Download, Upload, Trash2,
-  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, Package, User
+  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, ChevronLeft, Package, User
 } from 'lucide-react';
 import { Box, Typography, IconButton, Tooltip, Divider } from '@mui/material';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { Playlist } from '../../types';
 import { tokens } from '../../theme/muiTheme';
 import { AbstractPlaylistCover } from '../library/AbstractPlaylistCover';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 interface SidebarProps {
   activeView: string;
@@ -38,6 +39,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [showPlaylistInput, setShowPlaylistInput] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [playlistsExpanded, setPlaylistsExpanded] = useState(true);
+
+  const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useSettingsStore((s) => s.setSidebarCollapsed);
 
   useEffect(() => {
     const loadPlaylists = async () => {
@@ -158,11 +162,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const NavButton: React.FC<{ id: string; icon: any; label: string; color?: string }> = ({ id, icon: Icon, label, color }) => {
     const active = isViewActive(id) && !selectedPlaylistId;
     const activeColor = color || tokens.colors.primary;
-    return (
+    
+    const buttonContent = (
       <button
         onClick={() => { setActiveView(id); setSelectedPlaylistId(null); }}
         aria-label={`Navigate to ${label}`}
-        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all relative group"
+        className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'} rounded-xl text-sm font-semibold transition-all relative group`}
         style={{
           backgroundColor: active ? `${activeColor}12` : 'transparent',
           color: active ? tokens.colors.textPrimary : tokens.colors.textSecondary,
@@ -179,22 +184,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             '--icon-glow': activeColor 
           } as React.CSSProperties}
         />
-        <span className="group-hover:text-white transition-colors">{label}</span>
+        {!sidebarCollapsed && <span className="group-hover:text-white transition-colors">{label}</span>}
         {active && (
           <motion.div
             layoutId="sidebar-indicator"
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full"
-            style={{ height: 20, backgroundColor: activeColor }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[4px] rounded-r-full shadow-[0_0_10px_var(--icon-glow)]"
+            style={{ height: 20, backgroundColor: activeColor, '--icon-glow': activeColor } as React.CSSProperties}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           />
         )}
       </button>
     );
+
+    if (sidebarCollapsed) {
+      return (
+        <Tooltip title={label} placement="right" arrow>
+          {buttonContent}
+        </Tooltip>
+      );
+    }
+
+    return buttonContent;
   };
 
   return (
     <aside
-      className="w-60 h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10"
+      className={`h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}
       style={{
         backgroundColor: 'rgba(10, 10, 12, 0.6)',
         backdropFilter: 'blur(20px)',
@@ -202,220 +217,314 @@ export const Sidebar: React.FC<SidebarProps> = ({
         borderRight: `1px solid rgba(255, 255, 255, 0.05)`,
       }}
     >
-      <div className="flex flex-col gap-6 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex flex-col gap-6 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {/* Branding */}
-        <div className="flex items-center gap-3 px-2 pt-1">
-          <div
-            className="p-2 rounded-xl"
-            style={{
-              background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+        <div className={`flex items-center ${sidebarCollapsed ? 'flex-col justify-center gap-4' : 'justify-between px-2'} pt-1`}>
+          <div className="flex items-center gap-3">
+            <div
+              className="p-2 rounded-xl"
+              style={{
+                background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+              }}
+            >
+              <Music className="w-5 h-5 text-white" />
+            </div>
+            {!sidebarCollapsed && (
+              <div>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: 13, color: tokens.colors.textPrimary }}>
+                  SINGULARITY
+                </Typography>
+                <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.15em' }}>
+                  MUSIC PLATFORM
+                </Typography>
+              </div>
+            )}
+          </div>
+          
+          <IconButton
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            size="small"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            sx={{ 
+              color: tokens.colors.textTertiary, 
+              '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
+              mt: sidebarCollapsed ? 1 : 0
             }}
           >
-            <Music className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: 13, color: tokens.colors.textPrimary }}>
-              SINGULARITY
-            </Typography>
-            <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.15em' }}>
-              MUSIC PLATFORM
-            </Typography>
-          </div>
+            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </IconButton>
         </div>
 
         {/* Upload Music Button */}
-        <Box sx={{ px: 1, mt: 1, mb: 0.5 }}>
-          <button
-            onClick={onUploadClick}
-            aria-label="Upload music"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-              color: '#fff',
-              boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <Upload className="w-4 h-4" />
-            <span>Upload Music</span>
-          </button>
+        <Box sx={{ px: sidebarCollapsed ? 0 : 1, mt: 1, mb: 0.5, display: 'flex', justifyContent: 'center' }}>
+          {sidebarCollapsed ? (
+            <Tooltip title="Upload Music" placement="right" arrow>
+              <button
+                onClick={onUploadClick}
+                aria-label="Upload music"
+                className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+                  color: '#fff',
+                  boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Upload className="w-[18px] h-[18px]" />
+              </button>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={onUploadClick}
+              aria-label="Upload music"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
+              style={{
+                background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+                color: '#fff',
+                boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Upload className="w-4 h-4" />
+              <span>Upload Music</span>
+            </button>
+          )}
         </Box>
 
         {/* Main Navigation */}
         <nav className="flex flex-col gap-0.5">
-          <Typography
-            variant="caption"
-            sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-          >
-            Menu
-          </Typography>
+          {!sidebarCollapsed && (
+            <Typography
+              variant="caption"
+              sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
+            >
+              Menu
+            </Typography>
+          )}
           {mainNav.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
         </nav>
 
-        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: 1 }} />
+        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: sidebarCollapsed ? 0.5 : 1 }} />
 
         {/* Tools */}
         <nav className="flex flex-col gap-0.5">
-          <Typography
-            variant="caption"
-            sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-          >
-            Tools
-          </Typography>
+          {!sidebarCollapsed && (
+            <Typography
+              variant="caption"
+              sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
+            >
+              Tools
+            </Typography>
+          )}
           {toolsNav.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
-          <button
-            onClick={() => setShowEqualizer(!showEqualizer)}
-            aria-label="Toggle equalizer"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-            style={{
-              backgroundColor: showEqualizer ? `${tokens.colors.accent.amber}18` : 'transparent',
-              color: showEqualizer ? tokens.colors.accent.amber : tokens.colors.textSecondary,
-            }}
-          >
-            <Sliders className="w-[18px] h-[18px] shrink-0" />
-            <span className="hover:text-white transition-colors">Equalizer</span>
-          </button>
+          {sidebarCollapsed ? (
+            <Tooltip title="Equalizer" placement="right" arrow>
+              <button
+                onClick={() => setShowEqualizer(!showEqualizer)}
+                aria-label="Toggle equalizer"
+                className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all"
+                style={{
+                  backgroundColor: showEqualizer ? `${tokens.colors.accent.amber}12` : 'transparent',
+                  color: showEqualizer ? tokens.colors.accent.amber : tokens.colors.textSecondary,
+                }}
+              >
+                <Sliders className="w-[18px] h-[18px] shrink-0" />
+              </button>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => setShowEqualizer(!showEqualizer)}
+              aria-label="Toggle equalizer"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+              style={{
+                backgroundColor: showEqualizer ? `${tokens.colors.accent.amber}18` : 'transparent',
+                color: showEqualizer ? tokens.colors.accent.amber : tokens.colors.textSecondary,
+              }}
+            >
+              <Sliders className="w-[18px] h-[18px] shrink-0" />
+              <span className="hover:text-white transition-colors">Equalizer</span>
+            </button>
+          )}
         </nav>
 
-        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: 1 }} />
-
-        {/* Playlists */}
-        <div className="flex flex-col gap-0.5">
-          <div className="flex justify-between items-center px-1 mb-1">
-            <button
-              onClick={() => setPlaylistsExpanded(!playlistsExpanded)}
-              className="flex items-center gap-1 text-neutral-500 hover:text-neutral-300 transition-colors"
-              aria-label={playlistsExpanded ? 'Collapse playlists' : 'Expand playlists'}
-            >
-              {playlistsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              <Typography
-                variant="caption"
-                sx={{ color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-              >
-                Playlists ({playlists.length})
-              </Typography>
-            </button>
-            <Tooltip title="Create playlist" arrow>
-              <IconButton
-                size="small"
-                onClick={() => setShowPlaylistInput(!showPlaylistInput)}
-                aria-label="Create playlist"
-                sx={{ p: 0.5, color: tokens.colors.textTertiary, '&:hover': { color: tokens.colors.textPrimary } }}
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </IconButton>
-            </Tooltip>
-          </div>
-
-          <AnimatePresence>
-            {showPlaylistInput && (
-              <motion.form
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                onSubmit={handleCreatePlaylist}
-                className="px-1 mb-2 overflow-hidden"
-              >
-                <input
-                  type="text"
-                  autoFocus
-                  value={newPlaylistName}
-                  onChange={(e) => setNewPlaylistName(e.target.value)}
-                  placeholder="Playlist name..."
-                  className="w-full px-3 py-1.5 rounded-lg text-xs text-white placeholder-neutral-600 focus:outline-none focus:ring-1"
-                  style={{
-                    backgroundColor: tokens.colors.background,
-                    border: `1px solid ${tokens.colors.surfaceBorder}`,
-                  }}
-                />
-              </motion.form>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {playlistsExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="flex flex-col gap-0.5 max-h-48 overflow-y-auto"
-                style={{ scrollbarWidth: 'thin' }}
-              >
-                {playlists.length === 0 ? (
-                  <Typography variant="caption" sx={{ px: 2, py: 1, color: tokens.colors.textTertiary, fontStyle: 'italic', fontSize: 11 }}>
-                    No playlists yet
+        {!sidebarCollapsed && (
+          <>
+            <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: 1 }} />
+            
+            {/* Playlists */}
+            <div className="flex flex-col gap-0.5">
+              <div className="flex justify-between items-center px-1 mb-1">
+                <button
+                  onClick={() => setPlaylistsExpanded(!playlistsExpanded)}
+                  className="flex items-center gap-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                  aria-label={playlistsExpanded ? 'Collapse playlists' : 'Expand playlists'}
+                >
+                  {playlistsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <Typography
+                    variant="caption"
+                    sx={{ color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
+                  >
+                    Playlists ({playlists.length})
                   </Typography>
-                ) : (
-                  playlists.map(pl => (
-                    <button
-                      key={pl.id}
-                      onClick={() => {
-                        setSelectedPlaylistId(pl.id);
-                      }}
-                      className="w-full group flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                </button>
+                <Tooltip title="Create playlist" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowPlaylistInput(!showPlaylistInput)}
+                    aria-label="Create playlist"
+                    sx={{ p: 0.5, color: tokens.colors.textTertiary, '&:hover': { color: tokens.colors.textPrimary } }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </IconButton>
+                </Tooltip>
+              </div>
+
+              <AnimatePresence>
+                {showPlaylistInput && (
+                  <motion.form
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    onSubmit={handleCreatePlaylist}
+                    className="px-1 mb-2 overflow-hidden"
+                  >
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newPlaylistName}
+                      onChange={(e) => setNewPlaylistName(e.target.value)}
+                      placeholder="Playlist name..."
+                      className="w-full px-3 py-1.5 rounded-lg text-xs text-white placeholder-neutral-600 focus:outline-none focus:ring-1"
                       style={{
-                        backgroundColor: selectedPlaylistId === pl.id
-                          ? `${tokens.colors.primary}12`
-                          : 'transparent',
-                        color: selectedPlaylistId === pl.id
-                          ? tokens.colors.textPrimary
-                          : tokens.colors.textSecondary,
+                        backgroundColor: tokens.colors.background,
+                        border: `1px solid ${tokens.colors.surfaceBorder}`,
                       }}
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <AbstractPlaylistCover name={pl.name} id={pl.id} size="small" />
-                        <span className="truncate">{pl.name}</span>
-                      </div>
-                      <Trash2
-                        onClick={(e: any) => handleDeletePlaylist(pl.id, e)}
-                        className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 cursor-pointer"
-                        style={{ color: tokens.colors.error }}
-                      />
-                    </button>
-                  ))
+                    />
+                  </motion.form>
                 )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {playlistsExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="flex flex-col gap-0.5 max-h-48 overflow-y-auto"
+                    style={{ scrollbarWidth: 'thin' }}
+                  >
+                    {playlists.length === 0 ? (
+                      <Typography variant="caption" sx={{ px: 2, py: 1, color: tokens.colors.textTertiary, fontStyle: 'italic', fontSize: 11 }}>
+                        No playlists yet
+                      </Typography>
+                    ) : (
+                      playlists.map(pl => (
+                        <button
+                          key={pl.id}
+                          onClick={() => {
+                            setSelectedPlaylistId(pl.id);
+                          }}
+                          className="w-full group flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          style={{
+                            backgroundColor: selectedPlaylistId === pl.id
+                              ? `${tokens.colors.primary}12`
+                              : 'transparent',
+                            color: selectedPlaylistId === pl.id
+                              ? tokens.colors.textPrimary
+                              : tokens.colors.textSecondary,
+                          }}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <AbstractPlaylistCover name={pl.name} id={pl.id} size="small" />
+                            <span className="truncate">{pl.name}</span>
+                          </div>
+                          <Trash2
+                            onClick={(e: any) => handleDeletePlaylist(pl.id, e)}
+                            className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 cursor-pointer"
+                            style={{ color: tokens.colors.error }}
+                          />
+                        </button>
+                      ))
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Footer: Backup/Restore */}
-      <div className="pt-3 mt-2" style={{ borderTop: `1px solid ${tokens.colors.surfaceBorder}` }}>
-        <div className="grid grid-cols-2 gap-1.5">
-          <button
-            onClick={handleBackup}
-            aria-label="Export library backup"
-            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors"
-            style={{
-              backgroundColor: tokens.colors.surfaceVariant,
-              color: tokens.colors.textSecondary,
-              border: `1px solid ${tokens.colors.surfaceBorder}`,
-            }}
-          >
-            <Download className="w-3 h-3" />
-            Backup
-          </button>
-          <label
-            className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors cursor-pointer"
-            style={{
-              backgroundColor: tokens.colors.surfaceVariant,
-              color: tokens.colors.textSecondary,
-              border: `1px solid ${tokens.colors.surfaceBorder}`,
-            }}
-            aria-label="Import library backup"
-          >
-            <Upload className="w-3 h-3" />
-            Restore
-            <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
-          </label>
+      {sidebarCollapsed ? (
+        <div className="flex flex-col gap-2.5 items-center pt-3 border-t border-white/5">
+          <Tooltip title="Backup" placement="right" arrow>
+            <button
+              onClick={handleBackup}
+              aria-label="Export library backup"
+              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all"
+              style={{
+                backgroundColor: tokens.colors.surfaceVariant,
+                color: tokens.colors.textSecondary,
+                border: `1px solid ${tokens.colors.surfaceBorder}`,
+              }}
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          </Tooltip>
+          
+          <Tooltip title="Restore" placement="right" arrow>
+            <label
+              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer"
+              style={{
+                backgroundColor: tokens.colors.surfaceVariant,
+                color: tokens.colors.textSecondary,
+                border: `1px solid ${tokens.colors.surfaceBorder}`,
+              }}
+              aria-label="Import library backup"
+            >
+              <Upload className="w-4 h-4" />
+              <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+            </label>
+          </Tooltip>
         </div>
-      </div>
+      ) : (
+        <div className="pt-3 mt-2 border-t border-white/5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={handleBackup}
+              aria-label="Export library backup"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors"
+              style={{
+                backgroundColor: tokens.colors.surfaceVariant,
+                color: tokens.colors.textSecondary,
+                border: `1px solid ${tokens.colors.surfaceBorder}`,
+              }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Backup
+            </button>
+            <label
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors cursor-pointer"
+              style={{
+                backgroundColor: tokens.colors.surfaceVariant,
+                color: tokens.colors.textSecondary,
+                border: `1px solid ${tokens.colors.surfaceBorder}`,
+              }}
+              aria-label="Import library backup"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Restore
+              <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+            </label>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

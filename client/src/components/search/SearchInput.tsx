@@ -191,6 +191,20 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
     }
   };
 
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Focus shortcut listener (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDownGlobal);
+    return () => window.removeEventListener('keydown', handleKeyDownGlobal);
+  }, []);
+
   const getDropdownItems = () => {
     if (query.trim().length >= 2) {
       return { type: 'suggestions' as const, items: suggestions };
@@ -201,7 +215,12 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
   const dropdownData = getDropdownItems();
 
   return (
-    <Box className="relative w-full max-w-lg" ref={dropdownRef}>
+    <Box 
+      className={`relative w-full transition-all duration-300 ease-in-out ${
+        isFocused ? 'max-w-xl' : 'max-w-[280px] sm:max-w-xs'
+      }`} 
+      ref={dropdownRef}
+    >
       <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSuggestionClick(query); }} className="relative">
         <input
           ref={inputRef}
@@ -209,8 +228,17 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => { setShowDropdown(true); setHighlightedIndex(-1); loadDropdownData(); }}
-          placeholder="Search songs, artists, albums..."
+          onFocus={() => { 
+            setShowDropdown(true); 
+            setHighlightedIndex(-1); 
+            loadDropdownData(); 
+            setIsFocused(true);
+          }}
+          onBlur={() => {
+            // Delay slightly so click events on dropdown entries fire first
+            setTimeout(() => setIsFocused(false), 200);
+          }}
+          placeholder="Search songs, artists..."
           aria-label="Search input"
           aria-expanded={showDropdown}
           aria-controls="search-dropdown-list"
@@ -218,6 +246,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({ onSearch, initialValue
           className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-neutral-900 border border-neutral-700 hover:border-neutral-600 focus:border-white focus:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-white/30 text-sm text-white placeholder-neutral-500 transition-all"
         />
         <SearchIcon className="absolute left-3.5 top-3 w-4.5 h-4.5 text-neutral-400 pointer-events-none" />
+        
+        {/* Keyboard shortcut Ctrl+K chip */}
+        {!query && !isFocused && (
+          <div className="absolute right-10 top-3 px-1.5 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-[10px] font-mono text-neutral-400 pointer-events-none select-none">
+            Ctrl+K
+          </div>
+        )}
+
         {query ? (
           <button
             type="button"

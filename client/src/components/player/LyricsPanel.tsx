@@ -955,6 +955,15 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         + (isPlaying && !isBuffering ? msSinceRead * playbackSpeed : 0)
         + syncOffset;
 
+      // Force drift correction if interpolation drifts from actual time by more than 100ms
+      const targetTimeMs = rawTime * 1000 + syncOffset;
+      if (isPlaying && !isBuffering) {
+        const drift = Math.abs(timeMs - targetTimeMs);
+        if (drift > 100) {
+          timeMs = targetTimeMs; // Force snap to actual time + offset
+        }
+      }
+
       // Monotonic filter to prevent backward jitter during active playback
       if (currentTrack?.id !== lastTrackIdForMonotonicRef.current) {
         lastTrackIdForMonotonicRef.current = currentTrack?.id || null;
@@ -1119,7 +1128,11 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         }
 
         // ── Active ──
-        if (word.state !== 'completed' && timeMs <= word.effectiveEnd) {
+        if (timeMs <= word.effectiveEnd) {
+          if (word.state === 'completed') {
+            word.el.classList.remove('completed');
+            word.state = 'active';
+          }
           const nominalDuration = word.end - word.start;
 
           // Dynamic end extension: while energy is above threshold and we're past

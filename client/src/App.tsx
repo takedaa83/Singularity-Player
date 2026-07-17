@@ -10,6 +10,7 @@ import { LyricsPanel } from './components/player/LyricsPanel';
 import { Equalizer } from './components/player/Equalizer';
 import { ToastContainer } from './components/ui/Toast';
 import { useAudioEngine } from './hooks/useAudioEngine';
+import { useAmbientColor } from './hooks/useAmbientColor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePlayerStore } from './stores/playerStore';
 import { useLibraryDB } from './hooks/useLibraryDB';
@@ -134,6 +135,9 @@ export const App: React.FC = () => {
 
   // Audio engine (no longer returns currentTime/duration — uses external store)
   const { seek, getAnalyser } = useAudioEngine();
+
+  // Ambient color engine — extracts dominant colors from album art for dynamic backgrounds
+  useAmbientColor();
   const currentTrack = usePlayerStore((s) => s.currentTrack);
 
   // Keyboard shortcuts — seek is now stable (useCallback-memoized)
@@ -383,7 +387,7 @@ export const App: React.FC = () => {
             onMenuClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           />
 
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-36 sm:pb-6 relative">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-36 sm:pb-28 relative">
             <Suspense fallback={<LazyFallback />}>
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>

@@ -513,3 +513,22 @@ body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
   display: none !important;
 }
 
+/* Animated Mesh Gradient for Liked Songs */
+.mesh-gradient-animated {
+  background: linear-gradient(-45deg, var(--primary), #ec4899, #3b82f6, #10b981);
+  background-size: 400% 400%;
+  animation: mesh-gradient-animation 15s ease infinite;
+}
+
+@keyframes mesh-gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+

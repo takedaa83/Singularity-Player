@@ -14,9 +14,13 @@ import {
   Mic2,
   Gauge,
   Music,
-  Sparkles
+  Sparkles,
+  Heart
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { motion } from 'framer-motion';
+import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { usePlaybackTime } from '../../hooks/usePlaybackTime';
 import { formatTimeDisplay } from '../../utils/formatDuration';
 import { getSourceShortLabel } from '../../utils/sourceLabels';
@@ -150,8 +154,34 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const setRepeat = usePlayerStore((s) => s.setRepeat);
   const setPlaybackSpeed = usePlayerStore((s) => s.setPlaybackSpeed);
 
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [showSettingsPopover, setShowSettingsPopover] = useState(false);
   const [isMobilePlayerOpen, setIsMobilePlayerOpen] = useState(false);
+  const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed);
+  
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number }[]>([]);
+  const { toggleFavorite } = useLibraryDB();
+  const favorites = usePlayerStore((s) => s.favorites || []);
+  const isFavorite = currentTrack ? favorites.includes(currentTrack.id) : false;
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentTrack) return;
+    try {
+      const nextState = await toggleFavorite(currentTrack.id);
+      if (nextState) {
+        // Trigger Heart particles burst
+        const newParticles = Array.from({ length: 6 }).map((_, i) => ({
+          id: Math.random(),
+          x: (Math.random() - 0.5) * 44,
+          y: -10 - Math.random() * 35,
+        }));
+        setParticles(newParticles);
+        setTimeout(() => setParticles([]), 1000);
+      }
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  };
 
   const handlePlayPause = () => {
     if (!currentTrack) return;
@@ -180,7 +210,12 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   return (
     <>
       {/* Desktop Player Bar */}
-      <footer className="hidden sm:block glass-heavy border-t border-white/5 shrink-0 z-30 text-white relative">
+      <footer 
+        className="hidden sm:block glass-heavy border border-white/10 shrink-0 z-30 text-white fixed bottom-4 right-4 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300"
+        style={{
+          left: sidebarCollapsed ? '88px' : '256px',
+        }}
+      >
         <DesktopTopProgressBar />
 
         <div className="px-4 sm:px-8 py-3 flex items-center justify-between gap-4 sm:gap-6">
@@ -215,7 +250,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   )}
                 </div>
                 {/* Text details */}
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   <span className="text-sm font-semibold truncate">
                     {currentTrack.title}
                   </span>
@@ -233,6 +268,31 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* Heart burst button */}
+                <div className="relative flex items-center justify-center shrink-0 mr-1">
+                  <button
+                    onClick={handleFavoriteClick}
+                    className="p-1.5 rounded-full hover:bg-white/5 text-neutral-500 hover:text-white transition-all active:scale-75 cursor-pointer"
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-all duration-300 ${
+                        isFavorite ? 'fill-pink-500 text-pink-500 scale-110' : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    />
+                  </button>
+                  {particles.map((p) => (
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+                      animate={{ opacity: 0, scale: 0.3, x: p.x, y: p.y }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="absolute pointer-events-none text-pink-500 z-50"
+                    >
+                      <Heart className="w-3.5 h-3.5 fill-current" />
+                    </motion.div>
+                  ))}
                 </div>
               </>
             ) : (
@@ -320,50 +380,71 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
           {/* 3. Auxiliary Options Section */}
           <div className="w-1/4 flex items-center justify-end gap-2 sm:gap-3">
-            {/* Speed menu — hidden on mobile */}
-            <div className="relative hidden md:block">
+            {/* Audio Settings Popover (Speed & Equalizer) */}
+            <div 
+              className="relative hidden md:block"
+              onMouseLeave={() => setShowSettingsPopover(false)}
+            >
               <button
-                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                onClick={() => setShowSettingsPopover(!showSettingsPopover)}
                 disabled={!currentTrack}
-                className={`p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 flex items-center gap-1 text-[11px] font-semibold font-mono ${
-                  playbackSpeed !== 1 ? 'text-white' : 'text-neutral-500'
-                }`}
-                title="Playback Speed"
+                className={`p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 ${
+                  showSettingsPopover || playbackSpeed !== 1 || showEqualizer ? 'text-white bg-neutral-800' : 'text-neutral-500'
+                } disabled:opacity-30`}
+                title="Audio Settings"
               >
-                <Gauge className="w-4 h-4" />
-                <span>{playbackSpeed}x</span>
+                <Sliders className="w-4 h-4" />
               </button>
               
-              {showSpeedMenu && (
-                <div className="absolute bottom-full right-0 mb-3 w-24 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden py-1 shadow-lg z-50">
-                  {speedOptions.map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => {
-                        setPlaybackSpeed(opt);
-                        setShowSpeedMenu(false);
-                      }}
-                      className={`w-full px-3 py-1.5 text-left text-xs font-mono transition-colors hover:bg-neutral-800 ${
-                        playbackSpeed === opt ? 'text-white font-bold' : 'text-neutral-500'
-                      }`}
-                    >
-                      {opt.toFixed(2)}x
-                    </button>
-                  ))}
+              {showSettingsPopover && (
+                <div className="absolute bottom-full right-0 mb-3 w-48 bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden py-2 shadow-2xl z-50 flex flex-col gap-1 px-2 select-none">
+                  <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold px-3 py-1">
+                    Playback Options
+                  </div>
+                  
+                  {/* Equalizer Toggle */}
+                  <button
+                    onClick={() => {
+                      setShowEqualizer(!showEqualizer);
+                      setShowSettingsPopover(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-neutral-800 ${
+                      showEqualizer ? 'text-white font-semibold' : 'text-neutral-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sliders className="w-3.5 h-3.5" /> Equalizer
+                    </span>
+                    {showEqualizer && <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)]" />}
+                  </button>
+                  
+                  <div className="h-px bg-white/5 my-1" />
+                  
+                  {/* Speed Selector */}
+                  <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold px-3 py-1 flex justify-between items-center">
+                    <span>Speed</span>
+                    <span className="font-mono text-neutral-400">{playbackSpeed}x</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 px-1 mt-0.5">
+                    {speedOptions.map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => {
+                          setPlaybackSpeed(opt);
+                        }}
+                        className={`py-1 rounded text-center text-[10px] font-mono transition-all duration-150 ${
+                          playbackSpeed === opt 
+                            ? 'bg-[var(--primary)] text-white font-bold shadow-[0_2px_8px_rgba(0,0,0,0.4)]' 
+                            : 'hover:bg-neutral-800 text-neutral-400'
+                        }`}
+                      >
+                        {opt}x
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Equalizer toggle — hidden on mobile */}
-            <button
-              onClick={() => setShowEqualizer(!showEqualizer)}
-              className={`p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 hidden md:block ${
-                showEqualizer ? 'text-white bg-neutral-800' : 'text-neutral-500'
-              }`}
-              title="Equalizer"
-            >
-              <Sliders className="w-4 h-4" />
-            </button>
 
             {/* Lyrics */}
             <button

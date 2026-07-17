@@ -133,6 +133,29 @@ class DownloadManager extends EventEmitter {
     } finally {
       poolHandle.release();
       this.activeProcesses.delete(jobId);
+      
+      // Clean up orphaned or incomplete partial files if the job failed or was cancelled
+      if (job.status === 'failed') {
+        try {
+          if (fs.existsSync(TRACKS_DIR)) {
+            const files = fs.readdirSync(TRACKS_DIR);
+            for (const file of files) {
+              if (file.startsWith(job.videoId)) {
+                const filePath = path.join(TRACKS_DIR, file);
+                try {
+                  fs.unlinkSync(filePath);
+                  console.log(`[DownloadManager] Cleaned up aborted/partial file: ${file}`);
+                } catch (e) {
+                  // Ignore permission or file-not-found locks
+                }
+              }
+            }
+          }
+        } catch (cleanupErr) {
+          console.error(`[DownloadManager] Failed to clean up temp files for ${job.videoId}:`, cleanupErr);
+        }
+      }
+
       this.emit('update', job);
     }
   }
