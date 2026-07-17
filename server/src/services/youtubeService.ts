@@ -295,6 +295,10 @@ const FALLBACK_COBALT_INSTANCES = [
 let cobaltInstances: string[] = [...FALLBACK_COBALT_INSTANCES];
 let cobaltInstancesLastFetched = 0;
 
+export function getCobaltInstances(): string[] {
+  return cobaltInstances;
+}
+
 async function refreshCobaltInstances(): Promise<void> {
   if (Date.now() - cobaltInstancesLastFetched < INSTANCE_REFRESH_INTERVAL) return;
   try {

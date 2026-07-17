@@ -6,12 +6,30 @@ import { api } from './api';
  * from the user's residential IP, which matches the IP signature of the resolved tunnel URL.
  */
 export async function resolveStreamOnClient(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<string | null> {
-  const cobaltInstances = [
+  let cobaltInstances = [
     'https://api.cobalt.tools',
     'https://rue-cobalt.xenon.zone',
     'https://cobaltapi.kittycat.boo',
     'https://co.wuk.sh'
   ];
+
+  // Try to fetch dynamic instances from backend
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${api.baseUrl}/api/yt/instances`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json() as any;
+      if (data && Array.isArray(data.cobalt) && data.cobalt.length > 0) {
+        const dynamicList = data.cobalt.map((u: string) => u.replace(/\/$/, ''));
+        cobaltInstances = Array.from(new Set([...dynamicList, ...cobaltInstances]));
+        console.log('[Client Stream Resolver] Fetched dynamic Cobalt instances:', dynamicList);
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Client Stream Resolver] Failed to fetch dynamic instances from backend:', err?.message || err);
+  }
 
   for (const instance of cobaltInstances) {
     try {
@@ -26,8 +44,7 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
         body: JSON.stringify({
           url: `https://www.youtube.com/watch?v=${videoId}`,
           downloadMode: 'audio',
-          audioFormat: 'mp3',
-          audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
+          audioFormat: 'mp3'
         }),
         signal: controller.signal
       });
