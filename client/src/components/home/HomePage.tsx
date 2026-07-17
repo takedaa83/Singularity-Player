@@ -196,7 +196,9 @@ export const TrackScrollRowItem: React.FC<{
       audio.volume = 0.15;
       previewAudioRef.current = audio;
       audio.play().catch(e => {
-        console.warn('Preview audio playback failed or was interrupted:', e);
+        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+          console.warn('Preview audio playback failed or was interrupted:', e);
+        }
       });
     }, 600);
   };
