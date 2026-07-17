@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getRelatedTracks, YT_DLP_PATH } from '../services/youtubeService';
+import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getRelatedTracks, YT_DLP_PATH, getCobaltInstances } from '../services/youtubeService';
 import { ytdlpPool } from '../services/processPool';
 import path from 'path';
 import fs from 'fs';
@@ -615,6 +615,18 @@ router.post('/prefetch', (req: Request, res: Response) => {
  */
 router.get('/test-clients', async (req: Request, res: Response) => {
   res.json({ message: "youtubei.js has been replaced by custom lightweight InnerTube integration" });
+});
+
+/**
+ * GET /api/yt/instances
+ * Expose working Cobalt instances for client-side resolving fallback.
+ */
+router.get('/instances', (req: Request, res: Response) => {
+  try {
+    res.json({ cobalt: getCobaltInstances() });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || error });
+  }
 });
 
 export default router;
