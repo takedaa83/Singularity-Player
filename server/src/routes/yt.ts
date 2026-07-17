@@ -209,13 +209,20 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
-  // Trigger background caching if enabled
-  if (process.env.ENABLE_DISK_CACHE !== 'false') {
+  const isCloudHosting = process.env.RENDER === 'true' || 
+                         process.env.FLY_APP_NAME || 
+                         process.env.CLOUD_HOSTING === 'true';
+
+  // Background caching is disabled by default on cloud hosting to avoid datacenter IP bans and spammy logs.
+  const isDiskCacheEnabled = process.env.ENABLE_DISK_CACHE === 'true' || 
+                             (process.env.ENABLE_DISK_CACHE !== 'false' && !isCloudHosting);
+
+  if (isDiskCacheEnabled) {
     downloadAndCache(videoId, selectedQuality).catch((err) => {
       console.error(`[YT Route] Background caching failed for ${videoId}:`, err);
     });
   } else {
-    console.log(`[YT Route] Background caching is disabled (ENABLE_DISK_CACHE=false)`);
+    console.log(`[YT Route] Background caching is disabled (ENABLE_DISK_CACHE=false or cloud hosting detected)`);
   }
 
   try {
