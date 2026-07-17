@@ -442,6 +442,18 @@
       "addedAt": 1781015620564
     },
     {
+      "id": "yt-1ZkN7Hkda4c",
+      "title": "Le Aaunga",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/orby46otQWPMrwEEUIca-VBx6o8k1C4p-B1g4sHlEVtZFyC3V1CDfvf0hwh_ANXNV1pSe2kKr8FpRYw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/1ZkN7Hkda4c",
+      "videoId": "1ZkN7Hkda4c",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-1gcG6j_RD1k",
       "title": "Aarzu",
       "artist": "Noor, Khan, Madhurxo",
@@ -594,6 +606,18 @@
       "totalListenDuration": 6
     },
     {
+      "id": "yt-3cKQcs3_TSs",
+      "title": "Ishq Mera",
+      "artist": "Jubin Nautiyal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/msIfNmG_MJxJ-i9cG4L8IBstwwU_Lhj7s_H3kNa0oYX8ZSIqeodV8stgPAKy4_R1FM8dn1hkyfD2W6X5=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/3cKQcs3_TSs",
+      "videoId": "3cKQcs3_TSs",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-3f_CL9-dVXc",
       "title": "Zulfein - Mehul Mahesh Prod By Dj AYnik (Official Visualizer Video) Latest Hindi Romantic Song 2025",
       "artist": "Unknown Artist",
@@ -732,6 +756,18 @@
       "streamUrl": "/api/yt/stream/4De_ERjvuUI",
       "videoId": "4De_ERjvuUI",
       "addedAt": 1781031240077
+    },
+    {
+      "id": "yt-4FYKJPe0dOE",
+      "title": "Tu Hi Disda (From \"Bhooth Bangla\")",
+      "artist": "Pritam, Arijit Singh, Nikhita Gandhi, and Kumaar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/SeCzomSMReWy0YAelrxrrJD2-n5wz4B35pMEkKBw_QhLUlzO4-RMFzr_s3ptFeeyjg3Mo_-irIezItlleg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/4FYKJPe0dOE",
+      "videoId": "4FYKJPe0dOE",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-4Iuo_edrgC0",
@@ -1252,6 +1288,18 @@
       "streamUrl": "/api/yt/stream/8gq3S53aH3Y",
       "videoId": "8gq3S53aH3Y",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-8zkUFoXku0Y",
+      "title": "Tainu Khabar Nahi (From \"Munjya\")",
+      "artist": "Sachin-Jigar, Arijit Singh, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/IOH7_lgJn6lq9cp9rcZlLVYagV1Akj9GJzJerlz62JfP5wCjW_I-ASi4wc5TREfAFtbQZsKRplV1cUfJ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/8zkUFoXku0Y",
+      "videoId": "8zkUFoXku0Y",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-9KvCJi7t2DE",
@@ -2994,6 +3042,18 @@
       "addedAt": 1781007495750
     },
     {
+      "id": "yt-Ljz0tdAJL-4",
+      "title": "Tumse Behtar (From \"Sunny Sanskari Ki Tulsi Kumari\")",
+      "artist": "Arijit Singh, Tanishk Bagchi, Manoj Muntashir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/86R8uQaDQkCryjPaciZtvS2u-p4vy3o-lMrlru2UaHH34SlnOkG-PISMIlm0RE5_WP9xr3xmC8DFIMoT=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Ljz0tdAJL-4",
+      "videoId": "Ljz0tdAJL-4",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-LvEamw9flNs",
       "title": "Be Intehaan",
       "artist": "Pritam Chakraborty, Atif Aslam, Sunidhi Chauhan",
@@ -3718,6 +3778,18 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-SBrs9-Xb2dk",
+      "title": "Aavan Jaavan (Movie: WAR 2)",
+      "artist": "Pritam, Arijit Singh, Nikhita Gandhi, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/CpHtlQNWV3fThtKbZoKuhQ3x3u4BrLPi_3lNG4SXYcbDKK7_Cm9ohUakjbMvVXBMke0_1Yce6-4znJyASA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/SBrs9-Xb2dk",
+      "videoId": "SBrs9-Xb2dk",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-SEPEpvLQVrY",
       "title": "Ovhiman",
       "artist": "Tanveer Evan",
@@ -4226,6 +4298,18 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-VUwV2cE8BOM",
+      "title": "Kalank (Bonus Track)",
+      "artist": "Pritam, Arijit Singh, Shilpa Rao",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/V0W-fljVePY_Xw5AsVMP3S4vyqBrFRw2u40OslalyN62o_0IeAMy1tlWFXph-w5eWfNZk_IMPmD1fw70=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/VUwV2cE8BOM",
+      "videoId": "VUwV2cE8BOM",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-VdQjmdtuni4",
       "title": "ANGELS",
       "artist": "Chase Atlantic",
@@ -4449,6 +4533,18 @@
       "streamUrl": "/api/yt/stream/Wqu4MRQOgyo",
       "videoId": "Wqu4MRQOgyo",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-Wv5Ac3su5r4",
+      "title": "Apna Bana Le",
+      "artist": "Sachin-Jigar, Arijit Singh, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/U-s5NIYyGx0f6E1YrFD2h9Qks4lqi-x0jetbh4_R8GQibmIQDpeRDcv0CJANrXAwEYWNRyIlVnYEaHgS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Wv5Ac3su5r4",
+      "videoId": "Wv5Ac3su5r4",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-XBo7jtXAmNI",
@@ -4675,6 +4771,18 @@
       "addedAt": 1780990731154
     },
     {
+      "id": "yt-Ys6iPqfvmI0",
+      "title": "Sajni",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ftDdTjYV0ofe0WxH5JqtNg4eS7yF2nKYv3WbCRp_yGj8GRFTHq2eW_MF0NdmECV5IrjTL1VTSV2gTV8=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Ys6iPqfvmI0",
+      "videoId": "Ys6iPqfvmI0",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-Z0S8OOhuhIE",
       "title": "Katchi Sera (From \"Think Indie\")",
       "artist": "Sai Abhyankkar",
@@ -4697,6 +4805,18 @@
       "skipCount": 0,
       "lastPlayedAt": 1780989116211,
       "totalListenDuration": 59
+    },
+    {
+      "id": "yt-Z25GNhpajyY",
+      "title": "Qayde Se",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PPs-l8y5_mjgKAODz32vtbCVidBwOtPRjZsSyqY6oNdVohFut9Mob0jMMTBYV0aH7DC4XGH8F0CNgvRG=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Z25GNhpajyY",
+      "videoId": "Z25GNhpajyY",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-Z5gUq1uFUa0",
@@ -5267,6 +5387,18 @@
       "addedAt": 1780990069082
     },
     {
+      "id": "yt-bbroly6xXVA",
+      "title": "Tu Mileya",
+      "artist": "Darshan Raval",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ToZqotwcj01cUxCxv63-EqquNVmkHipt8-Rv_4-BDlXWoLLerxwHo7D6XF63LHDBCYn7k45LvsxijoWq=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/bbroly6xXVA",
+      "videoId": "bbroly6xXVA",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-bkfMNSqYX0c",
       "title": "Kalyani (EDM Remix) 🔥 | ARJN × KDS × FIFTY4 × RONN | Full Bass Boosted Mix | Malayalam EDM 2026",
       "artist": "Unknown Artist",
@@ -5597,6 +5729,18 @@
       "streamUrl": "/api/yt/stream/eN5fLqJ38ec",
       "videoId": "eN5fLqJ38ec",
       "addedAt": 1781011346570
+    },
+    {
+      "id": "yt-eUwS1KJhQAc",
+      "title": "Khoobsurat (From \"Stree 2\")",
+      "artist": "Sachin-Jigar, Vishal Mishra, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/P--mSoozIN5ZZmU2d8tm8Z32RbXX0tGNjVfHy2M3UBeS669P9C84f6Vpws9bUjLZWhkmHUw6Ct9ZzT3k=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/eUwS1KJhQAc",
+      "videoId": "eUwS1KJhQAc",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-eZZ5L6UQ6aU",
@@ -6215,6 +6359,18 @@
       "addedAt": 1781015620564
     },
     {
+      "id": "yt-jAnWrlSuE4c",
+      "title": "Sahiba",
+      "artist": "Jasleen Royal, Stebin Ben, Vijay Deverakonda, Radhikka Madan, Priya Saraiya, and Aditya Sharma",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/osEQplA2FDktP-YRPgzOX_YLDOd_fRxHM7oIV5wLVWrT75Bv3bzzaIPifi4RaSEr20Ph5wcyBiJgrE4=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jAnWrlSuE4c",
+      "videoId": "jAnWrlSuE4c",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-jGZII2oe_Ms",
       "title": "MAMACITA",
       "artist": "Chase Atlantic",
@@ -6683,6 +6839,18 @@
       "addedAt": 1780997170000
     },
     {
+      "id": "yt-nHWkyrhuQY8",
+      "title": "Qaafirana",
+      "artist": "Arijit Singh, Nikhita Gandhi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/U-s5NIYyGx0f6E1YrFD2h9Qks4lqi-x0jetbh4_R8GQibmIQDpeRDcv0CJANrXAwEYWNRyIlVnYEaHgS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/nHWkyrhuQY8",
+      "videoId": "nHWkyrhuQY8",
+      "addedAt": 1784277200968
+    },
+    {
       "id": "yt-nJqSvLRpvA0",
       "title": "jaise mera tumse koi pichle janam ka vaasta hai (Trending Viral Version)",
       "artist": "Arijit Singh, Sachin-Jigar, Amitabh Bhattacharya",
@@ -7141,6 +7309,18 @@
       "streamUrl": "/api/yt/stream/qCDIWvF9Lh8",
       "videoId": "qCDIWvF9Lh8",
       "addedAt": 1781076423554
+    },
+    {
+      "id": "yt-qCXbell_6d4",
+      "title": "Tere Sang Ishq Hua",
+      "artist": "Arijit Singh, Neeti Mohan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/4elreGo96wj3b0bsDcsEeElggZ-67A_XUM4qBPgmSLR3IDr5LqI4Q6YFZnT15VzHF3D1iR1F7Hog9rU=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/qCXbell_6d4",
+      "videoId": "qCXbell_6d4",
+      "addedAt": 1784277200968
     },
     {
       "id": "yt-qRsPt81VLNs",
@@ -8192,41 +8372,6 @@
   ],
   "history": [
     {
-      "trackId": "yt--XI2_610F0s",
-      "playedAt": 1781027180618,
-      "id": 255
-    },
-    {
-      "trackId": "yt--WE_iBqLmMI",
-      "playedAt": 1781027181589,
-      "id": 256
-    },
-    {
-      "trackId": "yt-TijBIPD4Jbw",
-      "playedAt": 1781027182774,
-      "id": 257
-    },
-    {
-      "trackId": "yt-2U_bbri5w08",
-      "playedAt": 1781027371664,
-      "id": 258
-    },
-    {
-      "trackId": "yt-_4gSLcAVHWs",
-      "playedAt": 1781027374229,
-      "id": 259
-    },
-    {
-      "trackId": "yt--76FUKpIz_g",
-      "playedAt": 1781027375582,
-      "id": 260
-    },
-    {
-      "trackId": "yt-osAW3KJgi2s",
-      "playedAt": 1781027380119,
-      "id": 261
-    },
-    {
       "trackId": "yt--kOteJfOG7Q",
       "playedAt": 1781027382049,
       "id": 262
@@ -9190,6 +9335,41 @@
       "trackId": "yt-tNc2coVC2aw",
       "playedAt": 1784276985483,
       "id": 454
+    },
+    {
+      "trackId": "yt-R38Er0St2as",
+      "playedAt": 1784277176127,
+      "id": 455
+    },
+    {
+      "trackId": "yt-usvVGXFIpTM",
+      "playedAt": 1784277195960,
+      "id": 456
+    },
+    {
+      "trackId": "yt-aaYtQCmn_HQ",
+      "playedAt": 1784277196941,
+      "id": 457
+    },
+    {
+      "trackId": "yt-KrJ5c-Egz-U",
+      "playedAt": 1784277198170,
+      "id": 458
+    },
+    {
+      "trackId": "yt-N7jDUBRVQVA",
+      "playedAt": 1784277199071,
+      "id": 459
+    },
+    {
+      "trackId": "yt-U_nAFr9tLYg",
+      "playedAt": 1784277200271,
+      "id": 460
+    },
+    {
+      "trackId": "yt-N7jDUBRVQVA",
+      "playedAt": 1784277202319,
+      "id": 461
     }
   ],
   "playSessions": [
@@ -11101,9 +11281,9 @@
     "lyricsFontSize": 16,
     "enableRecommendations": true,
     "autoSync": true,
-    "lastSyncTimestamp": 1784276952879
+    "lastSyncTimestamp": 1784277313614
   },
   "version": "2.0.0",
-  "exportedAt": 1784277133212,
-  "syncedAt": 1784277133225
+  "exportedAt": 1784277493900,
+  "syncedAt": 1784277493913
 }

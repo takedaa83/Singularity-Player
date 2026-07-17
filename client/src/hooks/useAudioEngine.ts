@@ -3,6 +3,7 @@ import { usePlayerStore } from '../stores/playerStore';
 import { useToastStore } from './useToast';
 import { api } from '../utils/api';
 import { Track, SpatialAudioConfig } from '../types';
+import { resolveStreamOnClient, isBackendCloudHosted } from '../utils/streamResolver';
 
 // ─── External time store (avoids React re-renders at 60fps) ──────────
 type TimeListener = () => void;
@@ -77,6 +78,7 @@ export class AudioEngine {
   private activeFadeOutEndedListener: (() => void) | null = null;
   private unsubscribeStore: (() => void) | null = null;
   private unlockListener: (() => void) | null = null;
+  private currentPlayRequestId = 0;
 
   // Cached store state properties
   private cachedCrossfadeDuration = 0;
@@ -301,6 +303,7 @@ export class AudioEngine {
     const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
 
     if (!currentTrack) {
+      this.currentPlayRequestId++;
       activePlayerInstance.pause();
       activePlayerInstance.src = '';
       this.stopProgressTimer();
@@ -309,51 +312,72 @@ export class AudioEngine {
       return;
     }
 
-    const currentSrc = activePlayerInstance.src;
-    const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
+    const requestId = ++this.currentPlayRequestId;
 
-    this.prefetchedTrackId = null;
+    const setupSource = async () => {
+      let targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
 
-    const decodeUrl = (url: string) => {
-      try {
-        return decodeURIComponent(url);
-      } catch {
-        return url;
+      if (currentTrack.videoId && isBackendCloudHosted()) {
+        usePlayerStore.getState().setBuffering(true);
+        console.log(`[Audio Engine] Resolving stream for "${currentTrack.title}" on client...`);
+        const clientSrc = await resolveStreamOnClient(currentTrack.videoId, streamingQuality as 'high' | 'medium' | 'low');
+        if (requestId !== this.currentPlayRequestId) {
+          console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
+          return;
+        }
+        if (clientSrc) {
+          targetSrc = clientSrc;
+        } else {
+          console.warn(`[Audio Engine] Client-side resolution failed, falling back to backend stream.`);
+        }
+      }
+
+      const currentSrc = activePlayerInstance.src;
+      this.prefetchedTrackId = null;
+
+      const decodeUrl = (url: string) => {
+        try {
+          return decodeURIComponent(url);
+        } catch {
+          return url;
+        }
+      };
+
+      if (decodeUrl(currentSrc) !== decodeUrl(targetSrc)) {
+        if (this.isCrossfading) {
+          this.cancelActiveCrossfade();
+        }
+        activePlayerInstance.src = targetSrc;
+        activePlayerInstance.load();
+      }
+
+      if (isPlaying) {
+        this.initAudioGraph();
+        if (this.audioContext?.state === 'suspended') {
+          this.audioContext.resume();
+        }
+        
+        this.updateMediaSession(currentTrack, true);
+        this.syncPreAmpGain();
+
+        activePlayerInstance.play().catch((e) => {
+          if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
+            console.warn('Playback failed or interrupted:', e);
+            usePlayerStore.getState().setPlaying(false);
+            usePlayerStore.getState().setBuffering(false);
+            this.showToast('Playback failed. Please check your network or try another track.', 'error');
+          }
+        });
+        this.startProgressTimer();
+      } else {
+        activePlayerInstance.pause();
+        this.stopProgressTimer();
+        usePlayerStore.getState().setBuffering(false);
+        this.updateMediaSession(currentTrack, false);
       }
     };
 
-    if (decodeUrl(currentSrc) !== decodeUrl(targetSrc)) {
-      if (this.isCrossfading) {
-        this.cancelActiveCrossfade();
-      }
-      activePlayerInstance.src = targetSrc;
-      activePlayerInstance.load();
-    }
-
-    if (isPlaying) {
-      this.initAudioGraph();
-      if (this.audioContext?.state === 'suspended') {
-        this.audioContext.resume();
-      }
-      
-      this.updateMediaSession(currentTrack, true);
-      this.syncPreAmpGain();
-
-      activePlayerInstance.play().catch((e) => {
-        if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
-          console.warn('Playback failed or interrupted:', e);
-          usePlayerStore.getState().setPlaying(false);
-          usePlayerStore.getState().setBuffering(false);
-          this.showToast('Playback failed. Please check your network or try another track.', 'error');
-        }
-      });
-      this.startProgressTimer();
-    } else {
-      activePlayerInstance.pause();
-      this.stopProgressTimer();
-      usePlayerStore.getState().setBuffering(false);
-      this.updateMediaSession(currentTrack, false);
-    }
+    setupSource();
   }
 
   private getStreamUrlWithParams(trackUrl: string, quality: string) {
@@ -898,9 +922,19 @@ export class AudioEngine {
       if (!currentTrack) return;
       
       const lastTime = audio.currentTime;
-      const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, usePlayerStore.getState().streamingQuality);
+      const quality = usePlayerStore.getState().streamingQuality;
+      const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, quality);
       try {
-        const freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
+        let freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
+
+        if (currentTrack.videoId && isBackendCloudHosted()) {
+          console.log('[Audio Engine] Cloud backend detected. Resolving recovery stream on client...');
+          const resolved = await resolveStreamOnClient(currentTrack.videoId, quality as 'high' | 'medium' | 'low');
+          if (resolved) {
+            freshSrc = resolved;
+          }
+        }
+
         console.log('[Audio Engine] Attempting stream recovery from:', freshSrc, 'at offset:', lastTime);
         
         audio.src = freshSrc;
