@@ -133,12 +133,18 @@ export class AudioEngine {
   private setupAudioEventListeners(audio: HTMLAudioElement) {
     audio.addEventListener('durationchange', () => {
       if (this.isActivePlayer(audio)) {
-        setTimeValues(audio.currentTime, audio.duration || this.getCurrentTrackDuration());
+        const duration = (Number.isFinite(audio.duration) && audio.duration > 0)
+          ? audio.duration
+          : this.getCurrentTrackDuration();
+        setTimeValues(audio.currentTime, duration);
       }
     });
     audio.addEventListener('loadedmetadata', () => {
       if (this.isActivePlayer(audio)) {
-        setTimeValues(audio.currentTime, audio.duration || this.getCurrentTrackDuration());
+        const duration = (Number.isFinite(audio.duration) && audio.duration > 0)
+          ? audio.duration
+          : this.getCurrentTrackDuration();
+        setTimeValues(audio.currentTime, duration);
       }
     });
     audio.addEventListener('waiting', () => {
@@ -764,7 +770,9 @@ export class AudioEngine {
   private tick = () => {
     const player = this.activePlayer === 1 ? this.audio1 : this.audio2;
     const current = player.currentTime;
-    const total = player.duration || 0;
+    const total = (Number.isFinite(player.duration) && player.duration > 0)
+      ? player.duration
+      : this.getCurrentTrackDuration();
     setTimeValues(current, total);
 
     const cfDur = this.cachedCrossfadeDuration;
@@ -952,7 +960,10 @@ export class AudioEngine {
   public seek(time: number) {
     const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
     activePlayerInstance.currentTime = time;
-    setTimeValues(time, activePlayerInstance.duration || 0, true);
+    const duration = (Number.isFinite(activePlayerInstance.duration) && activePlayerInstance.duration > 0)
+      ? activePlayerInstance.duration
+      : this.getCurrentTrackDuration();
+    setTimeValues(time, duration, true);
   }
 
   public getAnalyser(): AnalyserNode | null {
