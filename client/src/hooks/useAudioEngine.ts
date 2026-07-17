@@ -75,6 +75,8 @@ export class AudioEngine {
 
   private activeFadeOutPlayer: HTMLAudioElement | null = null;
   private activeFadeOutEndedListener: (() => void) | null = null;
+  private unsubscribeStore: (() => void) | null = null;
+  private unlockListener: (() => void) | null = null;
 
   // Cached store state properties
   private cachedCrossfadeDuration = 0;
@@ -124,7 +126,7 @@ export class AudioEngine {
     this.playbackSpeed = initialState.playbackSpeed;
 
     // Subscribe to store updates
-    usePlayerStore.subscribe((state) => this.handleStoreUpdate(state));
+    this.unsubscribeStore = usePlayerStore.subscribe((state) => this.handleStoreUpdate(state));
 
     // Interaction unlock
     this.setupUnlockListeners();
@@ -366,15 +368,23 @@ export class AudioEngine {
       if (this.audioContext && this.audioContext.state === 'suspended') {
         this.audioContext.resume();
       }
-      window.removeEventListener('click', unlock);
-      window.removeEventListener('keydown', unlock);
-      window.removeEventListener('touchstart', unlock);
-      window.removeEventListener('pointerdown', unlock);
+      this.removeUnlockListeners();
     };
+    this.unlockListener = unlock;
     window.addEventListener('click', unlock, { once: true });
     window.addEventListener('keydown', unlock, { once: true });
     window.addEventListener('touchstart', unlock, { once: true });
     window.addEventListener('pointerdown', unlock, { once: true });
+  }
+
+  private removeUnlockListeners() {
+    if (this.unlockListener) {
+      window.removeEventListener('click', this.unlockListener);
+      window.removeEventListener('keydown', this.unlockListener);
+      window.removeEventListener('touchstart', this.unlockListener);
+      window.removeEventListener('pointerdown', this.unlockListener);
+      this.unlockListener = null;
+    }
   }
 
   public initAudioGraph() {
@@ -923,6 +933,12 @@ export class AudioEngine {
   }
 
   public async destroy() {
+    if (this.unsubscribeStore) {
+      this.unsubscribeStore();
+      this.unsubscribeStore = null;
+    }
+    this.removeUnlockListeners();
+
     this.stopProgressTimer();
     this.cancelActiveCrossfade();
     
