@@ -369,10 +369,17 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
 
               // Duration
               let duration = 0;
-              const durationRun = artistCol?.find((r: any) => /^\d+:\d+$/.test(r.text));
+              const durationRun = artistCol?.find((r: any) => {
+                const text = (r.text || '').trim();
+                return /^\d+:\d+(:\d+)?$/.test(text);
+              });
               if (durationRun) {
-                const parts = durationRun.text.split(":");
-                duration = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                const parts = durationRun.text.trim().split(":");
+                if (parts.length === 3) {
+                  duration = parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+                } else if (parts.length === 2) {
+                  duration = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                }
               }
 
               // Cover Art
@@ -604,10 +611,17 @@ export async function customGetRelated(videoId: string): Promise<any[]> {
               }
 
               let durationSec = 0;
-              const durationRun = artistCol?.find((r: any) => /^\d+:\d+$/.test(r.text));
+              const durationRun = artistCol?.find((r: any) => {
+                const text = (r.text || '').trim();
+                return /^\d+:\d+(:\d+)?$/.test(text);
+              });
               if (durationRun) {
-                const parts = durationRun.text.split(":");
-                durationSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                const parts = durationRun.text.trim().split(":");
+                if (parts.length === 3) {
+                  durationSec = parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+                } else if (parts.length === 2) {
+                  durationSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                }
               }
 
               let coverArtUrl = null;

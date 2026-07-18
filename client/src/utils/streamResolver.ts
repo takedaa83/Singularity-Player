@@ -31,10 +31,11 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     console.warn('[Client Stream Resolver] Failed to fetch dynamic instances from backend:', err?.message || err);
   }
 
-  for (const instance of cobaltInstances) {
+  // Query Cobalt instances in parallel for faster startup
+  const cobaltPromises = cobaltInstances.map(async (instance) => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout for parallel queries
       const res = await fetch(instance, {
         method: 'POST',
         headers: {
@@ -50,18 +51,27 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
         signal: controller.signal
       });
       clearTimeout(timeout);
-      if (!res.ok) continue;
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json() as any;
       if (data && data.url) {
         console.log(`[Client Stream Resolver] Resolved via Cobalt (${instance}):`, data.url);
         return data.url;
       }
+      throw new Error("No URL returned");
     } catch (err: any) {
       console.warn(`[Client Stream Resolver] Failed via Cobalt (${instance}):`, err?.message || err);
+      throw err;
     }
+  });
+
+  try {
+    const resolvedUrl = await Promise.any(cobaltPromises);
+    if (resolvedUrl) return resolvedUrl;
+  } catch (raceErr) {
+    console.log('[Client Stream Resolver] All Cobalt instances failed. Trying Piped instances in parallel...');
   }
 
-  // Fallback: Try Piped instances
+  // Fallback: Try Piped instances in parallel
   const pipedInstances = [
     'https://pipedapi.kavin.rocks',
     'https://pipedapi.r4fo.com',
@@ -69,15 +79,15 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     'https://api.piped.privacydev.net'
   ];
 
-  for (const instance of pipedInstances) {
+  const pipedPromises = pipedInstances.map(async (instance) => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
       const res = await fetch(`${instance}/streams/${videoId}`, {
         signal: controller.signal
       });
       clearTimeout(timeout);
-      if (!res.ok) continue;
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json() as any;
       if (data && data.audioStreams && data.audioStreams.length > 0) {
         let streams = data.audioStreams.filter((s: any) => s.url);
@@ -93,9 +103,18 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
           return selected.url;
         }
       }
+      throw new Error("No streams returned");
     } catch (err: any) {
       console.warn(`[Client Stream Resolver] Failed via Piped (${instance}):`, err?.message || err);
+      throw err;
     }
+  });
+
+  try {
+    const resolvedUrl = await Promise.any(pipedPromises);
+    if (resolvedUrl) return resolvedUrl;
+  } catch (raceErr) {
+    console.log('[Client Stream Resolver] All Piped instances failed.');
   }
 
   return null;

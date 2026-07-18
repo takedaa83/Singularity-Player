@@ -343,6 +343,44 @@ export class AudioEngine {
         }
       }
 
+      // Self-healing: if track has no duration, fetch it from backend
+      if ((!currentTrack.duration || currentTrack.duration === 0) && currentTrack.videoId) {
+        (async () => {
+          try {
+            console.log(`[Audio Engine] Track duration is 0. Fetching info from backend for ${currentTrack.videoId}...`);
+            const res = await fetch(`${api.baseUrl}/api/yt/info/${currentTrack.videoId}`);
+            if (res.ok) {
+              const info = await res.json() as any;
+              if (info && info.duration) {
+                console.log(`[Audio Engine] Self-healed track duration: ${info.duration}s`);
+                
+                // 1. Update store
+                const updatedTrack = { ...currentTrack, duration: info.duration };
+                const playerState = usePlayerStore.getState();
+                
+                // If it is still the active track, update currentTrack in store
+                if (playerState.currentTrack?.id === currentTrack.id) {
+                  usePlayerStore.setState({ currentTrack: updatedTrack });
+                }
+                
+                // 2. Update database
+                const db = await import('../lib/db').then((m) => m.initDB());
+                const dbTrack = await db.get('tracks', currentTrack.id);
+                if (dbTrack) {
+                  dbTrack.duration = info.duration;
+                  await db.put('tracks', dbTrack);
+                }
+                
+                // 3. Update timeline
+                setTimeValues(activePlayerInstance.currentTime, info.duration);
+              }
+            }
+          } catch (err: any) {
+            console.warn('[Audio Engine] Failed to self-heal track duration:', err?.message || err);
+          }
+        })();
+      }
+
       const currentSrc = activePlayerInstance.src;
       this.prefetchedTrackId = null;
 
