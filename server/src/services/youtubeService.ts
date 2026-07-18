@@ -595,7 +595,9 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
         url: `https://www.youtube.com/watch?v=${videoId}`,
         downloadMode: 'audio',
         audioFormat: formatToTry,
-        audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256'
+        audioBitrate: quality === 'low' ? '64' : quality === 'medium' ? '128' : '256',
+        tunnelSource: true,
+        tunnel: true
       };
       try {
         console.log(`[Cobalt] Trying ${backend} for ${videoId} (format: ${formatToTry})...`);
