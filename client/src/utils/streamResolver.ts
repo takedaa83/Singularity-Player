@@ -45,8 +45,7 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
           url: `https://www.youtube.com/watch?v=${videoId}`,
           downloadMode: 'audio',
           audioFormat: 'mp3',
-          tunnelSource: true,
-          tunnel: true
+          alwaysProxy: true
         }),
         signal: controller.signal
       });
