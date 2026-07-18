@@ -120,12 +120,87 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
   return null;
 }
 
-/**
- * Checks if the configured backend server is cloud-hosted (non-local).
- */
 export function isBackendCloudHosted(): boolean {
   const url = api.baseUrl.toLowerCase();
   return !url.includes('localhost') && 
          !url.includes('127.0.0.1') && 
          !url.includes('192.168.');
+}
+
+/**
+ * Fetches the duration of a video directly from public Invidious or Piped instances on the client side.
+ * This bypasses the blocked cloud backend server.
+ */
+export async function fetchDurationOnClient(videoId: string): Promise<number | null> {
+  // Try Piped instances first
+  const pipedInstances = [
+    'https://pipedapi.kavin.rocks',
+    'https://pipedapi.r4fo.com',
+    'https://watchapi.whatever.social',
+    'https://api.piped.privacydev.net'
+  ];
+
+  const pipedPromises = pipedInstances.map(async (instance) => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${instance}/streams/${videoId}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json() as any;
+      if (data && typeof data.duration === 'number' && data.duration > 0) {
+        console.log(`[Duration Resolver] Resolved duration via Piped (${instance}):`, data.duration);
+        return data.duration;
+      }
+      throw new Error("No duration in response");
+    } catch (err: any) {
+      throw err;
+    }
+  });
+
+  try {
+    const resolvedDuration = await Promise.any(pipedPromises);
+    if (resolvedDuration) return resolvedDuration;
+  } catch (err) {
+    console.warn('[Duration Resolver] Failed to fetch duration via Piped. Trying Invidious...');
+  }
+
+  // Fallback to Invidious instances
+  const invidiousInstances = [
+    'https://inv.nadeko.net',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.jing.rocks',
+    'https://yewtu.be'
+  ];
+
+  const invidiousPromises = invidiousInstances.map(async (instance) => {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(`${instance}/api/v1/videos/${videoId}?fields=lengthSeconds`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json() as any;
+      if (data && typeof data.lengthSeconds === 'number' && data.lengthSeconds > 0) {
+        console.log(`[Duration Resolver] Resolved duration via Invidious (${instance}):`, data.lengthSeconds);
+        return data.lengthSeconds;
+      }
+      throw new Error("No duration in response");
+    } catch (err: any) {
+      throw err;
+    }
+  });
+
+  try {
+    const resolvedDuration = await Promise.any(invidiousPromises);
+    if (resolvedDuration) return resolvedDuration;
+  } catch (err) {
+    console.error('[Duration Resolver] Failed to fetch duration from all client-side sources.');
+  }
+
+  return null;
 }
