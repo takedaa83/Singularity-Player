@@ -292,14 +292,20 @@ export class AudioEngine {
       this.prevTrack = state.currentTrack;
       this.prevIsPlaying = state.isPlaying;
       this.prevStreamingQuality = state.streamingQuality;
-      this.handlePlaybackStateChange(state.currentTrack, state.isPlaying, state.streamingQuality);
+      this.handlePlaybackStateChange(state.currentTrack, state.isPlaying, state.streamingQuality, trackChanged, qualityChanged);
       if (isPlayingChanged) {
         setTimeValues(timeStore.getCurrentTime(), timeStore.getDuration(), true);
       }
     }
   }
 
-  private handlePlaybackStateChange(currentTrack: Track | null, isPlaying: boolean, streamingQuality: string) {
+  private handlePlaybackStateChange(
+    currentTrack: Track | null, 
+    isPlaying: boolean, 
+    streamingQuality: string,
+    trackChanged: boolean = true,
+    qualityChanged: boolean = false
+  ) {
     const activePlayerInstance = this.activePlayer === 1 ? this.audio1 : this.audio2;
 
     if (!currentTrack) {
@@ -316,19 +322,24 @@ export class AudioEngine {
 
     const setupSource = async () => {
       let targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
+      const hasSource = activePlayerInstance.src && activePlayerInstance.src !== '';
 
       if (currentTrack.videoId && isBackendCloudHosted()) {
-        usePlayerStore.getState().setBuffering(true);
-        console.log(`[Audio Engine] Resolving stream for "${currentTrack.title}" on client...`);
-        const clientSrc = await resolveStreamOnClient(currentTrack.videoId, streamingQuality as 'high' | 'medium' | 'low');
-        if (requestId !== this.currentPlayRequestId) {
-          console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
-          return;
-        }
-        if (clientSrc) {
-          targetSrc = clientSrc;
+        if (trackChanged || qualityChanged || !hasSource) {
+          usePlayerStore.getState().setBuffering(true);
+          console.log(`[Audio Engine] Resolving stream for "${currentTrack.title}" on client...`);
+          const clientSrc = await resolveStreamOnClient(currentTrack.videoId, streamingQuality as 'high' | 'medium' | 'low');
+          if (requestId !== this.currentPlayRequestId) {
+            console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
+            return;
+          }
+          if (clientSrc) {
+            targetSrc = clientSrc;
+          } else {
+            console.warn(`[Audio Engine] Client-side resolution failed, falling back to backend stream.`);
+          }
         } else {
-          console.warn(`[Audio Engine] Client-side resolution failed, falling back to backend stream.`);
+          targetSrc = activePlayerInstance.src;
         }
       }
 
