@@ -63,6 +63,8 @@ For streaming playback, the player bypasses bot-guard sign-in challenges by:
 2. **V8 VM Deobfuscation Sandbox**: Bootstrapping a V8 Virtual Machine sandbox to compile and execute YouTube's `base.js` player script at runtime, dynamically extracting signature deciphering and `n`-parameter transform functions (supporting expressions like `mP`, `$9`, `Jf`, and `v0` found in recent players).
 3. **Client-Fallback Stack**: Cycling through a client stack (`VISIONOS`, `TVHTML5_SIMPLY_EMBEDDED_PLAYER`, `TVHTML5`, `ANDROID_VR`, `IOS`, etc.) to resolve playable audio streams.
 4. **Cookie & SAPISID Authentication**: Authenticating web clients via an optional `YOUTUBE_COOKIE` environment variable, parsing it to construct SHA1-hashed `SAPISIDHASH` Authorization headers to bypass age-restricted or premium content checks.
+5. **Parallel Racing Resolution**: Racing multiple public Cobalt and Piped instances in parallel (`Promise.any`) on the client to automatically bypass slow, offline, or Turnstile-challenged instances and choose the fastest node under 1.5 seconds.
+6. **Client-Side Self-Healing Duration**: Automatically recovering missing audio metadata duration from public Piped and Invidious APIs directly in the user's browser, bypassing the cloud hosting server if YouTube has blocked its datacenter IP.
 
 Once resolved, the backend acts as a streaming proxy—routing the media stream through standard HTTP byte-range requests to eliminate CORS, hotlinking, or browser demuxer failures during playback.
 
@@ -255,7 +257,7 @@ pip install yt-dlp
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/singularity-player.git
+git clone https://github.com/takedaa83/Singularity-Player.git
 cd singularity-player
 
 # 2. Install all dependencies (monorepo — installs both client & server)
@@ -327,10 +329,10 @@ Open a terminal (like PowerShell) and navigate to the project directory:
 #### 💻 Step 3: Compile the Client Code with your Backend URL
 To tell the mobile app where to connect, you must inject your backend URL before building the frontend.
 1. Set the environment variable:
-   * **For Cloud Backend (Render)**:
-     ```powershell
-     $env:VITE_API_URL="https://singularity-player-backend.onrender.com"
-     ```
+    * **For Cloud Backend (Render)**:
+      ```powershell
+      $env:VITE_API_URL="https://singularity-player-backend-av2k.onrender.com"
+      ```
    * **For Local PC Backend (Home Wi-Fi)**:
      ```powershell
      $env:VITE_API_URL="http://<YOUR-PC-LOCAL-IP>:3001"
@@ -568,5 +570,5 @@ This project is licensed under the [MIT License](LICENSE).
 ---
 
 <p align="center">
-  Built with ♪ by <a href="https://github.com/yourusername">takedaa</a>
+  Built with ♪ by <a href="https://github.com/takedaa83">takedaa83</a>
 </p>
