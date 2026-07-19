@@ -142,9 +142,14 @@ const clients: Record<string, InnerTubeClient> = {
   },
   ANDROID: {
     clientName: "ANDROID",
-    clientVersion: "21.03.38",
+    clientVersion: "19.30.34",
     clientId: "3",
-    userAgent: "com.google.android.youtube/21.03.38 (Linux; U; Android 14) gzip",
+    userAgent: "com.google.android.youtube/19.30.34 (Linux; U; Android 14; en_US; Pixel 8; Build/UD1A.230805.019; Cronet/127.0.6533.100)",
+    osName: "Android",
+    osVersion: "14",
+    deviceMake: "Google",
+    deviceModel: "Pixel 8",
+    androidSdkVersion: "34",
     origin: "https://www.youtube.com",
     referer: "https://www.youtube.com/",
     loginSupported: true
@@ -228,7 +233,9 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
   if (client.osVersion) context.client.osVersion = client.osVersion;
   if (client.deviceMake) context.client.deviceMake = client.deviceMake;
   if (client.deviceModel) context.client.deviceModel = client.deviceModel;
-  if (client.androidSdkVersion) context.client.androidSdkVersion = client.androidSdkVersion;
+  if (client.androidSdkVersion) {
+    context.client.androidSdkVersion = parseInt(client.androidSdkVersion, 10);
+  }
   
   if (client.isEmbedded && payload.videoId) {
     context.thirdParty = {
@@ -437,9 +444,19 @@ const ALL_CLIENTS = [
 ];
 
 export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
+  const isCloudHosting = (process.env.RENDER === 'true' || 
+                          process.env.FLY_APP_NAME || 
+                          process.env.CLOUD_HOSTING === 'true') &&
+                          process.env.FORCE_DIRECT_STREAMS !== 'true';
+
+  let filteredClients = ALL_CLIENTS;
+  if (isCloudHosting) {
+    filteredClients = ALL_CLIENTS.filter(k => clients[k].loginSupported);
+  }
+
   const clientKeysToTry = clientKey ? [clientKey] : [
     lastSuccessfulClientKey,
-    ...ALL_CLIENTS.filter(k => k !== lastSuccessfulClientKey)
+    ...filteredClients.filter(k => k !== lastSuccessfulClientKey)
   ];
 
   let sts: number | null = null;

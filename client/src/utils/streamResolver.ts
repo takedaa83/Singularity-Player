@@ -1,6 +1,38 @@
 import { api } from './api';
 
 /**
+ * Fast client-side validation of a stream or tunnel URL using a 2-byte ranged fetch.
+ * Returns true if the URL is reachable and streams media; false if blocked or returning text errors.
+ */
+async function validateClientMediaUrl(url: string, timeoutMs: number = 3000): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Range': 'bytes=0-1'
+      },
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (!res.ok && res.status !== 206) {
+      console.warn(`[Client Stream Resolver] Validation failed for URL: ${url.substring(0, 80)}... Status: ${res.status}`);
+      return false;
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
+      console.warn(`[Client Stream Resolver] Validation failed (invalid content-type ${contentType}) for URL: ${url.substring(0, 80)}...`);
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.warn(`[Client Stream Resolver] Validation request failed for URL: ${url.substring(0, 80)}... Error:`, err?.message || err);
+    return false;
+  }
+}
+
+/**
  * Resolves a YouTube stream URL entirely on the client browser using public Cobalt and Piped instances.
  * This bypasses datacenter IP blocks on cloud-hosted backends (like Render) since the request is made
  * from the user's residential IP, which matches the IP signature of the resolved tunnel URL.
@@ -56,7 +88,11 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
       const data = await res.json() as any;
       if (data && data.url) {
         console.log(`[Client Stream Resolver] Resolved via Cobalt (${instance}):`, data.url);
-        return data.url;
+        const isValid = await validateClientMediaUrl(data.url);
+        if (isValid) {
+          return data.url;
+        }
+        throw new Error("Resolved Cobalt URL failed content-type or availability validation");
       }
       throw new Error("No URL returned");
     } catch (err: any) {
@@ -99,7 +135,11 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
         }
         if (selected && selected.url) {
           console.log(`[Client Stream Resolver] Resolved via Piped (${instance}):`, selected.url);
-          return selected.url;
+          const isValid = await validateClientMediaUrl(selected.url);
+          if (isValid) {
+            return selected.url;
+          }
+          throw new Error("Resolved Piped URL failed content-type or availability validation");
         }
       }
       throw new Error("No streams returned");
