@@ -442,7 +442,6 @@ refreshInvidiousInstances().catch(() => {});
 const FALLBACK_COBALT_INSTANCES = [
   'https://rue-cobalt.xenon.zone',
   'https://cobaltapi.kittycat.boo',
-  'https://api.cobalt.tools',
 ];
 
 let cobaltInstances: string[] = [...FALLBACK_COBALT_INSTANCES];
@@ -468,6 +467,7 @@ async function refreshCobaltInstances(): Promise<void> {
     for (const item of data) {
       if (
         item.url &&
+        !item.url.includes('api.cobalt.tools') &&
         item.monitoring?.status === 'up' &&
         item.trust >= 80 &&
         item.cors === 1
@@ -499,14 +499,9 @@ async function refreshCobaltInstances(): Promise<void> {
 refreshCobaltInstances().catch(() => {});
 
 async function validateMediaUrl(url: string): Promise<boolean> {
-  // Skip server-side validation for non-googlevideo URLs (e.g. Cobalt tunnel URLs).
-  // These will be redirected directly to the client browser, avoiding datacenter IP Turnstile blocks on Render.
-  if (!url.includes('googlevideo.com')) {
-    return true;
-  }
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const timeout = setTimeout(() => controller.abort(), 4000);
     const testRes = await fetch(url, {
       method: 'GET',
       headers: {
@@ -516,11 +511,11 @@ async function validateMediaUrl(url: string): Promise<boolean> {
       signal: controller.signal
     });
     clearTimeout(timeout);
-    if (testRes.status === 403 || testRes.status === 401) {
+    if (testRes.status === 403 || testRes.status === 401 || testRes.status >= 400) {
       return false;
     }
     const contentType = testRes.headers.get('content-type') || '';
-    if (contentType.includes('text/html')) {
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
       return false;
     }
     return true;
@@ -528,7 +523,6 @@ async function validateMediaUrl(url: string): Promise<boolean> {
     return false;
   }
 }
-
 
 async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
   const controller = new AbortController();
@@ -546,176 +540,191 @@ async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise
   }
 }
 
-async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
-  refreshInvidiousInstances().catch(() => {});
-  const targets = invidiousInstances.slice(0, 8);
-  const tasks = targets.map((instance) => async () => {
-    try {
-      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`;
-      console.log(`[Invidious] Trying ${instance} for ${videoId}...`);
-      const response = await fetchWithTimeout(apiUrl, 6000);
-      if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
-      const data = await response.json() as any;
-      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) {
-        throw new Error(`Missing adaptiveFormats from ${instance}`);
-      }
-      
-      let audioStreams: any[] = data.adaptiveFormats.filter((s: any) => s.type && s.type.startsWith('audio/') && s.url);
-      
-      // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
-      const mp4Streams = audioStreams.filter((s: any) => s.type.includes('audio/mp4'));
-      if (mp4Streams.length > 0) {
-        audioStreams = mp4Streams;
-      }
-      
-      audioStreams.sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
-      if (audioStreams.length === 0) throw new Error(`No audio streams found from ${instance}`);
-      
-      const selected = selectByQuality<any>(audioStreams, quality);
-      const contentType = (selected.type || 'audio/mp4').split(';')[0].trim();
-      
-      console.log(`[Invidious] Validating stream URL from ${instance}: ${selected.url}`);
-      const isValid = await validateMediaUrl(selected.url);
-      if (!isValid) {
-        throw new Error(`Stream validation failed for ${instance}`);
-      }
-      console.log(`[Invidious] Stream URL validation passed from ${instance}!`);
-      
-      return {
-        url: selected.url,
-        contentType,
-        title: data.title || 'Unknown',
-        artist: data.author || 'Unknown Artist',
-        duration: data.lengthSeconds || 0,
-        filesize: parseInt(selected.clen) || 0,
-      };
-    } catch (err: any) {
-      console.warn(`[Invidious] Failed via ${instance}:`, err.message || err);
-      return null;
-    }
-  });
-
-  return await raceFirstSuccessful(tasks, 3);
+export interface GenericAudioFormat {
+  url?: string;
+  bitrate?: number | string;
+  mimeType?: string;
+  type?: string;
+  contentLength?: string | number;
+  content_length?: string | number;
+  clen?: string | number;
 }
 
-async function getVideoInfoWithInvidious(videoId: string): Promise<{
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  coverArtUrl: string | null;
-} | null> {
-  const targets = invidiousInstances.slice(0, 8);
-  const tasks = targets.map((instance) => async () => {
-    try {
-      const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails`;
-      const response = await fetchWithTimeout(apiUrl, 6000);
-      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-      const data = await response.json() as any;
-      let coverArtUrl: string | null = null;
-      if (data.videoThumbnails && data.videoThumbnails.length > 0) {
-        const maxres = data.videoThumbnails.find((t: any) => t.quality === 'maxresdefault' || t.quality === 'maxres');
-        coverArtUrl = maxres?.url || data.videoThumbnails[0]?.url || null;
-      }
-      return {
-        title: data.title || 'Unknown',
-        artist: data.author || 'Unknown Artist',
-        album: 'YouTube',
-        duration: data.lengthSeconds || 0,
-        coverArtUrl,
-      };
-    } catch (err: any) {
-      return null;
-    }
+export function filterAndSelectAudioFormat(
+  rawFormats: GenericAudioFormat[],
+  quality: 'high' | 'medium' | 'low'
+): GenericAudioFormat | null {
+  if (!rawFormats || rawFormats.length === 0) return null;
+
+  const withUrls = rawFormats.filter(f => f.url);
+  if (withUrls.length === 0) return null;
+
+  let mp4Formats = withUrls.filter(f => {
+    const mime = (f.mimeType || f.type || '').toLowerCase();
+    return mime.includes('audio/mp4') || mime.includes('m4a');
   });
 
-  return await raceFirstSuccessful(tasks, 3);
-}
+  const baseFormats = mp4Formats.length > 0 ? mp4Formats : withUrls;
 
-async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
-  const targets = pipedInstances.slice(0, 8);
-  const tasks = targets.map((instance) => async () => {
-    try {
-      const apiUrl = `${instance}/streams/${videoId}`;
-      console.log(`[Piped] Trying ${instance} for ${videoId}...`);
-      const response = await fetchWithTimeout(apiUrl, 6000);
-      if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
-      const data = await response.json() as any;
-      if (!data.audioStreams || data.audioStreams.length === 0) {
-        throw new Error(`Missing audioStreams from ${instance}`);
-      }
-      
-      let streams: any[] = data.audioStreams.filter((s: any) => s.url && s.mimeType);
-      
-      // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
-      const mp4Streams = streams.filter((s: any) => s.mimeType.includes('audio/mp4'));
-      if (mp4Streams.length > 0) {
-        streams = mp4Streams;
-      }
-      
-      streams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-      if (streams.length === 0) throw new Error(`No audio streams found from ${instance}`);
-      
-      const selected = selectByQuality<any>(streams, quality);
-      const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
-      
-      console.log(`[Piped] Validating stream URL from ${instance}: ${selected.url}`);
-      const isValid = await validateMediaUrl(selected.url);
-      if (!isValid) {
-        throw new Error(`Stream validation failed for ${instance}`);
-      }
-      console.log(`[Piped] Stream URL validation passed from ${instance}!`);
-      
-      return {
-        url: selected.url,
-        contentType,
-        title: data.title || 'Unknown',
-        artist: data.uploader || 'Unknown Artist',
-        duration: data.duration || 0,
-        filesize: selected.contentLength || 0,
-      };
-    } catch (err: any) {
-      console.warn(`[Piped] Failed via ${instance}:`, err.message || err);
-      return null;
-    }
+  const sorted = [...baseFormats].sort((a, b) => {
+    const brA = a.bitrate ? parseInt(a.bitrate.toString(), 10) : 0;
+    const brB = b.bitrate ? parseInt(b.bitrate.toString(), 10) : 0;
+    return brB - brA;
   });
 
-  return await raceFirstSuccessful(tasks, 3);
+  return selectByQuality(sorted, quality);
 }
 
-async function getVideoInfoWithPiped(videoId: string): Promise<{
-  title: string;
-  artist: string;
-  album: string;
-  duration: number;
-  coverArtUrl: string | null;
-} | null> {
-  const targets = pipedInstances.slice(0, 8);
-  const tasks = targets.map((instance) => async () => {
-    try {
-      const apiUrl = `${instance}/streams/${videoId}`;
-      const response = await fetchWithTimeout(apiUrl, 6000);
-      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-      const data = await response.json() as any;
-      return {
-        title: data.title || 'Unknown',
-        artist: data.uploader || 'Unknown Artist',
-        album: 'YouTube',
-        duration: data.duration || 0,
-        coverArtUrl: data.thumbnailUrl || null,
-      };
-    } catch (err: any) {
-      return null;
-    }
-  });
+export function getAvailableExtractionTiers(): {
+  useInnerTube: boolean;
+  useYtDlp: boolean;
+  useProxies: boolean;
+} {
+  const isCloudHosting = (process.env.RENDER === 'true' || 
+                          process.env.FLY_APP_NAME || 
+                          process.env.CLOUD_HOSTING === 'true') &&
+                          process.env.FORCE_DIRECT_STREAMS !== 'true';
+  const hasAuth = !!getCookieHeader();
 
-  return await raceFirstSuccessful(tasks, 3);
+  return {
+    useInnerTube: !isCloudHosting || hasAuth,
+    useYtDlp: !isCloudHosting || hasAuth,
+    useProxies: true
+  };
 }
+
+async function refreshProxyInstances() {
+  console.log('[youtubeService] Probing and filtering fallback proxy instances...');
+  
+  const invidiousProbes = await Promise.all(
+    FALLBACK_INVIDIOUS_INSTANCES.map(async (uri) => {
+      const ok = await probeInstance(uri, '/api/v1/videos/dQw4w9WgXcQ', 2500);
+      return { uri, ok };
+    })
+  );
+  invidiousInstances = invidiousProbes.filter(r => r.ok).map(r => r.uri);
+  console.log(`[youtubeService] Found ${invidiousInstances.length}/${FALLBACK_INVIDIOUS_INSTANCES.length} working Invidious fallback instances.`);
+  
+  const pipedProbes = await Promise.all(
+    FALLBACK_PIPED_INSTANCES.map(async (uri) => {
+      const ok = await probeInstance(uri, '/streams/dQw4w9WgXcQ', 2500);
+      return { uri, ok };
+    })
+  );
+  pipedInstances = pipedProbes.filter(r => r.ok).map(r => r.uri);
+  console.log(`[youtubeService] Found ${pipedInstances.length}/${FALLBACK_PIPED_INSTANCES.length} working Piped fallback instances.`);
+  
+  if (invidiousInstances.length === 0) invidiousInstances = [...FALLBACK_INVIDIOUS_INSTANCES];
+  if (pipedInstances.length === 0) pipedInstances = [...FALLBACK_PIPED_INSTANCES];
+}
+
+// Call on startup
+refreshProxyInstances().catch(() => {});
 
 async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
-  const invResult = await extractUrlWithInvidious(videoId, quality);
-  if (invResult) return invResult;
-  return await extractUrlWithPiped(videoId, quality);
+  refreshInvidiousInstances().catch(() => {});
+  
+  const invTargets = invidiousInstances.slice(0, 5);
+  const pipedTargets = pipedInstances.slice(0, 5);
+  
+  const tasks: (() => Promise<StreamResult | null>)[] = [];
+  
+  for (const instance of invTargets) {
+    tasks.push(async () => {
+      try {
+        const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`;
+        console.log(`[Invidious] Trying ${instance} for ${videoId}...`);
+        const response = await fetchWithTimeout(apiUrl, 6000);
+        if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
+        const data = await response.json() as any;
+        if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) {
+          throw new Error(`Missing adaptiveFormats from ${instance}`);
+        }
+        
+        let audioStreams: any[] = data.adaptiveFormats.filter((s: any) => s.type && s.type.startsWith('audio/') && s.url);
+        const selected = filterAndSelectAudioFormat(
+          audioStreams.map((f: any) => ({
+            url: f.url,
+            bitrate: f.bitrate,
+            mimeType: f.type,
+            clen: f.clen
+          })),
+          quality
+        );
+        if (!selected || !selected.url) throw new Error(`No audio stream selected from ${instance}`);
+        
+        const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
+        
+        console.log(`[Invidious] Validating stream URL from ${instance}: ${selected.url}`);
+        const isValid = await validateMediaUrl(selected.url);
+        if (!isValid) {
+          throw new Error(`Stream validation failed for ${instance}`);
+        }
+        console.log(`[Invidious] Stream URL validation passed from ${instance}!`);
+        
+        return {
+          url: selected.url,
+          contentType,
+          title: data.title || 'Unknown',
+          artist: data.author || 'Unknown Artist',
+          duration: data.lengthSeconds || 0,
+          filesize: parseInt(selected.clen as string) || 0,
+        };
+      } catch (err: any) {
+        console.warn(`[Invidious] Failed via ${instance}:`, err.message || err);
+        return null;
+      }
+    });
+  }
+  
+  for (const instance of pipedTargets) {
+    tasks.push(async () => {
+      try {
+        const apiUrl = `${instance}/streams/${videoId}`;
+        console.log(`[Piped] Trying ${instance} for ${videoId}...`);
+        const response = await fetchWithTimeout(apiUrl, 6000);
+        if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
+        const data = await response.json() as any;
+        if (!data.audioStreams || data.audioStreams.length === 0) {
+          throw new Error(`Missing audioStreams from ${instance}`);
+        }
+        
+        const selected = filterAndSelectAudioFormat(data.audioStreams, quality);
+        if (!selected || !selected.url) throw new Error(`No audio stream selected from ${instance}`);
+        
+        const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
+        
+        console.log(`[Piped] Validating stream URL from ${instance}: ${selected.url}`);
+        const isValid = await validateMediaUrl(selected.url);
+        if (!isValid) {
+          throw new Error(`Stream validation failed for ${instance}`);
+        }
+        console.log(`[Piped] Stream URL validation passed from ${instance}!`);
+        
+        const clenStr = selected.contentLength || selected.content_length || '0';
+        return {
+          url: selected.url,
+          contentType,
+          title: data.title || 'Unknown',
+          artist: data.uploader || 'Unknown Artist',
+          duration: data.duration || 0,
+          filesize: parseInt(clenStr.toString(), 10) || 0,
+        };
+      } catch (err: any) {
+        console.warn(`[Piped] Failed via ${instance}:`, err.message || err);
+        return null;
+      }
+    });
+  }
+  
+  const interleaved: typeof tasks = [];
+  const maxLen = Math.max(invTargets.length, pipedTargets.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < invTargets.length) interleaved.push(tasks[i]);
+    if (i < pipedTargets.length) interleaved.push(tasks[invTargets.length + i]);
+  }
+  
+  return await raceFirstSuccessful(interleaved, 3);
 }
 
 async function getVideoInfoWithProxy(videoId: string): Promise<{
@@ -725,14 +734,70 @@ async function getVideoInfoWithProxy(videoId: string): Promise<{
   duration: number;
   coverArtUrl: string | null;
 } | null> {
-  const invResult = await getVideoInfoWithInvidious(videoId);
-  if (invResult) return invResult;
-  return await getVideoInfoWithPiped(videoId);
+  const invTargets = invidiousInstances.slice(0, 5);
+  const pipedTargets = pipedInstances.slice(0, 5);
+  
+  const tasks: (() => Promise<any | null>)[] = [];
+  
+  for (const instance of invTargets) {
+    tasks.push(async () => {
+      try {
+        const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails`;
+        const response = await fetchWithTimeout(apiUrl, 6000);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        const data = await response.json() as any;
+        let coverArtUrl: string | null = null;
+        if (data.videoThumbnails && data.videoThumbnails.length > 0) {
+          const maxres = data.videoThumbnails.find((t: any) => t.quality === 'maxresdefault' || t.quality === 'maxres');
+          coverArtUrl = maxres?.url || data.videoThumbnails[0]?.url || null;
+        }
+        return {
+          title: data.title || 'Unknown',
+          artist: data.author || 'Unknown Artist',
+          album: 'YouTube',
+          duration: data.lengthSeconds || 0,
+          coverArtUrl,
+        };
+      } catch (err: any) {
+        console.warn(`[Invidious Info] Failed via ${instance}:`, err.message || err);
+        return null;
+      }
+    });
+  }
+  
+  for (const instance of pipedTargets) {
+    tasks.push(async () => {
+      try {
+        const apiUrl = `${instance}/streams/${videoId}`;
+        const response = await fetchWithTimeout(apiUrl, 6000);
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        const data = await response.json() as any;
+        return {
+          title: data.title || 'Unknown',
+          artist: data.uploader || 'Unknown Artist',
+          album: 'YouTube',
+          duration: data.duration || 0,
+          coverArtUrl: data.thumbnailUrl || null,
+        };
+      } catch (err: any) {
+        console.warn(`[Piped Info] Failed via ${instance}:`, err.message || err);
+        return null;
+      }
+    });
+  }
+  
+  const interleaved: typeof tasks = [];
+  const maxLen = Math.max(invTargets.length, pipedTargets.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < invTargets.length) interleaved.push(tasks[i]);
+    if (i < pipedTargets.length) interleaved.push(tasks[invTargets.length + i]);
+  }
+  
+  return await raceFirstSuccessful(interleaved, 3);
 }
 
 async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
   refreshCobaltInstances().catch(() => {});
-  // Use dynamically resolved list of instances
   for (const backend of cobaltInstances) {
     const formatsToTry: ('mp3' | 'best')[] = ['mp3', 'best'];
     for (const formatToTry of formatsToTry) {
@@ -794,7 +859,6 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
   return null;
 }
 
-// ─── Pooled yt-dlp Execution Helper ──────────────────────────────────────
 function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: string; stderr: string }> {
   return new Promise(async (resolve, reject) => {
     let poolHandle;
@@ -832,7 +896,6 @@ function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: st
   });
 }
 
-// ─── Main Audio stream resolver ──────────────────────────────────────────
 export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medium' | 'low' = 'high', bypassCache: boolean = false): Promise<{
   url: string;
   contentType: string;
@@ -859,24 +922,16 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return null;
         }
 
-        const isCloudHosting = (process.env.RENDER === 'true' || 
-                                process.env.FLY_APP_NAME || 
-                                process.env.CLOUD_HOSTING === 'true') &&
-                                process.env.FORCE_DIRECT_STREAMS !== 'true';
-        const hasAuth = !!getCookieHeader();
+        const tiers = getAvailableExtractionTiers();
 
-        if (!isCloudHosting || hasAuth) {
-          // Try extracting via custom InnerTube IOS client context
+        if (tiers.useInnerTube) {
           const customResult = await extractUrlWithCustomInnertube(videoId, quality);
           if (customResult) {
             streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
             return customResult;
           }
-        } else {
-          console.log(`[youtubeService] Cloud hosting and no auth. Bypassing direct InnerTube extraction to prevent datacenter IP blocks.`);
         }
 
-        // Fallback to Cobalt API
         console.log(`[youtubeService] Direct extraction bypassed or failed, trying Cobalt API for ${videoId}...`);
         const cobaltResult = await extractUrlWithCobalt(videoId, quality);
         if (cobaltResult) {
@@ -884,7 +939,6 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return cobaltResult;
         }
 
-        // Fallback to Invidious / Piped proxies
         console.log(`[youtubeService] Cobalt failed, trying proxy APIs for ${videoId}...`);
         const proxyResult = await extractUrlWithProxy(videoId, quality);
         if (proxyResult) {
@@ -892,8 +946,7 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return proxyResult;
         }
 
-        if (!isCloudHosting || hasAuth) {
-          // Final fallback: local pooled yt-dlp execution
+        if (tiers.useYtDlp) {
           console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
           const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
           const formatSelector = getYtDlpFormatSelector(quality);
@@ -946,7 +999,6 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
 
           streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
 
-          // Cache eviction (LRU)
           if (streamUrlCache.size > MAX_CACHE_SIZE) {
             let oldestKey: string | null = null;
             let oldestAccessed = Infinity;
@@ -977,10 +1029,10 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
   return pending;
 }
 
-export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | 'low' = 'high'): {
+export async function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | 'low' = 'high'): Promise<{
   stream: Readable;
   process: ChildProcess;
-} {
+}> {
   if (!isValidVideoId(videoId)) {
     throw new Error(`Invalid video ID format: ${videoId}`);
   }
@@ -997,6 +1049,7 @@ export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | '
   }
   args.push('-o', '-', ytUrl);
 
+  await ytDlpReady;
   const child = spawn(YT_DLP_PATH, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -1043,14 +1096,9 @@ export async function getVideoInfo(videoId: string): Promise<{
       return null;
     }
 
-    const isCloudHosting = (process.env.RENDER === 'true' || 
-                            process.env.FLY_APP_NAME || 
-                            process.env.CLOUD_HOSTING === 'true') &&
-                            process.env.FORCE_DIRECT_STREAMS !== 'true';
-    const hasAuth = !!getCookieHeader();
+    const tiers = getAvailableExtractionTiers();
 
-    if (!isCloudHosting || hasAuth) {
-      // Try custom InnerTube player info fetch
+    if (tiers.useInnerTube) {
       const customResult = await getVideoInfoWithCustomInnertube(videoId);
       if (customResult) {
         pruneVideoInfoCache();
@@ -1061,7 +1109,6 @@ export async function getVideoInfo(videoId: string): Promise<{
       console.log(`[youtubeService] Cloud hosting and no auth. Bypassing direct InnerTube video info waterfall to prevent datacenter IP blocks.`);
     }
 
-    // Fallback to proxy APIs
     console.log(`[youtubeService] Custom InnerTube failed, trying proxy APIs for video info ${videoId}...`);
     const proxyResult = await getVideoInfoWithProxy(videoId);
     if (proxyResult) {
@@ -1070,7 +1117,7 @@ export async function getVideoInfo(videoId: string): Promise<{
       return proxyResult;
     }
 
-    if (!isCloudHosting || hasAuth) {
+    if (tiers.useYtDlp) {
       console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for video info of ${videoId}`);
       const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
       

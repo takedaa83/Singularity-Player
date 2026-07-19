@@ -37,9 +37,12 @@ async function validateClientMediaUrl(url: string, timeoutMs: number = 3000): Pr
  * This bypasses datacenter IP blocks on cloud-hosted backends (like Render) since the request is made
  * from the user's residential IP, which matches the IP signature of the resolved tunnel URL.
  */
-export async function resolveStreamOnClient(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<string | null> {
+export async function resolveStreamOnClient(
+  videoId: string,
+  quality: 'high' | 'medium' | 'low',
+  excludedUrls: string[] = []
+): Promise<string | null> {
   let cobaltInstances = [
-    'https://api.cobalt.tools',
     'https://rue-cobalt.xenon.zone',
     'https://cobaltapi.kittycat.boo'
   ];
@@ -55,13 +58,18 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
       if (data && Array.isArray(data.cobalt) && data.cobalt.length > 0) {
         const dynamicList = data.cobalt
           .map((u: string) => u.replace(/\/$/, ''))
-          .filter((u: string) => !u.includes('co.wuk.sh'));
+          .filter((u: string) => !u.includes('co.wuk.sh') && !u.includes('api.cobalt.tools'));
         cobaltInstances = Array.from(new Set([...dynamicList, ...cobaltInstances]));
         console.log('[Client Stream Resolver] Fetched dynamic Cobalt instances:', dynamicList);
       }
     }
   } catch (err: any) {
     console.warn('[Client Stream Resolver] Failed to fetch dynamic instances from backend:', err?.message || err);
+  }
+
+  // Filter excluded instances
+  if (excludedUrls && excludedUrls.length > 0) {
+    cobaltInstances = cobaltInstances.filter(inst => !excludedUrls.some(exc => inst.includes(exc)));
   }
 
   // Define Cobalt Tasks
@@ -101,18 +109,26 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     }
   });
 
-  const resolvedUrl = await raceFirstSuccessful(cobaltTasks, 3);
-  if (resolvedUrl) return resolvedUrl;
+  const rawResolvedUrl = await raceFirstSuccessful(cobaltTasks, 3);
+  if (rawResolvedUrl) {
+    // Return same-origin backend relay proxy URL instead of raw third-party URL
+    const backendRelayUrl = `${api.baseUrl}/api/yt/proxy?url=${encodeURIComponent(rawResolvedUrl)}&videoId=${videoId}`;
+    return backendRelayUrl;
+  }
 
   console.log('[Client Stream Resolver] All Cobalt instances failed. Trying Piped instances in parallel...');
 
   // Fallback: Try Piped instances in parallel
-  const pipedInstances = [
+  let pipedInstances = [
     'https://pipedapi.kavin.rocks',
     'https://pipedapi.r4fo.com',
     'https://watchapi.whatever.social',
     'https://api.piped.privacydev.net'
   ];
+
+  if (excludedUrls && excludedUrls.length > 0) {
+    pipedInstances = pipedInstances.filter(inst => !excludedUrls.some(exc => inst.includes(exc)));
+  }
 
   const pipedTasks = pipedInstances.map((instance) => async () => {
     try {
@@ -149,7 +165,13 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     }
   });
 
-  return await raceFirstSuccessful(pipedTasks, 3);
+  const rawPipedUrl = await raceFirstSuccessful(pipedTasks, 3);
+  if (rawPipedUrl) {
+    const backendRelayUrl = `${api.baseUrl}/api/yt/proxy?url=${encodeURIComponent(rawPipedUrl)}&videoId=${videoId}`;
+    return backendRelayUrl;
+  }
+
+  return null;
 }
 
 export function isBackendCloudHosted(): boolean {

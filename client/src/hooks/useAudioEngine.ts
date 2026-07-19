@@ -79,6 +79,9 @@ export class AudioEngine {
   private unsubscribeStore: (() => void) | null = null;
   private unlockListener: (() => void) | null = null;
   private currentPlayRequestId = 0;
+  private trackFailureCount = 0;
+  private lastFailedTrackId: string | null = null;
+  private excludedInstances = new Set<string>();
 
   // Cached store state properties
   private cachedCrossfadeDuration = 0;
@@ -318,29 +321,84 @@ export class AudioEngine {
       return;
     }
 
+    if (trackChanged) {
+      this.trackFailureCount = 0;
+      this.lastFailedTrackId = currentTrack.id;
+      this.excludedInstances.clear();
+    }
+
     const requestId = ++this.currentPlayRequestId;
 
     const setupSource = async () => {
-      let targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, streamingQuality);
+      let targetQuality = streamingQuality;
+      if (this.trackFailureCount === 1) {
+        targetQuality = 'medium';
+      } else if (this.trackFailureCount >= 2) {
+        targetQuality = 'low';
+      }
+
+      let targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, targetQuality);
       const hasSource = activePlayerInstance.src && activePlayerInstance.src !== '';
 
-      if (currentTrack.videoId && isBackendCloudHosted()) {
-        if (trackChanged || qualityChanged || !hasSource) {
-          usePlayerStore.getState().setBuffering(true);
-          console.log(`[Audio Engine] Resolving stream for "${currentTrack.title}" on client...`);
-          const clientSrc = await resolveStreamOnClient(currentTrack.videoId, streamingQuality as 'high' | 'medium' | 'low');
-          if (requestId !== this.currentPlayRequestId) {
-            console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
-            return;
-          }
-          if (clientSrc) {
-            targetSrc = clientSrc;
+      if (trackChanged || qualityChanged || !hasSource) {
+        usePlayerStore.getState().setBuffering(true);
+        console.log(`[Audio Engine] Loading track "${currentTrack.title}" (quality: ${targetQuality}, attempt: ${this.trackFailureCount + 1})...`);
+
+        let resolvedSrc = targetSrc;
+        
+        try {
+          const preflightUrl = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}preflight=true`;
+          console.log(`[Audio Engine] Pre-flight checking backend stream URL: ${preflightUrl}`);
+          
+          const checkRes = await fetch(preflightUrl, {
+            headers: { 'Range': 'bytes=0-1' }
+          });
+
+          if (checkRes.ok || checkRes.status === 206) {
+            console.log('[Audio Engine] Backend stream pre-flight check PASSED.');
+            resolvedSrc = targetSrc;
           } else {
-            console.warn(`[Audio Engine] Client-side resolution failed, falling back to backend stream.`);
+            let errorMsg = '';
+            try {
+              const errJson = await checkRes.json() as any;
+              errorMsg = errJson.code || errJson.error || '';
+            } catch {}
+
+            console.warn(`[Audio Engine] Backend stream pre-flight check FAILED (status ${checkRes.status}, error: ${errorMsg}). Falling back to client-side resolution.`);
+            
+            const excludedArray = Array.from(this.excludedInstances);
+            console.log('[Audio Engine] Resolving stream on client with exclusions:', excludedArray);
+            const clientSrc = await resolveStreamOnClient(currentTrack.videoId as string, targetQuality as 'high' | 'medium' | 'low', excludedArray);
+            
+            if (requestId !== this.currentPlayRequestId) {
+              console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
+              return;
+            }
+
+            if (clientSrc) {
+              resolvedSrc = clientSrc;
+              console.log(`[Audio Engine] Client-side resolution succeeded, using same-origin relay: ${resolvedSrc}`);
+            } else {
+              console.error('[Audio Engine] Client-side resolution returned null. Attempting backend stream anyway.');
+              resolvedSrc = targetSrc;
+            }
           }
-        } else {
-          targetSrc = activePlayerInstance.src;
+        } catch (err: any) {
+          console.warn('[Audio Engine] Pre-flight check network error. Fallback to client-side resolution.', err.message);
+          
+          const excludedArray = Array.from(this.excludedInstances);
+          const clientSrc = await resolveStreamOnClient(currentTrack.videoId as string, targetQuality as 'high' | 'medium' | 'low', excludedArray);
+          
+          if (requestId !== this.currentPlayRequestId) return;
+
+          if (clientSrc) {
+            resolvedSrc = clientSrc;
+          }
         }
+
+        targetSrc = resolvedSrc;
+      } else {
+        targetSrc = activePlayerInstance.src;
       }
 
       // Self-healing: if track has no duration, fetch it via client-side API or backend
@@ -973,53 +1031,75 @@ export class AudioEngine {
     console.error('[Audio Engine] Playback error event:', err);
     
     if (err) {
-      this.showToast('Playback interrupted. Recovering stream...', 'info');
-      usePlayerStore.getState().setBuffering(true);
+      this.trackFailureCount++;
       
-      const currentTrack = usePlayerStore.getState().currentTrack;
-      if (!currentTrack) return;
-      
-      const lastTime = audio.currentTime;
-      const quality = usePlayerStore.getState().streamingQuality;
-      const targetSrc = this.getStreamUrlWithParams(currentTrack.streamUrl, quality);
       try {
-        let freshSrc = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}retry=${Date.now()}`;
-
-        if (currentTrack.videoId && isBackendCloudHosted()) {
-          console.log('[Audio Engine] Cloud backend detected. Resolving recovery stream on client...');
-          const resolved = await resolveStreamOnClient(currentTrack.videoId, quality as 'high' | 'medium' | 'low');
-          if (resolved) {
-            freshSrc = resolved;
+        if (audio.src && audio.src.includes('/api/yt/proxy')) {
+          const urlObj = new URL(audio.src);
+          const proxiedUrlStr = urlObj.searchParams.get('url');
+          if (proxiedUrlStr) {
+            const proxiedUrl = new URL(proxiedUrlStr);
+            console.log(`[Audio Engine] Adding failed proxy instance to exclusions: ${proxiedUrl.origin}`);
+            this.excludedInstances.add(proxiedUrl.origin);
           }
         }
+      } catch (e) {
+        console.warn('[Audio Engine] Failed to parse failed instance domain:', e);
+      }
 
-        console.log('[Audio Engine] Attempting stream recovery from:', freshSrc, 'at offset:', lastTime);
-        
-        audio.src = freshSrc;
-        audio.load();
-        
-        const onCanPlay = async () => {
-          audio.removeEventListener('canplay', onCanPlay);
-          try {
-            // Restore playback position offset
-            if (lastTime > 0 && Math.abs(audio.currentTime - lastTime) > 1) {
-              audio.currentTime = lastTime;
-            }
-            if (usePlayerStore.getState().isPlaying) {
-              await audio.play();
-            }
-          } catch (playErr) {
-            console.error('[Audio Engine] Auto-resume play failed:', playErr);
-          } finally {
-            usePlayerStore.getState().setBuffering(false);
+      if (this.trackFailureCount >= 3) {
+        console.warn(`[Audio Engine] Track failed after 3 attempts. Skipping...`);
+        this.trackFailureCount = 0;
+        this.excludedInstances.clear();
+        usePlayerStore.getState().setBuffering(false);
+        usePlayerStore.getState().setPlaying(false);
+        audio.pause();
+        audio.src = '';
+        this.showToast('Playback failed. Skipping to next track...', 'error');
+        usePlayerStore.getState().nextTrack();
+        return;
+      }
+
+      const currentTrack = usePlayerStore.getState().currentTrack;
+      if (!currentTrack) return;
+
+      const lastTime = audio.currentTime;
+      this.showToast(`Playback interrupted. Retrying (attempt ${this.trackFailureCount + 1}/3)...`, 'info');
+      usePlayerStore.getState().setBuffering(true);
+
+      const onCanPlay = async () => {
+        audio.removeEventListener('canplay', onCanPlay);
+        try {
+          if (lastTime > 0 && Math.abs(audio.currentTime - lastTime) > 1) {
+            audio.currentTime = lastTime;
           }
-        };
-        audio.addEventListener('canplay', onCanPlay);
+          if (usePlayerStore.getState().isPlaying) {
+            await audio.play();
+          }
+        } catch (playErr) {
+          console.error('[Audio Engine] Auto-resume play failed:', playErr);
+        } finally {
+          usePlayerStore.getState().setBuffering(false);
+        }
+      };
+
+      audio.addEventListener('canplay', onCanPlay);
+
+      try {
+        this.handlePlaybackStateChange(
+          currentTrack,
+          usePlayerStore.getState().isPlaying,
+          usePlayerStore.getState().streamingQuality,
+          false, // trackChanged = false
+          true   // qualityChanged = true
+        );
       } catch (retryErr) {
+        audio.removeEventListener('canplay', onCanPlay);
         console.error('[Audio Engine] Recovery retry failed:', retryErr);
         usePlayerStore.getState().setPlaying(false);
         usePlayerStore.getState().setBuffering(false);
-        this.showToast('Playback failed. Please check your network or try another track.', 'error');
+        this.showToast('Playback failed. Skipping to next track...', 'error');
+        usePlayerStore.getState().nextTrack();
       }
     }
   }

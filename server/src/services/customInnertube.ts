@@ -211,7 +211,7 @@ const clients: Record<string, InnerTubeClient> = {
   }
 };
 
-async function requestInnerTube(endpoint: string, clientKey: string, payload: any, extraParams: string = "", forceDomain: string | null = null): Promise<any> {
+async function requestInnerTube(endpoint: string, clientKey: string, payload: any, extraParams: string = "", forceDomain: string | null = null, timeoutMs: number = 10000): Promise<any> {
   const client = clients[clientKey];
   if (!client) {
     throw new Error(`Unknown InnerTube client: ${clientKey}`);
@@ -278,7 +278,7 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000); // 10-second timeout
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
@@ -430,34 +430,54 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
  */
 let lastSuccessfulClientKey = "VISIONOS";
 
-const ALL_CLIENTS = [
-  "VISIONOS",
-  "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-  "TVHTML5",
-  "ANDROID_VR",
-  "ANDROID_VR_1_43",
-  "IOS",
-  "IPADOS",
-  "ANDROID_CREATOR",
-  "ANDROID",
-  "WEB"
-];
-
-export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
-  const isCloudHosting = (process.env.RENDER === 'true' || 
-                          process.env.FLY_APP_NAME || 
-                          process.env.CLOUD_HOSTING === 'true') &&
-                          process.env.FORCE_DIRECT_STREAMS !== 'true';
-
-  let filteredClients = ALL_CLIENTS;
-  if (isCloudHosting) {
-    filteredClients = ALL_CLIENTS.filter(k => clients[k].loginSupported);
+function getClientKeysOrdered(isCloudHosting: boolean, clientKeyOverride?: string): string[] {
+  if (clientKeyOverride) {
+    return [clientKeyOverride];
   }
 
-  const clientKeysToTry = clientKey ? [clientKey] : [
-    lastSuccessfulClientKey,
-    ...filteredClients.filter(k => k !== lastSuccessfulClientKey)
-  ];
+  const allKeys = Object.keys(clients);
+  let filtered = isCloudHosting ? allKeys.filter(k => clients[k].loginSupported) : allKeys;
+
+  const isAndroid = (key: string) => key.startsWith("ANDROID");
+  const androids = filtered.filter(isAndroid);
+  const nonAndroids = filtered.filter(k => !isAndroid(k));
+
+  const ordered: string[] = [];
+
+  // 1. Add lastSuccessfulClientKey if non-Android and available
+  if (lastSuccessfulClientKey && filtered.includes(lastSuccessfulClientKey) && !isAndroid(lastSuccessfulClientKey)) {
+    ordered.push(lastSuccessfulClientKey);
+  }
+
+  // 2. Add other non-Android clients
+  for (const k of nonAndroids) {
+    if (k !== lastSuccessfulClientKey) {
+      ordered.push(k);
+    }
+  }
+
+  // 3. Add lastSuccessfulClientKey if Android and available
+  if (lastSuccessfulClientKey && filtered.includes(lastSuccessfulClientKey) && isAndroid(lastSuccessfulClientKey)) {
+    ordered.push(lastSuccessfulClientKey);
+  }
+
+  // 4. Add other Android clients
+  for (const k of androids) {
+    if (k !== lastSuccessfulClientKey) {
+      ordered.push(k);
+    }
+  }
+
+  return ordered;
+}
+
+export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
+  const isCloudHosting = !!((process.env.RENDER === 'true' || 
+                             process.env.FLY_APP_NAME || 
+                             process.env.CLOUD_HOSTING === 'true') &&
+                            process.env.FORCE_DIRECT_STREAMS !== 'true');
+
+  const clientKeysToTry = getClientKeysOrdered(isCloudHosting, clientKey);
 
   let sts: number | null = null;
   try {
@@ -480,7 +500,7 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
         };
       }
 
-      const data = await requestInnerTube("player", key, payload);
+      const data = await requestInnerTube("player", key, payload, "", null, 4000);
       
       const playabilityStatus = data.playabilityStatus?.status;
       if (playabilityStatus !== "OK") {
