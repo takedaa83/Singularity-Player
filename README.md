@@ -432,20 +432,36 @@ Copy `.env.example` to `.env` and customize as needed:
 
 ### 🍪 Configuring YouTube Authentication (Optional)
 
-If you host Singularity Player on cloud providers (like Render, Fly.io, or VPS servers with datacenter IPs), YouTube will block anonymous traffic with bot-check challenges (`Sign in to confirm you're not a bot`). 
+If you host the Singularity Player backend on cloud providers (such as Render, Fly.io, or VPS servers with datacenter IPs), YouTube will block anonymous traffic with bot-check challenges (`Sign in to confirm you're not a bot`). 
 
-To bypass this, configure the `YOUTUBE_COOKIE` environment variable:
+To bypass this and enable seamless server-side extraction, configure the `YOUTUBE_COOKIE` environment variable:
 
-1. Log into a secondary/rotating YouTube/Google account in your browser (avoid using your primary personal account).
-2. Open Developer Tools (`F12`), go to the **Network** tab, navigate to [music.youtube.com](https://music.youtube.com), and inspect any outgoing request.
-3. Copy the entire value of the `Cookie` header from the request headers (which contains fields like `__Secure-3PAPISID`, `HSID`, `SSID`, etc.).
-4. Paste it as the value of `YOUTUBE_COOKIE` in your `.env` file or in your hosting provider's environment variables.
+#### Step-by-Step Guide to Retrieve Your Cookie:
+
+1. **Log in**: Open your browser and log into a secondary/rotating Google/YouTube account (avoid using your primary personal account as a best practice).
+2. **Open YouTube Music**: Navigate to [music.youtube.com](https://music.youtube.com).
+3. **Open Developer Tools**: Press `F12` (or right-click anywhere and select **Inspect**), then switch to the **Network** tab.
+4. **Locate an API Request**:
+   - Play a song or search for something to trigger network activity.
+   - In the left-hand column under the **Name** filter, search for or click on a request destined for the YouTube Music API. 
+   - Good candidates include: **`verify_session`**, **`browse`**, or **`next`**. Avoid `videoplayback` requests (which go to separate Google video delivery servers and lack the main login headers).
+5. **Copy the Cookie**:
+   - Select the chosen request on the left.
+   - In the right-hand panel under the **Headers** tab, scroll down to the **Request Headers** section.
+   - Look for the header named **`cookie:`** (note: make sure it is `cookie:` under *Request Headers*, not *Response Headers*).
+   - Copy the entire long text string to the right of `cookie:`. It will contain parameters like `__Secure-3PAPISID`, `HSID`, `SSID`, `APISID`, etc.
+6. **Save to Environment**:
+   - Paste the copied string as the value of `YOUTUBE_COOKIE` in your backend `.env` file:
+     ```env
+     YOUTUBE_COOKIE="__Secure-3PAPISID=...; HSID=...; ..."
+     ```
+   - If hosting on a service like Render or Fly.io, add `YOUTUBE_COOKIE` as a secret environment variable in their respective settings console.
 
 #### Features of the Authentication System:
-- **Centralized Auth**: Parses `YOUTUBE_COOKIE` at boot and maps it to request headers and `SAPISIDHASH` authorization keys for scrapers.
-- **Dynamic Netscape Converter**: `yt-dlp` requires Netscape-formatted tab-separated cookie files rather than plain strings. Singularity Player automatically translates your `YOUTUBE_COOKIE` string into a Netscape `cookies.txt` file in `os.tmpdir()` at runtime, injecting it via the `--cookies` flag into all `yt-dlp` shell invocations.
-- **Cookie-Aware Gating**: If hosted on a cloud datacenter and no cookie is set, the server immediately bypasses direct InnerTube waterfalls and local `yt-dlp` fallbacks. This avoids wasting 5–10s on doomed requests and instantly hands resolution off to the client-side residential IP fallback.
-- **Startup Diagnostic**: The server verifies cookie validity on boot with a lightweight visionOS query, logging a warning if the cookie is expired.
+- **Centralized Auth**: Parses the `YOUTUBE_COOKIE` string on boot to automatically build authenticated request headers and signed `SAPISIDHASH` tokens for secure API communication.
+- **Dynamic Netscape Converter**: `yt-dlp` requires a Netscape-formatted tab-separated cookie file path. Singularity Player automatically translates your raw cookie string into a temporary `cookies.txt` file in your OS temp directory (`os.tmpdir()`) at runtime, supplying it dynamically to all `yt-dlp` subprocess runs.
+- **Cookie-Aware Gating**: If the backend detects that it is running on a cloud hosting IP (Render/Fly) and no `YOUTUBE_COOKIE` is configured, it instantly gates (bypasses) direct scraper attempts. This saves 5–10 seconds of wasted execution time on blocked IPs and immediately prompts the client's browser to resolve playback from the user's residential IP instead.
+- **Startup Diagnostic**: The backend runs a validation check on startup to test your cookie's integrity using a lightweight visionOS API call, warning you in the console if the cookie is expired or invalid.
 
 ---
 
