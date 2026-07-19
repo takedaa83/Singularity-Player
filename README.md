@@ -430,6 +430,23 @@ Copy `.env.example` to `.env` and customize as needed:
 | `VITE_API_URL` | Backend URL for the frontend to connect to | `http://localhost:3001` |
 | `YOUTUBE_COOKIE` | Optional YouTube login cookie string (required for premium/age-restricted content and bypassing bot checks on certain hosting environments) | `""` |
 
+### 🍪 Configuring YouTube Authentication (Optional)
+
+If you host Singularity Player on cloud providers (like Render, Fly.io, or VPS servers with datacenter IPs), YouTube will block anonymous traffic with bot-check challenges (`Sign in to confirm you're not a bot`). 
+
+To bypass this, configure the `YOUTUBE_COOKIE` environment variable:
+
+1. Log into a secondary/rotating YouTube/Google account in your browser (avoid using your primary personal account).
+2. Open Developer Tools (`F12`), go to the **Network** tab, navigate to [music.youtube.com](https://music.youtube.com), and inspect any outgoing request.
+3. Copy the entire value of the `Cookie` header from the request headers (which contains fields like `__Secure-3PAPISID`, `HSID`, `SSID`, etc.).
+4. Paste it as the value of `YOUTUBE_COOKIE` in your `.env` file or in your hosting provider's environment variables.
+
+#### Features of the Authentication System:
+- **Centralized Auth**: Parses `YOUTUBE_COOKIE` at boot and maps it to request headers and `SAPISIDHASH` authorization keys for scrapers.
+- **Dynamic Netscape Converter**: `yt-dlp` requires Netscape-formatted tab-separated cookie files rather than plain strings. Singularity Player automatically translates your `YOUTUBE_COOKIE` string into a Netscape `cookies.txt` file in `os.tmpdir()` at runtime, injecting it via the `--cookies` flag into all `yt-dlp` shell invocations.
+- **Cookie-Aware Gating**: If hosted on a cloud datacenter and no cookie is set, the server immediately bypasses direct InnerTube waterfalls and local `yt-dlp` fallbacks. This avoids wasting 5–10s on doomed requests and instantly hands resolution off to the client-side residential IP fallback.
+- **Startup Diagnostic**: The server verifies cookie validity on boot with a lightweight visionOS query, logging a warning if the cookie is expired.
+
 ---
 
 ## 📁 Project Structure

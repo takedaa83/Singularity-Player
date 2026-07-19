@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getRelatedTracks, YT_DLP_PATH, getCobaltInstances } from '../services/youtubeService';
+import { searchYouTube, getAudioStreamUrl, spawnAudioStream, getVideoInfo, isValidVideoId, getRelatedTracks, YT_DLP_PATH, getCobaltInstances, getYtDlpFormatSelector, extToMime } from '../services/youtubeService';
+import { getCookieFilePath } from '../services/youtubeAuth';
 import { ytdlpPool } from '../services/processPool';
 import path from 'path';
 import fs from 'fs';
@@ -15,12 +16,30 @@ if (!fs.existsSync(CACHE_DIR)) {
 
 const activeCacheDownloads = new Map<string, Promise<string>>();
 
+/**
+ * Sanitize a filename for use in Content-Disposition headers.
+ * Strips control characters and quotes, and produces RFC 5987 encoded value.
+ */
+function sanitizeFileName(name: string): string {
+  // Remove CRLF and other control characters
+  const cleaned = name.replace(/[\x00-\x1f\x7f"\\]/g, '_');
+  return cleaned;
+}
+
+function buildContentDisposition(filename: string): string {
+  const safe = sanitizeFileName(filename);
+  const encoded = encodeURIComponent(safe);
+  return `attachment; filename="${safe}"; filename*=UTF-8''${encoded}`;
+}
+
 function downloadAndCache(videoId: string, quality: string): Promise<string> {
-  const existing = activeCacheDownloads.get(videoId);
+  const cacheKey = `${videoId}-${quality}`;
+  const existing = activeCacheDownloads.get(cacheKey);
   if (existing) return existing;
 
-  const tempPath = path.join(CACHE_DIR, `${videoId}.tmp`);
-  const finalPath = path.join(CACHE_DIR, `${videoId}.cache`);
+  const tempPath = path.join(CACHE_DIR, `${cacheKey}.tmp`);
+  const finalPath = path.join(CACHE_DIR, `${cacheKey}.cache`);
+  const metaPath = path.join(CACHE_DIR, `${cacheKey}.meta.json`);
 
   const promise = new Promise<string>(async (resolve, reject) => {
     if (fs.existsSync(finalPath)) {
@@ -28,7 +47,7 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
       return;
     }
 
-    console.log(`[Cache Manager] Starting background cache download for ${videoId}...`);
+    console.log(`[Cache Manager] Starting background cache download for ${videoId} (quality: ${quality})...`);
     try {
       const selectedQuality = quality as 'high' | 'medium' | 'low';
       const streamInfo = await getAudioStreamUrl(videoId, selectedQuality);
@@ -52,10 +71,21 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
           nodeStream.on('error', rejectWrite);
         });
 
-        activeCacheDownloads.delete(videoId);
         if (fs.existsSync(tempPath)) {
           fs.renameSync(tempPath, finalPath);
-          console.log(`[Cache Manager] Cached track ${videoId} successfully.`);
+          // Write companion metadata file
+          try {
+            fs.writeFileSync(metaPath, JSON.stringify({
+              contentType: streamInfo.contentType || 'audio/mp4',
+              title: streamInfo.title,
+              artist: streamInfo.artist,
+              duration: streamInfo.duration,
+            }));
+          } catch (metaErr) {
+            console.warn(`[Cache Manager] Failed to write meta for ${videoId}:`, metaErr);
+          }
+          console.log(`[Cache Manager] Cached track ${videoId} (${quality}) successfully.`);
+          cleanCacheOnStartup(); // Prune after successful write
           resolve(finalPath);
         } else {
           throw new Error('Temp file not found after download');
@@ -67,21 +97,22 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
       console.error(`[Cache Manager] Cache download failed for ${videoId}, falling back to yt-dlp:`, err?.message || err);
 
       const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-      const formatSelector = quality === 'low' 
-        ? '249/250/bestaudio/140' 
-        : quality === 'medium' 
-          ? '140/bestaudio[acodec=aac]/bestaudio' 
-          : 'bestaudio[acodec=opus]/bestaudio[acodec=aac]/bestaudio/251/140';
+      const formatSelector = getYtDlpFormatSelector(quality as 'high' | 'medium' | 'low');
 
-      const child = spawn(YT_DLP_PATH, [
+      const args = [
         '--no-warnings',
         '--no-playlist',
         '-f', formatSelector,
         '--no-check-formats',
         '--no-check-certificate',
-        '-o', tempPath,
-        ytUrl
-      ], {
+      ];
+      const cookieFilePath = getCookieFilePath();
+      if (cookieFilePath) {
+        args.push('--cookies', cookieFilePath);
+      }
+      args.push('-o', tempPath, ytUrl);
+
+      const child = spawn(YT_DLP_PATH, args, {
         stdio: ['ignore', 'ignore', 'pipe']
       });
 
@@ -91,11 +122,15 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
       });
 
       child.on('exit', (code) => {
-        activeCacheDownloads.delete(videoId);
         if (code === 0 && fs.existsSync(tempPath)) {
           try {
             fs.renameSync(tempPath, finalPath);
-            console.log(`[Cache Manager] Cached track ${videoId} successfully via yt-dlp fallback.`);
+            // yt-dlp doesn't reliably tell us the format, default to audio/mp4
+            try {
+              fs.writeFileSync(metaPath, JSON.stringify({ contentType: 'audio/mp4' }));
+            } catch {}
+            console.log(`[Cache Manager] Cached track ${videoId} (${quality}) successfully via yt-dlp fallback.`);
+            cleanCacheOnStartup(); // Prune after successful write
             resolve(finalPath);
           } catch (renameErr) {
             console.error(`[Cache Manager] Rename failed for ${videoId}:`, renameErr);
@@ -110,9 +145,11 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
         }
       });
     }
+  }).finally(() => {
+    activeCacheDownloads.delete(cacheKey);
   });
 
-  activeCacheDownloads.set(videoId, promise);
+  activeCacheDownloads.set(cacheKey, promise);
   return promise;
 }
 
@@ -132,14 +169,16 @@ function cleanCacheOnStartup() {
         return { name: f, path: filePath, size: stats.size, mtime: stats.mtimeMs };
       });
 
-    console.log(`[Cache Manager] Cache size: ${(totalSize / 1024 / 1024).toFixed(2)} MB / 2000 MB`);
-
     if (totalSize > maxCacheSizeBytes) {
+      console.log(`[Cache Manager] Cache size: ${(totalSize / 1024 / 1024).toFixed(2)} MB / 2000 MB — pruning...`);
       fileInfos.sort((a, b) => a.mtime - b.mtime);
       let deletedSize = 0;
       for (const info of fileInfos) {
         try {
           fs.unlinkSync(info.path);
+          // Also delete companion .meta.json
+          const metaFile = info.path.replace(/\.cache$/, '.meta.json');
+          if (fs.existsSync(metaFile)) fs.unlinkSync(metaFile);
           deletedSize += info.size;
           totalSize -= info.size;
           console.log(`[Cache Manager] Evicted oldest cached file: ${info.name}`);
@@ -151,7 +190,7 @@ function cleanCacheOnStartup() {
       console.log(`[Cache Manager] Eviction completed. Freed ${(deletedSize / 1024 / 1024).toFixed(2)} MB`);
     }
   } catch (err) {
-    console.error('[Cache Manager] Error cleaning cache on startup:', err);
+    console.error('[Cache Manager] Error cleaning cache:', err);
   }
 }
 
@@ -196,12 +235,23 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
-  const cacheFilePath = path.join(CACHE_DIR, `${videoId}.cache`);
+  // Quality-aware cache path
+  const cacheKey = `${videoId}-${selectedQuality}`;
+  const cacheFilePath = path.join(CACHE_DIR, `${cacheKey}.cache`);
+  const metaFilePath = path.join(CACHE_DIR, `${cacheKey}.meta.json`);
   if (fs.existsSync(cacheFilePath)) {
-    console.log(`[YT Route] Serving ${videoId} from local cache`);
+    console.log(`[YT Route] Serving ${videoId} (${selectedQuality}) from local cache`);
+    // Read content type from meta file if available
+    let cachedContentType = 'audio/mp4';
+    try {
+      if (fs.existsSync(metaFilePath)) {
+        const meta = JSON.parse(fs.readFileSync(metaFilePath, 'utf-8'));
+        cachedContentType = meta.contentType || 'audio/mp4';
+      }
+    } catch {}
     res.sendFile(cacheFilePath, {
       headers: {
-        'Content-Type': 'audio/mp4',
+        'Content-Type': cachedContentType,
         'Cache-Control': 'public, max-age=86400',
         'Accept-Ranges': 'bytes'
       }
@@ -255,60 +305,68 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
         fetchHeaders['Range'] = rangeHeader;
       }
 
-      console.log(`[YT Route] Proxy fetching via fetch: ${url}`);
-      const response = await fetch(url, {
-        headers: fetchHeaders
-      });
+      try {
+        console.log(`[YT Route] Proxy fetching via fetch: ${url}`);
+        const response = await fetch(url, {
+          headers: fetchHeaders
+        });
 
-      if (!response.ok && response.status !== 206) {
-        let errText = '';
-        try {
-          errText = await response.text();
-        } catch (e: any) {
-          errText = `(failed to read body: ${e.message})`;
-        }
-        
-        console.warn(`[YT Route] Proxy fetch failed (${response.status}) for ${url}. Response body: ${errText.substring(0, 500)}. Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
-
-        if (response.status === 416) {
-          // Forward 416 Range Not Satisfiable correctly to the browser
-          res.writeHead(416, {
-            'Content-Range': response.headers.get('content-range') || `bytes */${filesize}`,
-            'Content-Type': contentType || 'audio/mp4',
-          });
-          if (response.body) {
-            Readable.fromWeb(response.body as any).pipe(res);
-          } else {
-            res.end();
+        if (!response.ok && response.status !== 206) {
+          let errText = '';
+          try {
+            errText = await response.text();
+          } catch (e: any) {
+            errText = `(failed to read body: ${e.message})`;
           }
+          
+          console.warn(`[YT Route] Proxy fetch failed (${response.status}) for ${url}. Response body: ${errText.substring(0, 500)}. Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+
+          if (response.status === 416) {
+            // Forward 416 Range Not Satisfiable correctly to the browser
+            res.writeHead(416, {
+              'Content-Range': response.headers.get('content-range') || `bytes */${filesize}`,
+              'Content-Type': contentType || 'audio/mp4',
+            });
+            if (response.body) {
+              Readable.fromWeb(response.body as any).pipe(res);
+            } else {
+              res.end();
+            }
+            return;
+          }
+
+          // URL might be expired, fall through to Strategy 2
+          streamViaPipe(videoId, res, req, selectedQuality);
           return;
         }
 
-        // URL might be expired, fall through to Strategy 2
-        streamViaPipe(videoId, res, req, selectedQuality);
-        return;
-      }
+        // Set response headers
+        const headers: Record<string, string> = {
+          'Content-Type': contentType || 'audio/mp4',
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=1800',
+        };
 
-      // Set response headers
-      const headers: Record<string, string> = {
-        'Content-Type': contentType || 'audio/mp4',
-        'Accept-Ranges': 'bytes',
-        'Cache-Control': 'public, max-age=1800',
-      };
+        const upstreamContentRange = response.headers.get('content-range');
+        const upstreamContentLength = response.headers.get('content-length');
 
-      const upstreamContentRange = response.headers.get('content-range');
-      const upstreamContentLength = response.headers.get('content-length');
+        if (upstreamContentRange) headers['Content-Range'] = upstreamContentRange;
+        if (upstreamContentLength) headers['Content-Length'] = upstreamContentLength;
+        else if (filesize > 0 && !rangeHeader) headers['Content-Length'] = filesize.toString();
 
-      if (upstreamContentRange) headers['Content-Range'] = upstreamContentRange;
-      if (upstreamContentLength) headers['Content-Length'] = upstreamContentLength;
-      else if (filesize > 0 && !rangeHeader) headers['Content-Length'] = filesize.toString();
-
-      res.writeHead(response.status === 206 ? 206 : 200, headers);
-      
-      if (response.body) {
-        Readable.fromWeb(response.body as any).pipe(res);
-      } else {
-        res.end();
+        res.writeHead(response.status === 206 ? 206 : 200, headers);
+        
+        if (response.body) {
+          Readable.fromWeb(response.body as any).pipe(res);
+        } else {
+          res.end();
+        }
+      } catch (fetchErr: any) {
+        // DNS/network error — fall back to Strategy 2
+        console.warn(`[YT Route] Proxy fetch error (DNS/network): ${fetchErr.message}. Falling back to pipe.`);
+        if (!res.headersSent) {
+          streamViaPipe(videoId, res, req, selectedQuality);
+        }
       }
     } else {
       if (res.destroyed || res.writableEnded) return;
@@ -413,7 +471,7 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
       const fileName = `${safeName}.${ext}`;
       
       res.setHeader('Content-Type', streamInfo.contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Disposition', buildContentDisposition(fileName));
       if (streamInfo.filesize > 0) {
         res.setHeader('Content-Length', streamInfo.filesize.toString());
       }
@@ -470,7 +528,7 @@ router.get('/download/:videoId', async (req: Request, res: Response) => {
         // Send headers on first data chunk (proves yt-dlp is working)
         hasData = true;
         res.setHeader('Content-Type', 'audio/mp4');
-        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        res.setHeader('Content-Disposition', buildContentDisposition(fileName));
         res.setHeader('Transfer-Encoding', 'chunked');
       }
       if (!res.writableEnded) {
@@ -599,7 +657,11 @@ router.post('/prefetch', (req: Request, res: Response) => {
     return;
   }
 
-  for (const id of videoIds) {
+  // Cap prefetch queue to prevent abuse and unbounded concurrency
+  const MAX_PREFETCH = 10;
+  const capped = videoIds.slice(0, MAX_PREFETCH);
+
+  for (const id of capped) {
     if (typeof id === 'string' && isValidVideoId(id)) {
       getAudioStreamUrl(id).catch((err) => {
         console.error(`[YT Route] Prefetch failed for ${id}:`, err?.message || err);
@@ -607,7 +669,7 @@ router.post('/prefetch', (req: Request, res: Response) => {
     }
   }
 
-  res.json({ status: 'queued' });
+  res.json({ status: 'queued', count: capped.length });
 });
 
 /**

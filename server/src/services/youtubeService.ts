@@ -2,9 +2,11 @@ import { execFile, spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { Readable } from 'stream';
 import { ytdlpPool } from './processPool';
 import { customSearch, customPlayer, customGetRelated, customGetTranscript } from './customInnertube';
+import { getCookieFilePath, getCookieHeader } from './youtubeAuth';
 
 const execFileAsync = promisify(execFile);
 
@@ -26,22 +28,134 @@ export interface YouTubeTrack {
   quality: string;
 }
 
-// Cache extracted stream URLs — they're valid for ~30 minutes
-const streamUrlCache = new Map<string, { data: any; expiry: number; lastAccessed: number }>();
-const STREAM_URL_CACHE_TTL = 25 * 60 * 1000; // 25 minutes
-
-// Coalesce pending stream URL extractions to prevent duplicate yt-dlp runs
-const pendingExtractions = new Map<string, Promise<{
+export interface StreamResult {
   url: string;
   contentType: string;
   title: string;
   artist: string;
   duration: number;
   filesize: number;
-} | null>>();
+}
+
+export function selectByQuality<T>(sorted: T[], quality: 'high' | 'medium' | 'low'): T {
+  if (quality === 'low') return sorted[sorted.length - 1];
+  if (quality === 'medium') return sorted[Math.floor(sorted.length / 2)] || sorted[0];
+  return sorted[0];
+}
+
+export function extToMime(ext: string): string {
+  const clean = ext.toLowerCase().trim().replace(/^\./, '');
+  if (clean === 'mp3') return 'audio/mpeg';
+  if (clean === 'm4a') return 'audio/mp4';
+  if (clean === 'webm' || clean === 'opus') return 'audio/webm';
+  if (clean === 'ogg') return 'audio/ogg';
+  return 'audio/mp4';
+}
+
+export function getYtDlpFormatSelector(quality: 'high' | 'medium' | 'low'): string {
+  const formatMap: Record<string, string> = {
+    high: '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
+    medium: '140/bestaudio[acodec=aac]/bestaudio',
+    low: '140/249/250/bestaudio',
+  };
+  return formatMap[quality] || formatMap.high;
+}
+
+/**
+ * Concurrency-capped parallel racing function. Runs up to `concurrencyLimit` tasks in parallel.
+ * Resolves with the FIRST non-null result. If all tasks finish and none return a non-null value,
+ * resolves with null.
+ */
+export async function raceFirstSuccessful<T>(
+  tasks: (() => Promise<T | null>)[],
+  concurrencyLimit: number
+): Promise<T | null> {
+  return new Promise<T | null>((resolve) => {
+    let resolved = false;
+    let activeCount = 0;
+    let nextIndex = 0;
+    let completedCount = 0;
+
+    if (tasks.length === 0) {
+      resolve(null);
+      return;
+    }
+
+    const runNext = async () => {
+      if (resolved) return;
+
+      if (nextIndex >= tasks.length) {
+        if (activeCount === 0 && !resolved) {
+          resolved = true;
+          resolve(null);
+        }
+        return;
+      }
+
+      const currentIndex = nextIndex++;
+      activeCount++;
+
+      try {
+        const result = await tasks[currentIndex]();
+        if (result !== null && !resolved) {
+          resolved = true;
+          resolve(result);
+          return;
+        }
+      } catch (err) {
+        // Ignore error and continue racing other instances
+      } finally {
+        activeCount--;
+        completedCount++;
+        
+        if (!resolved) {
+          if (completedCount === tasks.length) {
+            resolved = true;
+            resolve(null);
+          } else {
+            runNext();
+          }
+        }
+      }
+    };
+
+    // Start initial batch of tasks
+    const initialBatch = Math.min(concurrencyLimit, tasks.length);
+    for (let i = 0; i < initialBatch; i++) {
+      runNext();
+    }
+  });
+}
+
+/**
+ * Cheap reachability probe that checks if a proxy is online and can reach YouTube APIs.
+ */
+export async function probeInstance(url: string, endpoint: string = '', timeoutMs: number = 2500): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const targetUrl = `${url.replace(/\/$/, '')}${endpoint}`;
+    const res = await fetch(targetUrl, {
+      method: endpoint === '' ? 'GET' : 'HEAD', // GET for root, HEAD for API endpoints
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+
+// Cache extracted stream URLs — they're valid for ~30 minutes
+const streamUrlCache = new Map<string, { data: StreamResult; expiry: number; lastAccessed: number }>();
+const STREAM_URL_CACHE_TTL = 25 * 60 * 1000; // 25 minutes
+
+// Coalesce pending stream URL extractions to prevent duplicate yt-dlp runs
+const pendingExtractions = new Map<string, Promise<StreamResult | null>>();
 
 // Cache video info to avoid redundant yt-dlp invocations
-const videoInfoCache = new Map<string, { data: any; expiry: number }>();
+const videoInfoCache = new Map<string, { data: any; expiry: number; lastAccessed: number }>();
 const VIDEO_INFO_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 const MAX_CACHE_SIZE = 200;
 
@@ -56,6 +170,7 @@ function resolveYtDlpPath(): string {
 }
 
 export let YT_DLP_PATH = resolveYtDlpPath();
+export let ytDlpReady: Promise<string>;
 
 export async function ensureYtDlpBinary(): Promise<string> {
   const binDir = path.resolve(__dirname, '..', '..', 'bin');
@@ -80,11 +195,34 @@ export async function ensureYtDlpBinary(): Promise<string> {
       ? 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos'
       : 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp');
 
+  const sumsUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA256SUMS';
+
   try {
+    // 1. Fetch SHA256SUMS manifest
+    console.log(`[youtubeService] Fetching SHA256SUMS from ${sumsUrl}...`);
+    const sumsRes = await fetch(sumsUrl);
+    if (!sumsRes.ok) throw new Error(`Failed to fetch SHA256SUMS: ${sumsRes.status}`);
+    const sumsText = await sumsRes.text();
+
+    // 2. Fetch binary
     const res = await fetch(downloadUrl);
     if (!res.ok) throw new Error(`HTTP error ${res.status}`);
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // 3. Verify SHA-256 hash
+    const calculatedHash = crypto.createHash('sha256').update(buffer).digest('hex');
+    const expectedHashLine = sumsText.split(/\r?\n/).find(line => line.trim().endsWith(filename));
+    if (expectedHashLine) {
+      const expectedHash = expectedHashLine.split(/\s+/)[0].trim().toLowerCase();
+      if (calculatedHash !== expectedHash) {
+        throw new Error(`SHA256 verification failed for ${filename}. Expected: ${expectedHash}, Got: ${calculatedHash}`);
+      }
+      console.log(`[youtubeService] SHA-256 verification passed for ${filename}`);
+    } else {
+      console.warn(`[youtubeService] Expected checksum for ${filename} not found in SHA256SUMS. Proceeding with caution.`);
+    }
+
     fs.writeFileSync(localPath, buffer);
     
     if (!isWindows) {
@@ -95,24 +233,19 @@ export async function ensureYtDlpBinary(): Promise<string> {
     YT_DLP_PATH = localPath;
     return localPath;
   } catch (error) {
-    console.error('[youtubeService] Failed to download yt-dlp:', error);
+    console.error('[youtubeService] Failed to download or verify yt-dlp:', error);
     console.log('[youtubeService] Falling back to system-wide "yt-dlp" command from PATH.');
     YT_DLP_PATH = 'yt-dlp';
     return 'yt-dlp';
   }
 }
 
+ytDlpReady = ensureYtDlpBinary();
+
 /**
  * Custom InnerTube stream URL extraction using the IOS client.
  */
-async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
-  url: string;
-  contentType: string;
-  title: string;
-  artist: string;
-  duration: number;
-  filesize: number;
-} | null> {
+async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
   try {
     console.log(`[youtubeService] Attempting custom InnerTube player extraction for ${videoId}...`);
     const { basicInfo, audioFormats } = await customPlayer(videoId);
@@ -129,14 +262,7 @@ async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 
     // Sort formats by bitrate descending
     const sortedFormats = [...filteredFormats].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
     
-    let selectedFormat: any;
-    if (quality === 'low') {
-      selectedFormat = sortedFormats[sortedFormats.length - 1]; // Lowest bitrate
-    } else if (quality === 'medium') {
-      selectedFormat = sortedFormats[Math.floor(sortedFormats.length / 2)] || sortedFormats[0];
-    } else {
-      selectedFormat = sortedFormats[0]; // Highest bitrate
-    }
+    const selectedFormat = selectByQuality(sortedFormats, quality);
 
     if (!selectedFormat || !selectedFormat.url) {
       throw new Error('Selected format has no direct URL');
@@ -200,6 +326,23 @@ export async function searchYouTube(query: string): Promise<YouTubeTrack[]> {
   }
 }
 
+export interface TranscriptSegment {
+  start_ms: number;
+  snippet: {
+    text: string;
+  };
+}
+
+export interface TranscriptResult {
+  transcript: {
+    content: {
+      body: {
+        initial_segments: TranscriptSegment[];
+      };
+    };
+  };
+}
+
 /**
  * Recommended tracks / radio from custom InnerTube.
  */
@@ -215,7 +358,7 @@ export async function getRelatedTracks(videoId: string): Promise<any[]> {
 /**
  * TIMED transcripts helper.
  */
-export async function getYouTubeTranscript(videoId: string): Promise<any> {
+export async function getYouTubeTranscript(videoId: string): Promise<TranscriptResult | null> {
   try {
     return await customGetTranscript(videoId);
   } catch (error) {
@@ -262,7 +405,7 @@ async function refreshInvidiousInstances(): Promise<void> {
     clearTimeout(timeout);
     if (!response.ok) return;
     const data = await response.json() as any[];
-    const working: string[] = [];
+    const candidates: string[] = [];
     for (const [, info] of data) {
       if (
         info?.type === 'https' &&
@@ -270,14 +413,24 @@ async function refreshInvidiousInstances(): Promise<void> {
         info?.monitor?.uptime > 90 &&
         !info?.monitor?.down
       ) {
-        working.push(info.uri);
+        candidates.push(info.uri);
       }
-      if (working.length >= 8) break;
+      if (candidates.length >= 16) break;
     }
+
+    console.log(`[Proxy] Probing ${candidates.length} Invidious candidates...`);
+    const probeResults = await Promise.all(
+      candidates.map(async (uri) => {
+        const ok = await probeInstance(uri, '/api/v1/videos/dQw4w9WgXcQ', 2000);
+        return { uri, ok };
+      })
+    );
+    const working = probeResults.filter(r => r.ok).map(r => r.uri).slice(0, 8);
+
     if (working.length > 0) {
       invidiousInstances = working;
       instancesLastFetched = Date.now();
-      console.log(`[Proxy] Refreshed Invidious instances: ${working.length} found`);
+      console.log(`[Proxy] Refreshed Invidious instances: ${working.length} verified working`);
     }
   } catch (err: any) {
     console.warn(`[Proxy] Failed to refresh Invidious instances: ${err.message || err}`);
@@ -311,7 +464,7 @@ async function refreshCobaltInstances(): Promise<void> {
     clearTimeout(timeout);
     if (!response.ok) return;
     const data = await response.json() as any[];
-    const working: string[] = [];
+    const candidates: string[] = [];
     for (const item of data) {
       if (
         item.url &&
@@ -319,14 +472,24 @@ async function refreshCobaltInstances(): Promise<void> {
         item.trust >= 80 &&
         item.cors === 1
       ) {
-        working.push(item.url.replace(/\/$/, ''));
+        candidates.push(item.url.replace(/\/$/, ''));
       }
-      if (working.length >= 12) break;
+      if (candidates.length >= 24) break;
     }
+
+    console.log(`[Proxy] Probing ${candidates.length} Cobalt candidates...`);
+    const probeResults = await Promise.all(
+      candidates.map(async (url) => {
+        const ok = await probeInstance(url, '', 2000);
+        return { url, ok };
+      })
+    );
+    const working = probeResults.filter(r => r.ok).map(r => r.url).slice(0, 12);
+
     if (working.length > 0) {
       cobaltInstances = working;
       cobaltInstancesLastFetched = Date.now();
-      console.log(`[Proxy] Refreshed Cobalt instances: ${working.length} found`);
+      console.log(`[Proxy] Refreshed Cobalt instances: ${working.length} verified working`);
     }
   } catch (err: any) {
     console.warn(`[Proxy] Failed to refresh Cobalt instances: ${err.message || err}`);
@@ -383,24 +546,21 @@ async function fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise
   }
 }
 
-async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
-  url: string;
-  contentType: string;
-  title: string;
-  artist: string;
-  duration: number;
-  filesize: number;
-} | null> {
+async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
   refreshInvidiousInstances().catch(() => {});
-  for (const instance of invidiousInstances) {
+  const targets = invidiousInstances.slice(0, 8);
+  const tasks = targets.map((instance) => async () => {
     try {
       const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,adaptiveFormats`;
       console.log(`[Invidious] Trying ${instance} for ${videoId}...`);
-      const response = await fetchWithTimeout(apiUrl, 12000);
-      if (!response.ok) continue;
+      const response = await fetchWithTimeout(apiUrl, 6000);
+      if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
       const data = await response.json() as any;
-      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) continue;
-      let audioStreams = data.adaptiveFormats.filter((s: any) => s.type && s.type.startsWith('audio/') && s.url);
+      if (!data.adaptiveFormats || data.adaptiveFormats.length === 0) {
+        throw new Error(`Missing adaptiveFormats from ${instance}`);
+      }
+      
+      let audioStreams: any[] = data.adaptiveFormats.filter((s: any) => s.type && s.type.startsWith('audio/') && s.url);
       
       // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
       const mp4Streams = audioStreams.filter((s: any) => s.type.includes('audio/mp4'));
@@ -409,21 +569,18 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
       }
       
       audioStreams.sort((a: any, b: any) => (parseInt(b.bitrate) || 0) - (parseInt(a.bitrate) || 0));
-      if (audioStreams.length === 0) continue;
-      let selected = audioStreams[0];
-      if (quality === 'low') {
-        selected = audioStreams[audioStreams.length - 1];
-      } else if (quality === 'medium') {
-        selected = audioStreams[Math.floor(audioStreams.length / 2)];
-      }
+      if (audioStreams.length === 0) throw new Error(`No audio streams found from ${instance}`);
+      
+      const selected = selectByQuality<any>(audioStreams, quality);
       const contentType = (selected.type || 'audio/mp4').split(';')[0].trim();
-      console.log(`[Invidious] Validating stream URL: ${selected.url}`);
+      
+      console.log(`[Invidious] Validating stream URL from ${instance}: ${selected.url}`);
       const isValid = await validateMediaUrl(selected.url);
       if (!isValid) {
-        console.warn(`[Invidious] Stream URL validation failed for ${selected.url}. Trying next...`);
-        continue;
+        throw new Error(`Stream validation failed for ${instance}`);
       }
-      console.log(`[Invidious] Stream URL validation passed!`);
+      console.log(`[Invidious] Stream URL validation passed from ${instance}!`);
+      
       return {
         url: selected.url,
         contentType,
@@ -433,10 +590,12 @@ async function extractUrlWithInvidious(videoId: string, quality: 'high' | 'mediu
         filesize: parseInt(selected.clen) || 0,
       };
     } catch (err: any) {
-      continue;
+      console.warn(`[Invidious] Failed via ${instance}:`, err.message || err);
+      return null;
     }
-  }
-  return null;
+  });
+
+  return await raceFirstSuccessful(tasks, 3);
 }
 
 async function getVideoInfoWithInvidious(videoId: string): Promise<{
@@ -446,11 +605,12 @@ async function getVideoInfoWithInvidious(videoId: string): Promise<{
   duration: number;
   coverArtUrl: string | null;
 } | null> {
-  for (const instance of invidiousInstances) {
+  const targets = invidiousInstances.slice(0, 8);
+  const tasks = targets.map((instance) => async () => {
     try {
       const apiUrl = `${instance}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails`;
-      const response = await fetchWithTimeout(apiUrl, 10000);
-      if (!response.ok) continue;
+      const response = await fetchWithTimeout(apiUrl, 6000);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json() as any;
       let coverArtUrl: string | null = null;
       if (data.videoThumbnails && data.videoThumbnails.length > 0) {
@@ -464,30 +624,28 @@ async function getVideoInfoWithInvidious(videoId: string): Promise<{
         duration: data.lengthSeconds || 0,
         coverArtUrl,
       };
-    } catch {
-      continue;
+    } catch (err: any) {
+      return null;
     }
-  }
-  return null;
+  });
+
+  return await raceFirstSuccessful(tasks, 3);
 }
 
-async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
-  url: string;
-  contentType: string;
-  title: string;
-  artist: string;
-  duration: number;
-  filesize: number;
-} | null> {
-  for (const instance of pipedInstances) {
+async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
+  const targets = pipedInstances.slice(0, 8);
+  const tasks = targets.map((instance) => async () => {
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
       console.log(`[Piped] Trying ${instance} for ${videoId}...`);
-      const response = await fetchWithTimeout(apiUrl, 10000);
-      if (!response.ok) continue;
+      const response = await fetchWithTimeout(apiUrl, 6000);
+      if (!response.ok) throw new Error(`HTTP error ${response.status} from ${instance}`);
       const data = await response.json() as any;
-      if (!data.audioStreams || data.audioStreams.length === 0) continue;
-      let streams = data.audioStreams.filter((s: any) => s.url && s.mimeType);
+      if (!data.audioStreams || data.audioStreams.length === 0) {
+        throw new Error(`Missing audioStreams from ${instance}`);
+      }
+      
+      let streams: any[] = data.audioStreams.filter((s: any) => s.url && s.mimeType);
       
       // Prioritize audio/mp4 (AAC) over audio/webm (Opus)
       const mp4Streams = streams.filter((s: any) => s.mimeType.includes('audio/mp4'));
@@ -496,21 +654,18 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
       }
       
       streams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
-      if (streams.length === 0) continue;
-      let selected = streams[0];
-      if (quality === 'low') {
-        selected = streams[streams.length - 1];
-      } else if (quality === 'medium') {
-        selected = streams[Math.floor(streams.length / 2)];
-      }
+      if (streams.length === 0) throw new Error(`No audio streams found from ${instance}`);
+      
+      const selected = selectByQuality<any>(streams, quality);
       const contentType = (selected.mimeType || 'audio/mp4').split(';')[0].trim();
-      console.log(`[Piped] Validating stream URL: ${selected.url}`);
+      
+      console.log(`[Piped] Validating stream URL from ${instance}: ${selected.url}`);
       const isValid = await validateMediaUrl(selected.url);
       if (!isValid) {
-        console.warn(`[Piped] Stream URL validation failed for ${selected.url}. Trying next...`);
-        continue;
+        throw new Error(`Stream validation failed for ${instance}`);
       }
-      console.log(`[Piped] Stream URL validation passed!`);
+      console.log(`[Piped] Stream URL validation passed from ${instance}!`);
+      
       return {
         url: selected.url,
         contentType,
@@ -520,10 +675,12 @@ async function extractUrlWithPiped(videoId: string, quality: 'high' | 'medium' |
         filesize: selected.contentLength || 0,
       };
     } catch (err: any) {
-      continue;
+      console.warn(`[Piped] Failed via ${instance}:`, err.message || err);
+      return null;
     }
-  }
-  return null;
+  });
+
+  return await raceFirstSuccessful(tasks, 3);
 }
 
 async function getVideoInfoWithPiped(videoId: string): Promise<{
@@ -533,11 +690,12 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
   duration: number;
   coverArtUrl: string | null;
 } | null> {
-  for (const instance of pipedInstances) {
+  const targets = pipedInstances.slice(0, 8);
+  const tasks = targets.map((instance) => async () => {
     try {
       const apiUrl = `${instance}/streams/${videoId}`;
-      const response = await fetchWithTimeout(apiUrl, 10000);
-      if (!response.ok) continue;
+      const response = await fetchWithTimeout(apiUrl, 6000);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json() as any;
       return {
         title: data.title || 'Unknown',
@@ -546,21 +704,15 @@ async function getVideoInfoWithPiped(videoId: string): Promise<{
         duration: data.duration || 0,
         coverArtUrl: data.thumbnailUrl || null,
       };
-    } catch {
-      continue;
+    } catch (err: any) {
+      return null;
     }
-  }
-  return null;
+  });
+
+  return await raceFirstSuccessful(tasks, 3);
 }
 
-async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
-  url: string;
-  contentType: string;
-  title: string;
-  artist: string;
-  duration: number;
-  filesize: number;
-} | null> {
+async function extractUrlWithProxy(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
   const invResult = await extractUrlWithInvidious(videoId, quality);
   if (invResult) return invResult;
   return await extractUrlWithPiped(videoId, quality);
@@ -578,14 +730,7 @@ async function getVideoInfoWithProxy(videoId: string): Promise<{
   return await getVideoInfoWithPiped(videoId);
 }
 
-async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<{
-  url: string;
-  contentType: string;
-  title: string;
-  artist: string;
-  duration: number;
-  filesize: number;
-} | null> {
+async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {
   refreshCobaltInstances().catch(() => {});
   // Use dynamically resolved list of instances
   for (const backend of cobaltInstances) {
@@ -629,11 +774,8 @@ async function extractUrlWithCobalt(videoId: string, quality: 'high' | 'medium' 
           const parts = cleanFilename.split(' - ');
           const title = parts[0] || 'Unknown';
           const artist = parts[1] || 'Unknown Artist';
-          let contentType = 'audio/mp4';
-          if (filename.endsWith('.mp3')) contentType = 'audio/mpeg';
-          else if (filename.endsWith('.m4a')) contentType = 'audio/mp4';
-          else if (filename.endsWith('.webm') || filename.endsWith('.opus')) contentType = 'audio/webm';
-          else if (filename.endsWith('.ogg')) contentType = 'audio/ogg';
+          const extension = path.extname(filename);
+          const contentType = extToMime(extension);
           return {
             url: data.url,
             contentType,
@@ -657,6 +799,7 @@ function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: st
   return new Promise(async (resolve, reject) => {
     let poolHandle;
     try {
+      await ytDlpReady;
       poolHandle = await ytdlpPool.acquire();
     } catch (err) {
       return reject(err);
@@ -720,8 +863,9 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
                                 process.env.FLY_APP_NAME || 
                                 process.env.CLOUD_HOSTING === 'true') &&
                                 process.env.FORCE_DIRECT_STREAMS !== 'true';
+        const hasAuth = !!getCookieHeader();
 
-        if (!isCloudHosting) {
+        if (!isCloudHosting || hasAuth) {
           // Try extracting via custom InnerTube IOS client context
           const customResult = await extractUrlWithCustomInnertube(videoId, quality);
           if (customResult) {
@@ -729,7 +873,7 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
             return customResult;
           }
         } else {
-          console.log(`[youtubeService] Cloud hosting detected (Render/Fly). Bypassing direct GoogleVideo extraction to prevent datacenter IP blocks.`);
+          console.log(`[youtubeService] Cloud hosting and no auth. Bypassing direct InnerTube extraction to prevent datacenter IP blocks.`);
         }
 
         // Fallback to Cobalt API
@@ -748,72 +892,78 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return proxyResult;
         }
 
-        // Final fallback: local pooled yt-dlp execution
-        console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
-        const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const formatMap: Record<string, string> = {
-          high: '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
-          medium: '140/bestaudio[acodec=aac]/bestaudio',
-          low: '140/249/250/bestaudio',
-        };
-        const formatSelector = formatMap[quality] || formatMap.high;
+        if (!isCloudHosting || hasAuth) {
+          // Final fallback: local pooled yt-dlp execution
+          console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
+          const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          const formatSelector = getYtDlpFormatSelector(quality);
 
-        const { stdout } = await runYtDlpPooled([
-          '--no-warnings',
-          '--no-playlist',
-          '-f', formatSelector,
-          '--no-check-formats',
-          '--no-check-certificate',
-          '--print', '%(url)s',
-          '--print', '%(ext)s',
-          '--print', '%(filesize)s',
-          '--print', '%(filesize_approx)s',
-          '--print', '%(title)s',
-          '--print', '%(uploader)s',
-          '--print', '%(duration)s',
-          '--print', '%(abr)s',
-          '--skip-download',
-          ytUrl
-        ], 20000);
-
-        const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
-        const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr, abrStr] = lines;
-
-        if (!url || url === 'NA') {
-          throw new Error('No valid URL extracted by yt-dlp');
-        }
-
-        const cleanStr = (val: string | undefined) => (!val || val === 'NA' ? '' : val);
-        const parsedFilesize = parseInt(filesizeStr || '', 10);
-        const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
-        const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
-        const duration = parseFloat(durationStr || '') || 0;
-
-        const result = {
-          url,
-          contentType: ext === 'm4a' ? 'audio/mp4' : ext === 'webm' ? 'audio/webm' : 'audio/mp4',
-          title: cleanStr(title) || 'Unknown',
-          artist: cleanStr(artist) || 'Unknown Artist',
-          duration,
-          filesize,
-        };
-
-        streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-
-        // Cache eviction
-        if (streamUrlCache.size > MAX_CACHE_SIZE) {
-          let oldestKey: string | null = null;
-          let oldestExpiry = Infinity;
-          for (const [key, val] of streamUrlCache) {
-            if (val.expiry < oldestExpiry) {
-              oldestExpiry = val.expiry;
-              oldestKey = key;
-            }
+          const args = [
+            '--no-warnings',
+            '--no-playlist',
+            '-f', formatSelector,
+            '--no-check-formats',
+            '--no-check-certificate',
+            '--print', '%(url)s',
+            '--print', '%(ext)s',
+            '--print', '%(filesize)s',
+            '--print', '%(filesize_approx)s',
+            '--print', '%(title)s',
+            '--print', '%(uploader)s',
+            '--print', '%(duration)s',
+            '--print', '%(abr)s',
+            '--skip-download',
+          ];
+          const cookieFilePath = getCookieFilePath();
+          if (cookieFilePath) {
+            args.push('--cookies', cookieFilePath);
           }
-          if (oldestKey) streamUrlCache.delete(oldestKey);
-        }
+          args.push(ytUrl);
 
-        return result;
+          const { stdout } = await runYtDlpPooled(args, 20000);
+          
+          const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
+          const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr, abrStr] = lines;
+
+          if (!url || url === 'NA') {
+            throw new Error('No valid URL extracted by yt-dlp');
+          }
+
+          const cleanStr = (val: string | undefined) => (!val || val === 'NA' ? '' : val);
+          const parsedFilesize = parseInt(filesizeStr || '', 10);
+          const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
+          const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
+          const duration = parseFloat(durationStr || '') || 0;
+
+          const result: StreamResult = {
+            url,
+            contentType: extToMime(ext || ''),
+            title: cleanStr(title) || 'Unknown',
+            artist: cleanStr(artist) || 'Unknown Artist',
+            duration,
+            filesize,
+          };
+
+          streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+
+          // Cache eviction (LRU)
+          if (streamUrlCache.size > MAX_CACHE_SIZE) {
+            let oldestKey: string | null = null;
+            let oldestAccessed = Infinity;
+            for (const [key, val] of streamUrlCache) {
+              if (val.lastAccessed < oldestAccessed) {
+                oldestAccessed = val.lastAccessed;
+                oldestKey = key;
+              }
+            }
+            if (oldestKey) streamUrlCache.delete(oldestKey);
+          }
+
+          return result;
+        } else {
+          console.log(`[youtubeService] Cloud hosting and no auth. Skipping yt-dlp fallback to prevent guaranteed bot-check failure.`);
+          return null;
+        }
       } catch (error: any) {
         console.error(`[youtubeService] Stream URL extraction failed for ${videoId}:`, error?.message || error);
         return null;
@@ -835,14 +985,19 @@ export function spawnAudioStream(videoId: string, quality: 'high' | 'medium' | '
     throw new Error(`Invalid video ID format: ${videoId}`);
   }
   const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  const child = spawn(YT_DLP_PATH, [
+  const args = [
     '--no-warnings',
     '--no-playlist',
-    '-f', quality === 'low' ? '140/249/250/bestaudio' : quality === 'medium' ? '140/bestaudio[acodec=aac]/bestaudio' : '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
+    '-f', getYtDlpFormatSelector(quality),
     '--sponsorblock-remove', 'sponsor,intro,outro,selfpromo,interaction',
-    '-o', '-',
-    ytUrl
-  ], {
+  ];
+  const cookieFilePath = getCookieFilePath();
+  if (cookieFilePath) {
+    args.push('--cookies', cookieFilePath);
+  }
+  args.push('-o', '-', ytUrl);
+
+  const child = spawn(YT_DLP_PATH, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   child.stderr?.on('data', (data: Buffer) => {
@@ -864,8 +1019,23 @@ export async function getVideoInfo(videoId: string): Promise<{
 } | null> {
   const cached = videoInfoCache.get(videoId);
   if (cached && cached.expiry > Date.now()) {
+    cached.lastAccessed = Date.now();
     return cached.data;
   }
+
+  const pruneVideoInfoCache = () => {
+    if (videoInfoCache.size >= MAX_CACHE_SIZE) {
+      let oldestKey: string | null = null;
+      let oldestAccessed = Infinity;
+      for (const [key, val] of videoInfoCache) {
+        if (val.lastAccessed < oldestAccessed) {
+          oldestAccessed = val.lastAccessed;
+          oldestKey = key;
+        }
+      }
+      if (oldestKey) videoInfoCache.delete(oldestKey);
+    }
+  };
 
   try {
     if (!isValidVideoId(videoId)) {
@@ -873,65 +1043,77 @@ export async function getVideoInfo(videoId: string): Promise<{
       return null;
     }
 
-    // Try custom InnerTube player info fetch
-    const customResult = await getVideoInfoWithCustomInnertube(videoId);
-    if (customResult) {
-      if (videoInfoCache.size >= MAX_CACHE_SIZE) {
-        const oldest = videoInfoCache.keys().next().value;
-        if (oldest) videoInfoCache.delete(oldest);
+    const isCloudHosting = (process.env.RENDER === 'true' || 
+                            process.env.FLY_APP_NAME || 
+                            process.env.CLOUD_HOSTING === 'true') &&
+                            process.env.FORCE_DIRECT_STREAMS !== 'true';
+    const hasAuth = !!getCookieHeader();
+
+    if (!isCloudHosting || hasAuth) {
+      // Try custom InnerTube player info fetch
+      const customResult = await getVideoInfoWithCustomInnertube(videoId);
+      if (customResult) {
+        pruneVideoInfoCache();
+        videoInfoCache.set(videoId, { data: customResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
+        return customResult;
       }
-      videoInfoCache.set(videoId, { data: customResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
-      return customResult;
+    } else {
+      console.log(`[youtubeService] Cloud hosting and no auth. Bypassing direct InnerTube video info waterfall to prevent datacenter IP blocks.`);
     }
 
     // Fallback to proxy APIs
     console.log(`[youtubeService] Custom InnerTube failed, trying proxy APIs for video info ${videoId}...`);
     const proxyResult = await getVideoInfoWithProxy(videoId);
     if (proxyResult) {
-      if (videoInfoCache.size >= MAX_CACHE_SIZE) {
-        const oldest = videoInfoCache.keys().next().value;
-        if (oldest) videoInfoCache.delete(oldest);
-      }
-      videoInfoCache.set(videoId, { data: proxyResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
+      pruneVideoInfoCache();
+      videoInfoCache.set(videoId, { data: proxyResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
       return proxyResult;
     }
 
-    // Fallback to yt-dlp info query
-    console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for video info of ${videoId}`);
-    const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const { stdout } = await runYtDlpPooled([
-      '--no-warnings',
-      '--no-playlist',
-      '--no-check-formats',
-      '--no-check-certificate',
-      '--print', '%(title)s',
-      '--print', '%(uploader)s',
-      '--print', '%(album)s',
-      '--print', '%(duration)s',
-      '--print', '%(thumbnail)s',
-      '--skip-download',
-      ytUrl
-    ], 15000);
+    if (!isCloudHosting || hasAuth) {
+      console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for video info of ${videoId}`);
+      const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      
+      const args = [
+        '--no-warnings',
+        '--no-playlist',
+        '--no-check-formats',
+        '--no-check-certificate',
+        '--print', '%(title)s',
+        '--print', '%(uploader)s',
+        '--print', '%(album)s',
+        '--print', '%(duration)s',
+        '--print', '%(thumbnail)s',
+        '--skip-download',
+      ];
+      const cookieFilePath = getCookieFilePath();
+      if (cookieFilePath) {
+        args.push('--cookies', cookieFilePath);
+      }
+      args.push(ytUrl);
 
-    const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
-    const [title, artist, album, durationStr, coverArtUrl] = lines;
-    const cleanStr = (val: string | undefined, defaultVal: string = '') => (!val || val === 'NA' ? defaultVal : val);
-    const cleanUrl = (val: string | undefined): string | null => (!val || val === 'NA' ? null : val);
+      const { stdout } = await runYtDlpPooled(args, 15000);
 
-    const result = {
-      title: cleanStr(title) || 'Unknown',
-      artist: cleanStr(artist) || 'Unknown Artist',
-      album: cleanStr(album, 'YouTube'),
-      duration: parseFloat(durationStr || '') || 0,
-      coverArtUrl: cleanUrl(coverArtUrl),
-    };
+      const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
+      const [title, artist, album, durationStr, coverArtUrl] = lines;
+      const cleanStr = (val: string | undefined, defaultVal: string = '') => (!val || val === 'NA' ? defaultVal : val);
+      const cleanUrl = (val: string | undefined): string | null => (!val || val === 'NA' ? null : val);
 
-    if (videoInfoCache.size >= MAX_CACHE_SIZE) {
-      const oldest = videoInfoCache.keys().next().value;
-      if (oldest) videoInfoCache.delete(oldest);
+      const result = {
+        title: cleanStr(title) || 'Unknown',
+        artist: cleanStr(artist) || 'Unknown Artist',
+        album: cleanStr(album, 'YouTube'),
+        duration: parseFloat(durationStr || '') || 0,
+        coverArtUrl: cleanUrl(coverArtUrl),
+      };
+
+      pruneVideoInfoCache();
+      videoInfoCache.set(videoId, { data: result, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
+      return result;
+    } else {
+      console.log(`[youtubeService] Cloud hosting and no auth. Skipping yt-dlp video info fallback.`);
+      return null;
     }
-    videoInfoCache.set(videoId, { data: result, expiry: Date.now() + VIDEO_INFO_CACHE_TTL });
-    return result;
   } catch (error: any) {
     console.error(`[youtubeService] Video info fetch failed for ${videoId}:`, error?.message || error);
     return null;

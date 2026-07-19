@@ -18,31 +18,7 @@ export interface InnerTubeClient {
   loginSupported?: boolean;
 }
 
-const YOUTUBE_COOKIE = process.env.YOUTUBE_COOKIE || '';
-
-interface CookieMap {
-  [key: string]: string;
-}
-
-function parseCookie(cookieStr: string): CookieMap {
-  const map: CookieMap = {};
-  cookieStr.split(';').forEach(pair => {
-    const parts = pair.split('=');
-    if (parts.length >= 2) {
-      map[parts[0].trim()] = parts.slice(1).join('=').trim();
-    }
-  });
-  return map;
-}
-
-const cookieMap = YOUTUBE_COOKIE ? parseCookie(YOUTUBE_COOKIE) : {};
-
-function getSapisidHash(sapisid: string, origin: string): string {
-  const currentTime = Math.floor(Date.now() / 1000);
-  const data = `${currentTime} ${sapisid} ${origin}`;
-  const sha1 = crypto.createHash('sha1').update(data).digest('hex');
-  return `${currentTime}_${sha1}`;
-}
+import { getCookieHeader, getCookieMap, getSapisidHash } from './youtubeAuth';
 
 let cachedVisitorData: string | null = null;
 let lastVisitorDataFetch = 0;
@@ -284,25 +260,120 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
     // Ignore visitorId errors
   }
 
-  if (client.loginSupported && YOUTUBE_COOKIE) {
-    headers["Cookie"] = YOUTUBE_COOKIE;
+  const cookieHeader = getCookieHeader();
+  if (client.loginSupported && cookieHeader) {
+    headers["Cookie"] = cookieHeader;
+    const cookieMap = getCookieMap();
     if (cookieMap["SAPISID"]) {
       const sapisidHash = getSapisidHash(cookieMap["SAPISID"], client.origin);
       headers["Authorization"] = `SAPISIDHASH ${sapisidHash}`;
     }
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body)
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000); // 10-second timeout
 
-  if (!res.ok) {
-    throw new Error(`InnerTube request failed: ${res.status} ${await res.text()}`);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(`InnerTube request failed: ${res.status} ${await res.text()}`);
+    }
+
+    return res.json();
+  } catch (error: any) {
+    clearTimeout(timeout);
+    throw error;
   }
+}
 
-  return res.json();
+export function parseMusicListItem(renderer: any): YouTubeTrack | null {
+  try {
+    if (!renderer) return null;
+    const flexColumns = renderer.flexColumns;
+    if (!flexColumns || flexColumns.length === 0) return null;
+    
+    const title = flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text || "Unknown Title";
+    const videoId = renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId ||
+                    flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId;
+    
+    if (!videoId) return null;
+
+    // Artists runs
+    let artist = "Unknown Artist";
+    const artistCol = flexColumns[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs;
+    if (artistCol) {
+      const artists = [];
+      for (const run of artistCol) {
+        if (run.text === " • ") break; // Stop at separator
+        if (run.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ARTIST") {
+          artists.push(run.text);
+        }
+      }
+      if (artists.length > 0) {
+        artist = artists.join(", ");
+      } else {
+        artist = artistCol[0]?.text || "Unknown Artist";
+      }
+    }
+
+    // Album
+    let album = "Single";
+    if (artistCol) {
+      const dotIdx = artistCol.findIndex((r: any) => r.text === " • ");
+      if (dotIdx !== -1 && dotIdx + 1 < artistCol.length) {
+        const afterDot = artistCol.slice(dotIdx + 1);
+        const albumRun = afterDot.find((r: any) => r.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ALBUM");
+        if (albumRun) {
+          album = albumRun.text;
+        }
+      }
+    }
+
+    // Duration
+    let duration = 0;
+    const durationRun = artistCol?.find((r: any) => {
+      const text = (r.text || '').trim();
+      return /^\d+:\d+(:\d+)?$/.test(text);
+    });
+    if (durationRun) {
+      const parts = durationRun.text.trim().split(":");
+      if (parts.length === 3) {
+        duration = parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+      } else if (parts.length === 2) {
+        duration = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      }
+    }
+
+    // Cover Art
+    let coverArtUrl: string | null = null;
+    const thumbnails = renderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails;
+    if (thumbnails && thumbnails.length > 0) {
+      const sorted = [...thumbnails].sort((a: any, b: any) => b.width - a.width);
+      coverArtUrl = sorted[0].url;
+    }
+
+    return {
+      videoId,
+      title,
+      artist,
+      album,
+      duration,
+      coverArtUrl,
+      source: "youtube",
+      quality: "YouTube Audio"
+    };
+  } catch (err) {
+    console.warn("[InnerTube Parser] Failed to parse music list item:", err);
+    return null;
+  }
 }
 
 /**
@@ -324,82 +395,16 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
           const shelf = section.musicShelfRenderer;
           if (shelf.contents) {
             for (const item of shelf.contents) {
-              const renderer = item.musicResponsiveListItemRenderer;
-              if (!renderer) continue;
-              
-              const flexColumns = renderer.flexColumns;
-              if (!flexColumns || flexColumns.length === 0) continue;
-              
-              const title = flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text || "Unknown Title";
-              const videoId = renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId ||
-                              flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId;
-              
-              if (!videoId) continue;
-
-              // Artists runs
-              let artist = "Unknown Artist";
-              const artistCol = flexColumns[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs;
-              if (artistCol) {
-                const artists = [];
-                for (const run of artistCol) {
-                  if (run.text === " • ") break; // Stop at separator
-                  if (run.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ARTIST") {
-                    artists.push(run.text);
-                  }
+              try {
+                const renderer = item.musicResponsiveListItemRenderer;
+                if (!renderer) continue;
+                const parsed = parseMusicListItem(renderer);
+                if (parsed) {
+                  tracks.push(parsed);
                 }
-                if (artists.length > 0) {
-                  artist = artists.join(", ");
-                } else {
-                  artist = artistCol[0]?.text || "Unknown Artist";
-                }
+              } catch (itemErr) {
+                console.warn("[InnerTube Search] Failed to parse item in search results:", itemErr);
               }
-
-              // Album
-              let album = "Single";
-              if (artistCol) {
-                const dotIdx = artistCol.findIndex((r: any) => r.text === " • ");
-                if (dotIdx !== -1 && dotIdx + 1 < artistCol.length) {
-                  const afterDot = artistCol.slice(dotIdx + 1);
-                  const albumRun = afterDot.find((r: any) => r.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ALBUM");
-                  if (albumRun) {
-                    album = albumRun.text;
-                  }
-                }
-              }
-
-              // Duration
-              let duration = 0;
-              const durationRun = artistCol?.find((r: any) => {
-                const text = (r.text || '').trim();
-                return /^\d+:\d+(:\d+)?$/.test(text);
-              });
-              if (durationRun) {
-                const parts = durationRun.text.trim().split(":");
-                if (parts.length === 3) {
-                  duration = parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
-                } else if (parts.length === 2) {
-                  duration = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-                }
-              }
-
-              // Cover Art
-              let coverArtUrl: string | null = null;
-              const thumbnails = renderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails;
-              if (thumbnails && thumbnails.length > 0) {
-                const sorted = [...thumbnails].sort((a: any, b: any) => b.width - a.width);
-                coverArtUrl = sorted[0].url;
-              }
-
-              tracks.push({
-                videoId,
-                title,
-                artist,
-                album,
-                duration,
-                coverArtUrl,
-                source: "youtube",
-                quality: "YouTube Audio"
-              });
             }
           }
         }
@@ -416,18 +421,25 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
 /**
  * Resolves track metadata and available audio formats using the IOS client.
  */
+let lastSuccessfulClientKey = "VISIONOS";
+
+const ALL_CLIENTS = [
+  "VISIONOS",
+  "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+  "TVHTML5",
+  "ANDROID_VR",
+  "ANDROID_VR_1_43",
+  "IOS",
+  "IPADOS",
+  "ANDROID_CREATOR",
+  "ANDROID",
+  "WEB"
+];
+
 export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
   const clientKeysToTry = clientKey ? [clientKey] : [
-    "VISIONOS",
-    "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-    "TVHTML5",
-    "ANDROID_VR",
-    "ANDROID_VR_1_43",
-    "IOS",
-    "IPADOS",
-    "ANDROID_CREATOR",
-    "ANDROID",
-    "WEB"
+    lastSuccessfulClientKey,
+    ...ALL_CLIENTS.filter(k => k !== lastSuccessfulClientKey)
   ];
 
   let sts: number | null = null;
@@ -523,6 +535,7 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
       }
 
       console.log(`[customInnertube] Successfully resolved and validated video ${videoId} with client ${key}`);
+      lastSuccessfulClientKey = key;
       return {
         basicInfo,
         audioFormats,
@@ -569,80 +582,27 @@ export async function customGetRelated(videoId: string): Promise<any[]> {
           if (title === "You might also like") {
             const items = shelf.contents || [];
             for (const item of items) {
-              const renderer = item.musicResponsiveListItemRenderer;
-              if (!renderer) continue;
-
-              const flexColumns = renderer.flexColumns;
-              if (!flexColumns || flexColumns.length === 0) continue;
-
-              const titleText = flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.text || "Unknown Title";
-              const itemVideoId = renderer.overlay?.musicItemThumbnailOverlayRenderer?.content?.musicPlayButtonRenderer?.playNavigationEndpoint?.watchEndpoint?.videoId ||
-                                  flexColumns[0]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs?.[0]?.navigationEndpoint?.watchEndpoint?.videoId;
-
-              if (!itemVideoId) continue;
-
-              const artistCol = flexColumns[1]?.musicResponsiveListItemFlexColumnRenderer?.text?.runs;
-              let artistText = "Unknown Artist";
-              if (artistCol) {
-                const artists = [];
-                for (const run of artistCol) {
-                  if (run.text === " • ") break;
-                  if (run.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ARTIST") {
-                    artists.push(run.text);
-                  }
+              try {
+                const renderer = item.musicResponsiveListItemRenderer;
+                if (!renderer) continue;
+                const parsed = parseMusicListItem(renderer);
+                if (parsed) {
+                  tracks.push({
+                    id: `yt-${parsed.videoId}`,
+                    title: parsed.title,
+                    artist: parsed.artist,
+                    album: parsed.album,
+                    duration: parsed.duration,
+                    coverArtUrl: parsed.coverArtUrl,
+                    source: "youtube",
+                    streamUrl: `/api/yt/stream/${parsed.videoId}`,
+                    videoId: parsed.videoId,
+                    addedAt: Date.now()
+                  });
                 }
-                if (artists.length > 0) {
-                  artistText = artists.join(", ");
-                } else {
-                  artistText = artistCol[0]?.text || "Unknown Artist";
-                }
+              } catch (itemErr) {
+                console.warn("[InnerTube Related] Failed to parse item in related shelf:", itemErr);
               }
-
-              let albumText = "Single";
-              if (artistCol) {
-                const dotIdx = artistCol.findIndex((r: any) => r.text === " • ");
-                if (dotIdx !== -1 && dotIdx + 1 < artistCol.length) {
-                  const afterDot = artistCol.slice(dotIdx + 1);
-                  const albumRun = afterDot.find((r: any) => r.navigationEndpoint?.browseEndpoint?.browseEndpointContextSupportedConfigs?.browseEndpointContextMusicConfig?.pageType === "MUSIC_PAGE_TYPE_ALBUM");
-                  if (albumRun) {
-                    albumText = albumRun.text;
-                  }
-                }
-              }
-
-              let durationSec = 0;
-              const durationRun = artistCol?.find((r: any) => {
-                const text = (r.text || '').trim();
-                return /^\d+:\d+(:\d+)?$/.test(text);
-              });
-              if (durationRun) {
-                const parts = durationRun.text.trim().split(":");
-                if (parts.length === 3) {
-                  durationSec = parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
-                } else if (parts.length === 2) {
-                  durationSec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
-                }
-              }
-
-              let coverArtUrl = null;
-              const thumbnails = renderer.thumbnail?.musicThumbnailRenderer?.thumbnail?.thumbnails;
-              if (thumbnails && thumbnails.length > 0) {
-                const sorted = [...thumbnails].sort((a: any, b: any) => b.width - a.width);
-                coverArtUrl = sorted[0].url;
-              }
-
-              tracks.push({
-                id: `yt-${itemVideoId}`,
-                title: titleText,
-                artist: artistText,
-                album: albumText,
-                duration: durationSec,
-                coverArtUrl,
-                source: "youtube",
-                streamUrl: `/api/yt/stream/${itemVideoId}`,
-                videoId: itemVideoId,
-                addedAt: Date.now()
-              });
             }
           }
         }
@@ -657,6 +617,15 @@ export async function customGetRelated(videoId: string): Promise<any[]> {
 }
 
 /**
+ * Lightweight player response fetcher specifically for transcripts.
+ * Bypasses signature deciphering, n-parameter transform, and media URL validation.
+ */
+async function fetchPlayerResponseForTranscript(videoId: string, clientKey: string): Promise<any> {
+  const payload: any = { videoId };
+  return await requestInnerTube("player", clientKey, payload);
+}
+
+/**
  * Retrieves track transcripts (captions) via timedtext API.
  */
 export async function customGetTranscript(videoId: string): Promise<any> {
@@ -665,9 +634,9 @@ export async function customGetTranscript(videoId: string): Promise<any> {
     const captionClients = ["IOS", "IPADOS", "ANDROID", "WEB"];
     for (const clientKey of captionClients) {
       try {
-        console.log(`[customInnertube] Trying client ${clientKey} for captions of ${videoId}...`);
-        const data = await customPlayer(videoId, clientKey);
-        if (data.rawData?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
+        console.log(`[customInnertube] Fetching player response for transcript of ${videoId} via client ${clientKey}...`);
+        const data = await fetchPlayerResponseForTranscript(videoId, clientKey);
+        if (data?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
           playData = data;
           break;
         }
@@ -747,3 +716,35 @@ async function validateUrl(url: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Checks cookie health at server boot time by making a single, authenticated VISIONOS request.
+ */
+export async function checkCookieHealth(): Promise<void> {
+  const cookieHeader = getCookieHeader();
+  if (!cookieHeader) {
+    console.log('[youtubeAuth] No YOUTUBE_COOKIE environment variable set. Running in anonymous mode.');
+    return;
+  }
+
+  console.log('[youtubeAuth] YOUTUBE_COOKIE is set. Verifying credentials health...');
+  try {
+    const result = await customPlayer('dQw4w9WgXcQ', 'VISIONOS');
+    if (result && result.audioFormats && result.audioFormats.length > 0) {
+      console.log('[youtubeAuth] Credentials health check PASSED. Successfully authenticated and resolved formats.');
+    } else {
+      console.warn('[youtubeAuth] Credentials health check returned no formats, but did not throw.');
+    }
+  } catch (err: any) {
+    const errMsg = err?.message || '';
+    if (errMsg.includes('LOGIN_REQUIRED') || errMsg.includes('Sign in')) {
+      console.error('========================================================================');
+      console.error('[youtubeAuth] ERROR: YOUTUBE_COOKIE is set but appears EXPIRED or INVALID.');
+      console.error('[youtubeAuth] YouTube returned: LOGIN_REQUIRED / Sign in required.');
+      console.error('========================================================================');
+    } else {
+      console.warn('[youtubeAuth] Credentials check failed with a non-auth error:', errMsg);
+    }
+  }
+}
+

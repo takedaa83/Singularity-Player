@@ -21,6 +21,7 @@ import lyricsRouter from './routes/lyrics';
 import downloadsRouter from './routes/downloads';
 import syncRouter from './routes/sync';
 import { preWarmClient, ensureYtDlpBinary } from './services/youtubeService';
+import { checkCookieHealth } from './services/customInnertube';
 import { ytdlpPool } from './services/processPool';
 
 const app = express();
@@ -245,6 +246,7 @@ app.listen(PORT, async () => {
   console.log(`[Server] CORS origins: ${allowedOrigins.join(', ')}`);
   await ensureYtDlpBinary();
   preWarmClient();
+  checkCookieHealth().catch(() => {});
 
   // Self-pinging keep-alive mechanism to prevent Render spin-down
   const PUBLIC_URL = process.env.PUBLIC_URL;

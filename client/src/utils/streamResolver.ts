@@ -9,8 +9,7 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
   let cobaltInstances = [
     'https://api.cobalt.tools',
     'https://rue-cobalt.xenon.zone',
-    'https://cobaltapi.kittycat.boo',
-    'https://co.wuk.sh'
+    'https://cobaltapi.kittycat.boo'
   ];
 
   // Try to fetch dynamic instances from backend
@@ -22,7 +21,9 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     if (res.ok) {
       const data = await res.json() as any;
       if (data && Array.isArray(data.cobalt) && data.cobalt.length > 0) {
-        const dynamicList = data.cobalt.map((u: string) => u.replace(/\/$/, ''));
+        const dynamicList = data.cobalt
+          .map((u: string) => u.replace(/\/$/, ''))
+          .filter((u: string) => !u.includes('co.wuk.sh'));
         cobaltInstances = Array.from(new Set([...dynamicList, ...cobaltInstances]));
         console.log('[Client Stream Resolver] Fetched dynamic Cobalt instances:', dynamicList);
       }
@@ -31,11 +32,11 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     console.warn('[Client Stream Resolver] Failed to fetch dynamic instances from backend:', err?.message || err);
   }
 
-  // Query Cobalt instances in parallel for faster startup
-  const cobaltPromises = cobaltInstances.map(async (instance) => {
+  // Define Cobalt Tasks
+  const cobaltTasks = cobaltInstances.map((instance) => async () => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout for parallel queries
+      const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout for Cobalt tunnels
       const res = await fetch(instance, {
         method: 'POST',
         headers: {
@@ -60,16 +61,14 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
       throw new Error("No URL returned");
     } catch (err: any) {
       console.warn(`[Client Stream Resolver] Failed via Cobalt (${instance}):`, err?.message || err);
-      throw err;
+      return null;
     }
   });
 
-  try {
-    const resolvedUrl = await Promise.any(cobaltPromises);
-    if (resolvedUrl) return resolvedUrl;
-  } catch (raceErr) {
-    console.log('[Client Stream Resolver] All Cobalt instances failed. Trying Piped instances in parallel...');
-  }
+  const resolvedUrl = await raceFirstSuccessful(cobaltTasks, 3);
+  if (resolvedUrl) return resolvedUrl;
+
+  console.log('[Client Stream Resolver] All Cobalt instances failed. Trying Piped instances in parallel...');
 
   // Fallback: Try Piped instances in parallel
   const pipedInstances = [
@@ -79,7 +78,7 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
     'https://api.piped.privacydev.net'
   ];
 
-  const pipedPromises = pipedInstances.map(async (instance) => {
+  const pipedTasks = pipedInstances.map((instance) => async () => {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 4000); // 4s timeout
@@ -106,18 +105,11 @@ export async function resolveStreamOnClient(videoId: string, quality: 'high' | '
       throw new Error("No streams returned");
     } catch (err: any) {
       console.warn(`[Client Stream Resolver] Failed via Piped (${instance}):`, err?.message || err);
-      throw err;
+      return null;
     }
   });
 
-  try {
-    const resolvedUrl = await Promise.any(pipedPromises);
-    if (resolvedUrl) return resolvedUrl;
-  } catch (raceErr) {
-    console.log('[Client Stream Resolver] All Piped instances failed.');
-  }
-
-  return null;
+  return await raceFirstSuccessful(pipedTasks, 3);
 }
 
 export function isBackendCloudHosted(): boolean {
@@ -203,4 +195,69 @@ export async function fetchDurationOnClient(videoId: string): Promise<number | n
   }
 
   return null;
+}
+
+/**
+ * Concurrency-capped parallel racing function. Runs up to `concurrencyLimit` tasks in parallel.
+ * Resolves with the FIRST non-null result. If all tasks finish and none return a non-null value,
+ * resolves with null.
+ */
+async function raceFirstSuccessful<T>(
+  tasks: (() => Promise<T | null>)[],
+  concurrencyLimit: number
+): Promise<T | null> {
+  return new Promise<T | null>((resolve) => {
+    let resolved = false;
+    let activeCount = 0;
+    let nextIndex = 0;
+    let completedCount = 0;
+
+    if (tasks.length === 0) {
+      resolve(null);
+      return;
+    }
+
+    const runNext = async () => {
+      if (resolved) return;
+
+      if (nextIndex >= tasks.length) {
+        if (activeCount === 0 && !resolved) {
+          resolved = true;
+          resolve(null);
+        }
+        return;
+      }
+
+      const currentIndex = nextIndex++;
+      activeCount++;
+
+      try {
+        const result = await tasks[currentIndex]();
+        if (result !== null && !resolved) {
+          resolved = true;
+          resolve(result);
+          return;
+        }
+      } catch (err) {
+        // Ignore and continue racing
+      } finally {
+        activeCount--;
+        completedCount++;
+        
+        if (!resolved) {
+          if (completedCount === tasks.length) {
+            resolved = true;
+            resolve(null);
+          } else {
+            runNext();
+          }
+        }
+      }
+    };
+
+    const initialBatch = Math.min(concurrencyLimit, tasks.length);
+    for (let i = 0; i < initialBatch; i++) {
+      runNext();
+    }
+  });
 }
