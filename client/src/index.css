@@ -52,9 +52,9 @@
   --accent: #000000;
   --border-primary: #e5e5e5;
 
-  --primary: var(--primary-color, #7c3aed);
-  --primary-light: var(--primary-light-color, #a855f7);
-  --primary-dark: var(--primary-dark-color, #6d28d9);
+  --primary: var(--primary-color, #f59e0b);
+  --primary-light: var(--primary-light-color, #fbbf24);
+  --primary-dark: var(--primary-dark-color, #d97706);
 }
 
 /* ── Global Reset ── */
@@ -532,3 +532,7 @@ body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
   }
 }
 
+.fade-y-edges {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
