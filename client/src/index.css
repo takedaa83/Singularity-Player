@@ -33,9 +33,9 @@
   --accent: #ffffff;
   --border-primary: #262626;
 
-  --primary: var(--primary-color, #a855f7);
-  --primary-light: var(--primary-light-color, #c084fc);
-  --primary-dark: var(--primary-dark-color, #7c3aed);
+  --primary: var(--primary-color, #f59e0b);
+  --primary-light: var(--primary-light-color, #fbbf24);
+  --primary-dark: var(--primary-dark-color, #d97706);
 }
 
 :root.light {

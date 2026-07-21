@@ -104,7 +104,7 @@ export interface UserSettings {
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   theme: 'dark',
-  accentColor: '#a855f7',
+  accentColor: '#f59e0b',
   compactMode: false,
   volume: 0.7,
   shuffle: false,

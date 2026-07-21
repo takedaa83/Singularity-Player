@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { Play, Pause, Heart, Plus, ListPlus, Download, Trash2, Music, Radio, Loader2 } from 'lucide-react';
+import { Play, Pause, Heart, Plus, ListPlus, Download, Trash2, Music, Radio, Loader2, MoreVertical } from 'lucide-react';
 import { Track } from '../../types';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -274,8 +274,8 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           </div>
         </div>
 
-        {/* 2. Metadata (Album + Duration) */}
-        <div className="flex items-center gap-6 shrink-0 text-xs text-text-tertiary">
+        {/* 2. Metadata (Album + Duration + Actions) */}
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0 text-xs text-text-tertiary">
           <span 
             onClick={(e) => {
               e.stopPropagation();
@@ -285,10 +285,10 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           >
             {track.album}
           </span>
-          <span className="font-mono w-10 text-right">{formatDuration(track.duration)}</span>
+          <span className="font-mono text-right text-[11px] sm:text-xs">{formatDuration(track.duration)}</span>
 
-          {/* 3. Action Buttons */}
-          <div className="flex items-center gap-1 ml-2">
+          {/* Desktop Action Buttons */}
+          <div className="hidden md:flex items-center gap-1 ml-2">
             {/* Play Next */}
             <button
               onClick={(e) => { e.stopPropagation(); e.preventDefault(); playNext(track); toast('Will play next', 'info'); }}
@@ -350,6 +350,15 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
               </button>
             )}
           </div>
+
+          {/* Mobile 3-dot context menu trigger */}
+          <button
+            onClick={handleContextMenu}
+            className="md:hidden p-2 rounded-lg text-neutral-400 active:text-white active:bg-white/10 transition-all"
+            aria-label="More options"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <TrackContextMenu
