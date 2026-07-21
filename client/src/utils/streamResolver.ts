@@ -121,9 +121,10 @@ export async function resolveStreamOnClient(
   // Fallback: Try Piped instances in parallel
   let pipedInstances = [
     'https://pipedapi.kavin.rocks',
-    'https://pipedapi.r4fo.com',
-    'https://watchapi.whatever.social',
-    'https://api.piped.privacydev.net'
+    'https://pipedapi.tokhmi.xyz',
+    'https://pipedapi.adminforge.de',
+    'https://piped-api.garudalinux.org',
+    'https://pipedapi.simplelogin.fr'
   ];
 
   if (excludedUrls && excludedUrls.length > 0) {
@@ -189,9 +190,10 @@ export async function fetchDurationOnClient(videoId: string): Promise<number | n
   // Try Piped instances first
   const pipedInstances = [
     'https://pipedapi.kavin.rocks',
-    'https://pipedapi.r4fo.com',
-    'https://watchapi.whatever.social',
-    'https://api.piped.privacydev.net'
+    'https://pipedapi.tokhmi.xyz',
+    'https://pipedapi.adminforge.de',
+    'https://piped-api.garudalinux.org',
+    'https://pipedapi.simplelogin.fr'
   ];
 
   const pipedPromises = pipedInstances.map(async (instance) => {
@@ -225,8 +227,9 @@ export async function fetchDurationOnClient(videoId: string): Promise<number | n
   const invidiousInstances = [
     'https://inv.nadeko.net',
     'https://invidious.nerdvpn.de',
-    'https://invidious.jing.rocks',
-    'https://yewtu.be'
+    'https://invidious.drgns.space',
+    'https://yewtu.be',
+    'https://invidious.projectsegfau.lt'
   ];
 
   const invidiousPromises = invidiousInstances.map(async (instance) => {

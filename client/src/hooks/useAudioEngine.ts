@@ -345,54 +345,21 @@ export class AudioEngine {
         console.log(`[Audio Engine] Loading track "${currentTrack.title}" (quality: ${targetQuality}, attempt: ${this.trackFailureCount + 1})...`);
 
         let resolvedSrc = targetSrc;
-        
-        try {
-          const preflightUrl = `${targetSrc}${targetSrc.includes('?') ? '&' : '?'}preflight=true`;
-          console.log(`[Audio Engine] Pre-flight checking backend stream URL: ${preflightUrl}`);
-          
-          const checkRes = await fetch(preflightUrl, {
-            headers: { 'Range': 'bytes=0-1' }
-          });
 
-          if (checkRes.ok || checkRes.status === 206) {
-            console.log('[Audio Engine] Backend stream pre-flight check PASSED.');
-            resolvedSrc = targetSrc;
-          } else {
-            let errorMsg = '';
-            try {
-              const errJson = await checkRes.json() as any;
-              errorMsg = errJson.code || errJson.error || '';
-            } catch {}
-
-            console.warn(`[Audio Engine] Backend stream pre-flight check FAILED (status ${checkRes.status}, error: ${errorMsg}). Falling back to client-side resolution.`);
-            
-            const excludedArray = Array.from(this.excludedInstances);
-            console.log('[Audio Engine] Resolving stream on client with exclusions:', excludedArray);
-            const clientSrc = await resolveStreamOnClient(currentTrack.videoId as string, targetQuality as 'high' | 'medium' | 'low', excludedArray);
-            
-            if (requestId !== this.currentPlayRequestId) {
-              console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
-              return;
-            }
-
-            if (clientSrc) {
-              resolvedSrc = clientSrc;
-              console.log(`[Audio Engine] Client-side resolution succeeded, using same-origin relay: ${resolvedSrc}`);
-            } else {
-              console.error('[Audio Engine] Client-side resolution returned null. Attempting backend stream anyway.');
-              resolvedSrc = targetSrc;
-            }
-          }
-        } catch (err: any) {
-          console.warn('[Audio Engine] Pre-flight check network error. Fallback to client-side resolution.', err.message);
-          
+        // If this is a retry attempt (primary stream failed), resolve via client-side relay
+        if (this.trackFailureCount > 0 && currentTrack.videoId) {
           const excludedArray = Array.from(this.excludedInstances);
-          const clientSrc = await resolveStreamOnClient(currentTrack.videoId as string, targetQuality as 'high' | 'medium' | 'low', excludedArray);
-          
-          if (requestId !== this.currentPlayRequestId) return;
+          console.log(`[Audio Engine] Attempt ${this.trackFailureCount + 1}: Resolving stream on client with exclusions:`, excludedArray);
+          const clientSrc = await resolveStreamOnClient(currentTrack.videoId, targetQuality as 'high' | 'medium' | 'low', excludedArray);
+
+          if (requestId !== this.currentPlayRequestId) {
+            console.log(`[Audio Engine] Playback request outdated for "${currentTrack.title}", discarding.`);
+            return;
+          }
 
           if (clientSrc) {
             resolvedSrc = clientSrc;
+            console.log(`[Audio Engine] Client-side resolution succeeded, using relay: ${resolvedSrc}`);
           }
         }
 
