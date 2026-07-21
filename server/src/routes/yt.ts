@@ -541,6 +541,7 @@ async function streamViaPipe(videoId: string, res: Response, req: Request, quali
     const { stream, process: child } = await spawnAudioStream(videoId, quality);
     poolHandle.registerProcess(child);
 
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'audio/mp4');
     res.setHeader('Cache-Control', 'public, max-age=1800');
     res.setHeader('Transfer-Encoding', 'chunked');
