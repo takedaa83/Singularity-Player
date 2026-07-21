@@ -1,113 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BottomNavigation, BottomNavigationAction, Paper, Box } from '@mui/material';
-import {
-  Home as HomeIcon,
-  Search as SearchIcon,
-  LibraryMusic as LibraryIcon,
-  Download as DownloadIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
-import { tokens } from '../../theme/muiTheme';
+import { motion } from 'framer-motion';
+import { Home, Search, Library, Download, Settings } from 'lucide-react';
 
 export const MobileNav: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [value, setValue] = useState('/');
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    setValue(location.pathname);
-  }, [location.pathname]);
-
-  // Hide mobile nav when keyboard is active (useful on search page input focus)
-  useEffect(() => {
     const handleResize = () => {
-      const isKeyboard = window.innerHeight < 500;
-      setIsKeyboardOpen(isKeyboard);
+      setIsKeyboardOpen(window.innerHeight < 500);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   if (isKeyboardOpen) return null;
 
+  const navItems = [
+    { label: 'Home', path: '/', icon: Home },
+    { label: 'Search', path: '/search', icon: Search },
+    { label: 'Library', path: '/library', icon: Library },
+    { label: 'Downloads', path: '/downloads', icon: Download },
+    { label: 'Settings', path: '/settings', icon: Settings },
+  ];
+
+  const triggerHaptic = () => {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try { navigator.vibrate(8); } catch (_) {}
+    }
+  };
+
   return (
-    <Box
-      sx={{
-        display: { xs: 'block', md: 'none' },
-        position: 'fixed',
-        bottom: 0, // Sit flush at the bottom of the screen
-        left: 0,
-        right: 0,
-        zIndex: 40,
-      }}
-    >
-      <Paper
-        elevation={4}
-        sx={{
-          borderRadius: 0,
-          borderTop: `1px solid ${tokens.colors.surfaceBorder}`,
-          bgcolor: tokens.colors.background,
-        }}
-      >
-        <BottomNavigation
-          showLabels
-          value={value}
-          onChange={(_, newValue) => {
-            setValue(newValue);
-            navigate(newValue);
-          }}
-          sx={{
-            height: 64,
-            bgcolor: tokens.colors.background,
-            '& .MuiBottomNavigationAction-root': {
-              color: tokens.colors.textTertiary,
-              minWidth: 'auto',
-              padding: '6px 0',
-              '&.Mui-selected': {
-                color: tokens.colors.primary,
-                '& .MuiSvgIcon-root': {
-                  color: tokens.colors.primary,
-                },
-              },
-            },
-          }}
-        >
-          <BottomNavigationAction
-            label="Home"
-            value="/"
-            icon={<HomeIcon />}
-            aria-label="Navigate to Home"
-          />
-          <BottomNavigationAction
-            label="Search"
-            value="/search"
-            icon={<SearchIcon />}
-            aria-label="Navigate to Search"
-          />
-          <BottomNavigationAction
-            label="Library"
-            value="/library"
-            icon={<LibraryIcon />}
-            aria-label="Navigate to Library"
-          />
-          <BottomNavigationAction
-            label="Downloads"
-            value="/downloads"
-            icon={<DownloadIcon />}
-            aria-label="Navigate to Downloads"
-          />
-          <BottomNavigationAction
-            label="Settings"
-            value="/settings"
-            icon={<SettingsIcon />}
-            aria-label="Navigate to Settings"
-          />
-        </BottomNavigation>
-      </Paper>
-    </Box>
+    <nav className="block md:hidden fixed bottom-2 left-3 right-3 z-40">
+      <div className="flex items-center justify-around h-14 px-1 rounded-2xl border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.75)] backdrop-blur-2xl bg-neutral-950/85">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.path}
+              onClick={() => {
+                triggerHaptic();
+                navigate(item.path);
+              }}
+              className={`relative flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 ${
+                isActive ? 'text-primary font-bold' : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabGlow"
+                  className="absolute inset-x-1 inset-y-0.5 bg-primary/10 rounded-xl border border-primary/20"
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                />
+              )}
+              <Icon className={`w-5 h-5 relative z-10 transition-transform ${isActive ? 'scale-110 text-primary' : ''}`} />
+              <span className="text-[10px] mt-0.5 tracking-tight relative z-10 font-medium select-none">
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 };
 
