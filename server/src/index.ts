@@ -189,11 +189,20 @@ app.get('/api/proxy-image', (req, res) => {
 });
 
 // Serve frontend static build if present (allows friends to open full app directly from link)
-const clientDistPath = path.join(__dirname, '../../client/dist');
-if (fs.existsSync(clientDistPath)) {
+const possibleClientPaths = [
+  path.resolve(__dirname, '../../client/dist'),
+  path.resolve(__dirname, '../client/dist'),
+  path.resolve(process.cwd(), '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+];
+
+const clientDistPath = possibleClientPaths.find(p => fs.existsSync(p));
+
+if (clientDistPath) {
   console.log(`[Server] Serving frontend client static build from ${clientDistPath}`);
   app.use(express.static(clientDistPath));
-  app.get('/', (req, res) => {
+  app.get('*', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 } else {
