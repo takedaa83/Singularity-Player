@@ -7,10 +7,20 @@
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
+    const isHttps = window.location.protocol === 'https:';
     const custom = localStorage.getItem('singularity_server_url');
+
     if (custom && custom.trim()) {
-      return custom.trim().replace(/\/$/, '');
+      const trimmed = custom.trim().replace(/\/$/, '');
+      // If browsing over HTTPS (Cloudflare Tunnel), clear outdated HTTP or Render URLs
+      if (isHttps && (trimmed.startsWith('http://') || trimmed.includes('onrender.com'))) {
+        console.warn(`[API] Clearing invalid server URL from localStorage: ${trimmed}`);
+        localStorage.removeItem('singularity_server_url');
+      } else {
+        return trimmed;
+      }
     }
+
     if (window.location.origin && window.location.origin.startsWith('http') && !window.location.origin.includes(':5173')) {
       return window.location.origin.replace(/\/$/, '');
     }
