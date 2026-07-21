@@ -5,13 +5,32 @@
  * - AbortController integration for cancellable requests
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('singularity_server_url');
+    if (custom && custom.trim()) {
+      return custom.trim().replace(/\/$/, '');
+    }
+  }
+  return (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+}
+
+export function setApiBaseUrl(url: string): void {
+  if (typeof window !== 'undefined') {
+    if (url && url.trim()) {
+      localStorage.setItem('singularity_server_url', url.trim().replace(/\/$/, ''));
+    } else {
+      localStorage.removeItem('singularity_server_url');
+    }
+  }
+}
 
 // In-flight request deduplication
 const pendingRequests = new Map<string, Promise<any>>();
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
-  const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+  const base = getApiBaseUrl();
+  const fullUrl = url.startsWith('http') ? url : `${base}${url}`;
   const cacheKey = `${options?.method || 'GET'}:${fullUrl}`;
 
   // Deduplicate identical concurrent requests (GET only)
@@ -58,9 +77,9 @@ export class ApiError extends Error {
     body?: any
   ) {
     super(message);
-    this.name = 'ApiError';
     this.status = status;
     this.body = body;
+    this.name = 'ApiError';
   }
 }
 
@@ -68,7 +87,9 @@ export class ApiError extends Error {
 
 export const api = {
   /** Base URL for constructing stream/download URLs */
-  baseUrl: API_BASE,
+  get baseUrl(): string {
+    return getApiBaseUrl();
+  },
 
   /** Search tracks across all sources */
   search(query: string, signal?: AbortSignal) {
@@ -110,18 +131,18 @@ export const api = {
 
   /** Get the streaming URL (constructs a proxy URL, does not fetch) */
   streamUrl(videoId: string): string {
-    return `${API_BASE}/api/yt/stream/${videoId}`;
+    return `${getApiBaseUrl()}/api/yt/stream/${videoId}`;
   },
 
   /** Get the download URL (constructs a URL, does not fetch) */
   downloadUrl(videoId: string, name?: string): string {
     const params = name ? `?name=${encodeURIComponent(name)}` : '';
-    return `${API_BASE}/api/yt/download/${videoId}${params}`;
+    return `${getApiBaseUrl()}/api/yt/download/${videoId}${params}`;
   },
 
   /** Local file stream URL */
   localStreamUrl(filename: string): string {
-    return `${API_BASE}/api/stream/${filename}`;
+    return `${getApiBaseUrl()}/api/stream/${filename}`;
   },
 
   /** Health check */
@@ -131,7 +152,7 @@ export const api = {
 
   /** Upload tracks (multipart form data) */
   async upload(formData: FormData, signal?: AbortSignal) {
-    const res = await fetch(`${API_BASE}/api/upload`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/upload`, {
       method: 'POST',
       body: formData,
       signal,
@@ -142,7 +163,7 @@ export const api = {
 
   /** Batch download (returns ZIP stream URL) */
   batchDownloadUrl(): string {
-    return `${API_BASE}/api/download/batch`;
+    return `${getApiBaseUrl()}/api/download/batch`;
   },
 
   /** Server cover art URL */
@@ -159,7 +180,7 @@ export const api = {
     } else if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) {
       resolvedUrl = path;
     } else {
-      resolvedUrl = `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
+      resolvedUrl = `${getApiBaseUrl()}${path.startsWith('/') ? '' : '/'}${path}`;
     }
 
     if (resolvedUrl) {

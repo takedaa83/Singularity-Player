@@ -37,7 +37,7 @@ import { usePlayerStore } from '../../stores/playerStore';
 import { ViewHeader } from '../ui/ViewHeader';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { useToast } from '../../hooks/useToast';
-import { api } from '../../utils/api';
+import { api, getApiBaseUrl, setApiBaseUrl } from '../../utils/api';
 import { initDB } from '../../lib/db';
 
 // ─── Accent Color Palette ────────────────────────────────────────────
@@ -896,6 +896,45 @@ export const SettingsPage: React.FC = () => {
           >
             Pull from Server
           </Button>
+        </Box>
+      </SettingSection>
+
+      {/* ── Server Connection ─────────────────────────────────────── */}
+      <SettingSection
+        icon={Server}
+        title="Server Connection"
+        iconColor={tokens.colors.accent.emerald}
+      >
+        <Box sx={{ mb: 1.5 }}>
+          <Typography variant="body2" sx={{ color: tokens.colors.textSecondary, mb: 1.5 }}>
+            Connected Backend: <strong>{getApiBaseUrl()}</strong>
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant={getApiBaseUrl() === 'http://localhost:3001' ? 'contained' : 'outlined'}
+              size="small"
+              onClick={() => {
+                setApiBaseUrl('http://localhost:3001');
+                toast('Switched to Local Server (http://localhost:3001)', 'info');
+                setTimeout(() => window.location.reload(), 600);
+              }}
+              sx={{ borderRadius: `${tokens.radius.lg}px`, textTransform: 'none' }}
+            >
+              Use Local Server (http://localhost:3001)
+            </Button>
+            <Button
+              variant={getApiBaseUrl().includes('onrender.com') ? 'contained' : 'outlined'}
+              size="small"
+              onClick={() => {
+                setApiBaseUrl('https://singularity-player-backend-av2k.onrender.com');
+                toast('Switched to Render Cloud Server', 'info');
+                setTimeout(() => window.location.reload(), 600);
+              }}
+              sx={{ borderRadius: `${tokens.radius.lg}px`, textTransform: 'none' }}
+            >
+              Use Render Cloud Server
+            </Button>
+          </Box>
         </Box>
       </SettingSection>
 
