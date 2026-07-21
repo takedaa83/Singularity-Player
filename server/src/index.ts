@@ -188,6 +188,28 @@ app.get('/api/proxy-image', (req, res) => {
   }
 });
 
+// Root status page for browsers
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Singularity Player Server</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body style="font-family: system-ui, -apple-system, sans-serif; text-align: center; margin: 0; padding: 40px 20px; background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; box-sizing: border-box;">
+      <div style="background: #1e293b; border: 1px solid #334155; padding: 40px; border-radius: 16px; max-width: 480px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        <h1 style="color: #a855f7; font-size: 2rem; margin: 0 0 10px 0;">Singularity Server</h1>
+        <p style="font-size: 1rem; color: #94a3b8; margin: 0 0 24px 0; line-height: 1.5;">Your 24/7 Music Backend is Online & Ready to Stream!</p>
+        <div style="display: inline-block; padding: 10px 20px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; font-family: monospace; color: #34d399; font-weight: 600;">
+          Status: ONLINE 🚀
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
+});
+
 // Health check with process pool stats
 app.get('/api/health', (req, res) => {
   res.json({
