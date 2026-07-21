@@ -322,6 +322,9 @@ async function proxyUrl(
         res.writeHead(416, {
           'Content-Range': response.headers.get('content-range') || `bytes */${filesize}`,
           'Content-Type': contentType || 'audio/mp4',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
         });
         if (response.body) {
           Readable.fromWeb(response.body as any).pipe(res);
@@ -338,6 +341,9 @@ async function proxyUrl(
       'Content-Type': contentType || response.headers.get('content-type') || 'audio/mp4',
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=1800',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     };
 
     const upstreamContentRange = response.headers.get('content-range');
@@ -394,6 +400,9 @@ router.get('/proxy', async (req: Request, res: Response) => {
       'Content-Type': contentType,
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=1800',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     };
 
     const upstreamContentRange = response.headers.get('content-range');
@@ -449,7 +458,8 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
       headers: {
         'Content-Type': cachedContentType,
         'Cache-Control': 'public, max-age=86400',
-        'Accept-Ranges': 'bytes'
+        'Accept-Ranges': 'bytes',
+        'Access-Control-Allow-Origin': '*'
       }
     });
     return;

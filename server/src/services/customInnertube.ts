@@ -436,7 +436,7 @@ function getClientKeysOrdered(isCloudHosting: boolean, clientKeyOverride?: strin
   }
 
   const allKeys = Object.keys(clients);
-  let filtered = isCloudHosting ? allKeys.filter(k => clients[k].loginSupported) : allKeys;
+  let filtered = isCloudHosting ? allKeys.filter(k => clients[k].loginSupported || k === "VISIONOS" || k.startsWith("TVHTML5") || k === "IOS") : allKeys;
 
   const isAndroid = (key: string) => key.startsWith("ANDROID");
   const androids = filtered.filter(isAndroid);

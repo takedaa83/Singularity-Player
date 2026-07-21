@@ -56,42 +56,10 @@ app.use(compression({
   }
 }));
 
-// Configurable CORS origins via environment variable
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173').split(',').map(s => s.trim());
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, postman)
-    if (!origin) {
-      callback(null, true);
-      return;
-    }
-    
-    let isAllowed = allowedOrigins.includes('*') || 
-                    allowedOrigins.includes(origin) || 
-                    origin.startsWith('http://localhost') || 
-                    origin.startsWith('capacitor://localhost');
-                    
-    // Automatically allow any Render subdomains in production
-    if (!isAllowed) {
-      try {
-        const hostname = new URL(origin).hostname;
-        if (hostname === 'onrender.com' || hostname.endsWith('.onrender.com')) {
-          isAllowed = true;
-        }
-      } catch (e) {
-        // Ignore parsing errors for non-standard origins
-      }
-    }
-                      
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Range', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Range', 'Authorization', 'X-Goog-Visitor-Id', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'],
   credentials: true
 }));
@@ -243,7 +211,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Start server
 app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
-  console.log(`[Server] CORS origins: ${allowedOrigins.join(', ')}`);
+  console.log(`[Server] CORS origins: * (all origins allowed)`);
   await ensureYtDlpBinary();
   preWarmClient();
   checkCookieHealth().catch(() => {});
