@@ -503,9 +503,19 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       </footer>
 
       {/* Mobile Floating Mini-Player */}
-      <div 
+      <motion.div 
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.4}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -60 || info.velocity.x < -300) {
+            nextTrack(true);
+          } else if (info.offset.x > 60 || info.velocity.x > 300) {
+            prevTrack();
+          }
+        }}
         onClick={() => setIsMobilePlayerOpen(true)}
-        className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden"
+        className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden touch-pan-x"
       >
         <MobileMiniProgressBar />
 
@@ -518,7 +528,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     <img 
                       src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId)!} 
                       alt={currentTrack.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {
@@ -532,7 +542,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 select-none">
                   <span className="text-[11px] font-bold text-white truncate">
                     {currentTrack.title}
                   </span>
@@ -576,7 +586,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Fullscreen Mobile Player Modal */}
       <MobileFullscreenPlayer

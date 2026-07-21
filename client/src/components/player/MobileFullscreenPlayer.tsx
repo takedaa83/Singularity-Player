@@ -130,6 +130,14 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120 || info.velocity.y > 400) {
+            onClose();
+          }
+        }}
         className="fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white overflow-hidden"
       >
         {/* Apple Music Style blurred dynamic art background */}

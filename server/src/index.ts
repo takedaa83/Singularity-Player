@@ -205,7 +205,17 @@ const clientDistPath = possibleClientPaths.find(p => fs.existsSync(p));
 
 if (clientDistPath) {
   console.log(`[Server] Serving frontend client static build from ${clientDistPath}`);
-  app.use(express.static(clientDistPath));
+  app.use(express.static(clientDistPath, {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
   app.get('*', (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'));

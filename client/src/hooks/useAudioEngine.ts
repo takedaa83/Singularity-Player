@@ -945,6 +945,19 @@ export class AudioEngine {
 
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
 
+    if ('setPositionState' in navigator.mediaSession && Number.isFinite(track.duration) && track.duration > 0) {
+      try {
+        const activeAudio = this.activePlayer === 1 ? this.audio1 : this.audio2;
+        navigator.mediaSession.setPositionState({
+          duration: track.duration,
+          playbackRate: this.playbackSpeed,
+          position: Math.min(activeAudio.currentTime || 0, track.duration),
+        });
+      } catch (e) {
+        // Ignore transient position state errors
+      }
+    }
+
     navigator.mediaSession.setActionHandler('play', () => usePlayerStore.getState().setPlaying(true));
     navigator.mediaSession.setActionHandler('pause', () => usePlayerStore.getState().setPlaying(false));
     navigator.mediaSession.setActionHandler('previoustrack', () => usePlayerStore.getState().prevTrack());
@@ -953,6 +966,17 @@ export class AudioEngine {
       if (e.seekTime != null) {
         this.seek(e.seekTime);
       }
+    });
+    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+      const activeAudio = this.activePlayer === 1 ? this.audio1 : this.audio2;
+      const skipTime = details.seekOffset || 10;
+      this.seek(Math.max((activeAudio.currentTime || 0) - skipTime, 0));
+    });
+    navigator.mediaSession.setActionHandler('seekforward', (details) => {
+      const activeAudio = this.activePlayer === 1 ? this.audio1 : this.audio2;
+      const skipTime = details.seekOffset || 10;
+      const dur = this.getCurrentTrackDuration();
+      this.seek(Math.min((activeAudio.currentTime || 0) + skipTime, dur));
     });
   }
 
