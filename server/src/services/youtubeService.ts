@@ -922,100 +922,79 @@ export async function getAudioStreamUrl(videoId: string, quality: 'high' | 'medi
           return null;
         }
 
-        const tiers = getAvailableExtractionTiers();
-
-        if (tiers.useInnerTube) {
-          const customResult = await extractUrlWithCustomInnertube(videoId, quality);
-          if (customResult) {
-            streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-            return customResult;
-          }
+        // Tier 1: Fast direct InnerTube extraction (VISIONOS / TVHTML5 / ANDROID)
+        const customResult = await extractUrlWithCustomInnertube(videoId, quality);
+        if (customResult) {
+          streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+          return customResult;
         }
 
-        console.log(`[youtubeService] Direct extraction bypassed or failed, trying Cobalt API for ${videoId}...`);
-        const cobaltResult = await extractUrlWithCobalt(videoId, quality);
-        if (cobaltResult) {
-          streamUrlCache.set(cacheKey, { data: cobaltResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-          return cobaltResult;
+        // Tier 2: Direct local yt-dlp extraction fallback
+        console.log(`[youtubeService] InnerTube extraction failed for ${videoId}, falling back directly to local yt-dlp...`);
+        const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const formatSelector = getYtDlpFormatSelector(quality);
+
+        const args = [
+          '--no-warnings',
+          '--no-playlist',
+          '-f', formatSelector,
+          '--no-check-formats',
+          '--no-check-certificate',
+          '--print', '%(url)s',
+          '--print', '%(ext)s',
+          '--print', '%(filesize)s',
+          '--print', '%(filesize_approx)s',
+          '--print', '%(title)s',
+          '--print', '%(uploader)s',
+          '--print', '%(duration)s',
+          '--print', '%(abr)s',
+          '--skip-download',
+        ];
+        const cookieFilePath = getCookieFilePath();
+        if (cookieFilePath) {
+          args.push('--cookies', cookieFilePath);
+        }
+        args.push(ytUrl);
+
+        const { stdout } = await runYtDlpPooled(args, 15000);
+        
+        const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
+        const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr] = lines;
+
+        if (!url || url === 'NA') {
+          throw new Error('No valid URL extracted by yt-dlp');
         }
 
-        console.log(`[youtubeService] Cobalt failed, trying proxy APIs for ${videoId}...`);
-        const proxyResult = await extractUrlWithProxy(videoId, quality);
-        if (proxyResult) {
-          streamUrlCache.set(cacheKey, { data: proxyResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-          return proxyResult;
-        }
+        const cleanStr = (val: string | undefined) => (!val || val === 'NA' ? '' : val);
+        const parsedFilesize = parseInt(filesizeStr || '', 10);
+        const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
+        const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
+        const duration = parseFloat(durationStr || '') || 0;
 
-        if (tiers.useYtDlp) {
-          console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for ${videoId}`);
-          const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
-          const formatSelector = getYtDlpFormatSelector(quality);
+        const result: StreamResult = {
+          url,
+          contentType: extToMime(ext || ''),
+          title: cleanStr(title) || 'Unknown',
+          artist: cleanStr(artist) || 'Unknown Artist',
+          duration,
+          filesize,
+        };
 
-          const args = [
-            '--no-warnings',
-            '--no-playlist',
-            '-f', formatSelector,
-            '--no-check-formats',
-            '--no-check-certificate',
-            '--print', '%(url)s',
-            '--print', '%(ext)s',
-            '--print', '%(filesize)s',
-            '--print', '%(filesize_approx)s',
-            '--print', '%(title)s',
-            '--print', '%(uploader)s',
-            '--print', '%(duration)s',
-            '--print', '%(abr)s',
-            '--skip-download',
-          ];
-          const cookieFilePath = getCookieFilePath();
-          if (cookieFilePath) {
-            args.push('--cookies', cookieFilePath);
-          }
-          args.push(ytUrl);
+        streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
 
-          const { stdout } = await runYtDlpPooled(args, 20000);
-          
-          const lines = stdout.trim().split(/\r?\n/).map(l => l.trim());
-          const [url, ext, filesizeStr, filesizeApproxStr, title, artist, durationStr, abrStr] = lines;
-
-          if (!url || url === 'NA') {
-            throw new Error('No valid URL extracted by yt-dlp');
-          }
-
-          const cleanStr = (val: string | undefined) => (!val || val === 'NA' ? '' : val);
-          const parsedFilesize = parseInt(filesizeStr || '', 10);
-          const parsedFilesizeApprox = parseInt(filesizeApproxStr || '', 10);
-          const filesize = !isNaN(parsedFilesize) ? parsedFilesize : (!isNaN(parsedFilesizeApprox) ? parsedFilesizeApprox : 0);
-          const duration = parseFloat(durationStr || '') || 0;
-
-          const result: StreamResult = {
-            url,
-            contentType: extToMime(ext || ''),
-            title: cleanStr(title) || 'Unknown',
-            artist: cleanStr(artist) || 'Unknown Artist',
-            duration,
-            filesize,
-          };
-
-          streamUrlCache.set(cacheKey, { data: result, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
-
-          if (streamUrlCache.size > MAX_CACHE_SIZE) {
-            let oldestKey: string | null = null;
-            let oldestAccessed = Infinity;
-            for (const [key, val] of streamUrlCache) {
-              if (val.lastAccessed < oldestAccessed) {
-                oldestAccessed = val.lastAccessed;
-                oldestKey = key;
-              }
+        if (streamUrlCache.size > MAX_CACHE_SIZE) {
+          let oldestKey: string | null = null;
+          let oldestAccessed = Infinity;
+          for (const [key, val] of streamUrlCache) {
+            if (val.lastAccessed < oldestAccessed) {
+              oldestAccessed = val.lastAccessed;
+              oldestKey = key;
             }
-            if (oldestKey) streamUrlCache.delete(oldestKey);
           }
-
-          return result;
-        } else {
-          console.log(`[youtubeService] Cloud hosting and no auth. Skipping yt-dlp fallback to prevent guaranteed bot-check failure.`);
-          return null;
+          if (oldestKey) streamUrlCache.delete(oldestKey);
         }
+
+        return result;
       } catch (error: any) {
         console.error(`[youtubeService] Stream URL extraction failed for ${videoId}:`, error?.message || error);
         return null;
@@ -1096,30 +1075,15 @@ export async function getVideoInfo(videoId: string): Promise<{
       return null;
     }
 
-    const tiers = getAvailableExtractionTiers();
-
-    if (tiers.useInnerTube) {
-      const customResult = await getVideoInfoWithCustomInnertube(videoId);
-      if (customResult) {
-        pruneVideoInfoCache();
-        videoInfoCache.set(videoId, { data: customResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
-        return customResult;
-      }
-    } else {
-      console.log(`[youtubeService] Cloud hosting and no auth. Bypassing direct InnerTube video info waterfall to prevent datacenter IP blocks.`);
-    }
-
-    console.log(`[youtubeService] Custom InnerTube failed, trying proxy APIs for video info ${videoId}...`);
-    const proxyResult = await getVideoInfoWithProxy(videoId);
-    if (proxyResult) {
+    const customResult = await getVideoInfoWithCustomInnertube(videoId);
+    if (customResult) {
       pruneVideoInfoCache();
-      videoInfoCache.set(videoId, { data: proxyResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
-      return proxyResult;
+      videoInfoCache.set(videoId, { data: customResult, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
+      return customResult;
     }
 
-    if (tiers.useYtDlp) {
-      console.log(`[youtubeService] All proxy APIs failed, falling back to yt-dlp for video info of ${videoId}`);
-      const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    console.log(`[youtubeService] Custom InnerTube failed, falling back directly to local yt-dlp for video info of ${videoId}...`);
+    const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
       
       const args = [
         '--no-warnings',
@@ -1156,11 +1120,7 @@ export async function getVideoInfo(videoId: string): Promise<{
 
       pruneVideoInfoCache();
       videoInfoCache.set(videoId, { data: result, expiry: Date.now() + VIDEO_INFO_CACHE_TTL, lastAccessed: Date.now() });
-      return result;
-    } else {
-      console.log(`[youtubeService] Cloud hosting and no auth. Skipping yt-dlp video info fallback.`);
-      return null;
-    }
+    return result;
   } catch (error: any) {
     console.error(`[youtubeService] Video info fetch failed for ${videoId}:`, error?.message || error);
     return null;

@@ -430,22 +430,20 @@ export async function customSearch(query: string): Promise<YouTubeTrack[]> {
  */
 let lastSuccessfulClientKey = "VISIONOS";
 
-function getClientKeysOrdered(isCloudHosting: boolean, clientKeyOverride?: string): string[] {
+function getClientKeysOrdered(clientKeyOverride?: string): string[] {
   if (clientKeyOverride) {
     return [clientKeyOverride];
   }
 
   const allKeys = Object.keys(clients);
-  let filtered = isCloudHosting ? allKeys.filter(k => clients[k].loginSupported || k === "VISIONOS" || k.startsWith("TVHTML5") || k === "IOS") : allKeys;
-
   const isAndroid = (key: string) => key.startsWith("ANDROID");
-  const androids = filtered.filter(isAndroid);
-  const nonAndroids = filtered.filter(k => !isAndroid(k));
+  const androids = allKeys.filter(isAndroid);
+  const nonAndroids = allKeys.filter(k => !isAndroid(k));
 
   const ordered: string[] = [];
 
   // 1. Add lastSuccessfulClientKey if non-Android and available
-  if (lastSuccessfulClientKey && filtered.includes(lastSuccessfulClientKey) && !isAndroid(lastSuccessfulClientKey)) {
+  if (lastSuccessfulClientKey && allKeys.includes(lastSuccessfulClientKey) && !isAndroid(lastSuccessfulClientKey)) {
     ordered.push(lastSuccessfulClientKey);
   }
 
@@ -457,7 +455,7 @@ function getClientKeysOrdered(isCloudHosting: boolean, clientKeyOverride?: strin
   }
 
   // 3. Add lastSuccessfulClientKey if Android and available
-  if (lastSuccessfulClientKey && filtered.includes(lastSuccessfulClientKey) && isAndroid(lastSuccessfulClientKey)) {
+  if (lastSuccessfulClientKey && allKeys.includes(lastSuccessfulClientKey) && isAndroid(lastSuccessfulClientKey)) {
     ordered.push(lastSuccessfulClientKey);
   }
 
@@ -472,12 +470,7 @@ function getClientKeysOrdered(isCloudHosting: boolean, clientKeyOverride?: strin
 }
 
 export async function customPlayer(videoId: string, clientKey?: string): Promise<{ basicInfo: any; audioFormats: any[]; rawData?: any }> {
-  const isCloudHosting = !!((process.env.RENDER === 'true' || 
-                             process.env.FLY_APP_NAME || 
-                             process.env.CLOUD_HOSTING === 'true') &&
-                            process.env.FORCE_DIRECT_STREAMS !== 'true');
-
-  const clientKeysToTry = getClientKeysOrdered(isCloudHosting, clientKey);
+  const clientKeysToTry = getClientKeysOrdered(clientKey);
 
   let sts: number | null = null;
   try {

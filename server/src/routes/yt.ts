@@ -465,33 +465,17 @@ router.get('/stream/:videoId', async (req: Request, res: Response) => {
     return;
   }
 
-  const isCloudHosting = process.env.RENDER === 'true' || 
-                         process.env.FLY_APP_NAME || 
-                         process.env.CLOUD_HOSTING === 'true';
-  const hasAuth = !!getCookieHeader();
-
-  const isDiskCacheEnabled = process.env.ENABLE_DISK_CACHE === 'true' || 
-                             (process.env.ENABLE_DISK_CACHE !== 'false' && !isCloudHosting);
+  const isDiskCacheEnabled = process.env.ENABLE_DISK_CACHE !== 'false';
 
   if (isDiskCacheEnabled) {
     // Run background caching inside queue with capped concurrency
     cacheDownloadQueue.run(() => downloadAndCache(videoId, selectedQuality)).catch((err) => {
       console.error(`[YT Route] Background caching failed for ${videoId}:`, err);
     });
-  } else {
-    console.log(`[YT Route] Background caching is disabled (ENABLE_DISK_CACHE=false or cloud hosting detected)`);
   }
 
-  const canUseYtDlp = !isCloudHosting || hasAuth;
-
   const handleFailure = async () => {
-    if (canUseYtDlp) {
-      await streamViaPipe(videoId, res, req, selectedQuality);
-    } else {
-      if (!res.headersSent) {
-        res.status(404).json({ error: 'UNABLE_TO_RESOLVE', code: 'UNABLE_TO_RESOLVE' });
-      }
-    }
+    await streamViaPipe(videoId, res, req, selectedQuality);
   };
 
   try {
