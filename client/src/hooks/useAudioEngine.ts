@@ -144,6 +144,12 @@ export class AudioEngine {
           ? audio.duration
           : this.getCurrentTrackDuration();
         setTimeValues(audio.currentTime, duration);
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          const track = usePlayerStore.getState().currentTrack;
+          if (track && (!track.duration || track.duration === 0)) {
+            usePlayerStore.setState({ currentTrack: { ...track, duration: Math.round(audio.duration) } });
+          }
+        }
       }
     });
     audio.addEventListener('loadedmetadata', () => {
@@ -152,6 +158,12 @@ export class AudioEngine {
           ? audio.duration
           : this.getCurrentTrackDuration();
         setTimeValues(audio.currentTime, duration);
+        if (Number.isFinite(audio.duration) && audio.duration > 0) {
+          const track = usePlayerStore.getState().currentTrack;
+          if (track && (!track.duration || track.duration === 0)) {
+            usePlayerStore.setState({ currentTrack: { ...track, duration: Math.round(audio.duration) } });
+          }
+        }
       }
     });
     audio.addEventListener('waiting', () => {
@@ -368,52 +380,7 @@ export class AudioEngine {
         targetSrc = activePlayerInstance.src;
       }
 
-      // Self-healing: if track has no duration, fetch it via client-side API or backend
-      if ((!currentTrack.duration || currentTrack.duration === 0) && currentTrack.videoId) {
-        (async () => {
-          try {
-            console.log(`[Audio Engine] Track duration is 0. Attempting client-side duration lookup for ${currentTrack.videoId}...`);
-            let duration: number | null = await fetchDurationOnClient(currentTrack.videoId as string);
-            
-            if (!duration) {
-              console.log(`[Audio Engine] Client-side duration lookup failed. Falling back to backend for ${currentTrack.videoId}...`);
-              const res = await fetch(`${api.baseUrl}/api/yt/info/${currentTrack.videoId}`);
-              if (res.ok) {
-                const info = await res.json() as any;
-                if (info && info.duration) {
-                  duration = info.duration;
-                }
-              }
-            }
 
-            if (duration && duration > 0) {
-              console.log(`[Audio Engine] Self-healed track duration: ${duration}s`);
-              
-              // 1. Update store
-              const updatedTrack = { ...currentTrack, duration };
-              const playerState = usePlayerStore.getState();
-              
-              // If it is still the active track, update currentTrack in store
-              if (playerState.currentTrack?.id === currentTrack.id) {
-                usePlayerStore.setState({ currentTrack: updatedTrack });
-              }
-              
-              // 2. Update database
-              const db = await import('../lib/db').then((m) => m.initDB());
-              const dbTrack = await db.get('tracks', currentTrack.id);
-              if (dbTrack) {
-                dbTrack.duration = duration;
-                await db.put('tracks', dbTrack);
-              }
-              
-              // 3. Update timeline
-              setTimeValues(activePlayerInstance.currentTime, duration);
-            }
-          } catch (err: any) {
-            console.warn('[Audio Engine] Failed to self-heal track duration:', err?.message || err);
-          }
-        })();
-      }
 
       const currentSrc = activePlayerInstance.src;
       this.prefetchedTrackId = null;
