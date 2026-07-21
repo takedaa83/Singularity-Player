@@ -159,13 +159,15 @@ const videoInfoCache = new Map<string, { data: any; expiry: number; lastAccessed
 const VIDEO_INFO_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
 const MAX_CACHE_SIZE = 200;
 
-// Helper to resolve the correct yt-dlp path dynamically
 function resolveYtDlpPath(): string {
   const localPath = path.resolve(__dirname, '..', '..', 'yt-dlp.exe');
   if (fs.existsSync(localPath)) {
     return localPath;
   }
-  // Fallback to system-wide yt-dlp from PATH (useful for Linux/macOS hosting)
+  const termuxPath = '/data/data/com.termux/files/usr/bin/yt-dlp';
+  if (fs.existsSync(termuxPath)) {
+    return termuxPath;
+  }
   return 'yt-dlp';
 }
 
@@ -173,6 +175,13 @@ export let YT_DLP_PATH = resolveYtDlpPath();
 export let ytDlpReady: Promise<string>;
 
 export async function ensureYtDlpBinary(): Promise<string> {
+  const termuxPath = '/data/data/com.termux/files/usr/bin/yt-dlp';
+  if (fs.existsSync(termuxPath)) {
+    console.log(`[youtubeService] Using native Termux yt-dlp binary at ${termuxPath}`);
+    YT_DLP_PATH = termuxPath;
+    return termuxPath;
+  }
+
   const binDir = path.resolve(__dirname, '..', '..', 'bin');
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });
@@ -180,6 +189,13 @@ export async function ensureYtDlpBinary(): Promise<string> {
 
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';
+  const isAndroid = process.platform === 'android';
+
+  if (isAndroid) {
+    console.log('[youtubeService] Running on Android Termux. Using system yt-dlp package.');
+    YT_DLP_PATH = 'yt-dlp';
+    return 'yt-dlp';
+  }
   const filename = isWindows ? 'yt-dlp.exe' : (isMac ? 'yt-dlp_macos' : 'yt-dlp');
   const localPath = path.join(binDir, filename);
 

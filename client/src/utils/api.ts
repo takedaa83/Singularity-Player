@@ -11,6 +11,9 @@ export function getApiBaseUrl(): string {
     if (custom && custom.trim()) {
       return custom.trim().replace(/\/$/, '');
     }
+    if (window.location.origin && window.location.origin.startsWith('http') && !window.location.origin.includes(':5173')) {
+      return window.location.origin.replace(/\/$/, '');
+    }
   }
   return (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 }
