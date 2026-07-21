@@ -587,7 +587,7 @@ export function getAvailableExtractionTiers(): {
   const hasAuth = !!getCookieHeader();
 
   return {
-    useInnerTube: !isCloudHosting || hasAuth,
+    useInnerTube: true,
     useYtDlp: !isCloudHosting || hasAuth,
     useProxies: true
   };
