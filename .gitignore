@@ -5,7 +5,6 @@ test_dl.m4a
 *.mp3
 
 # Build outputs
-client/dist
 server/dist
 
 # Uploaded user data (audio files, cover art)
