@@ -164,10 +164,17 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
           const res = await fetch(`${api.baseUrl}/api/lyrics?${params.toString()}`);
           if (res.ok) {
             const data = await res.json();
-            if (data.lyrics) {
-               const parsed = parseLrc(data.lyrics);
-               if (parsed.length > 0) setLyrics(parsed);
-               else setPlainLyrics(data.lyrics.replace(/\[\d+:\d+\.\d+\]/g, ''));
+            const rawSynced = data.syncedLyrics;
+            const rawPlain = data.plainLyrics;
+
+            if (rawSynced) {
+              const parsed = parseLrc(rawSynced);
+              if (parsed.length > 0) setLyrics(parsed);
+              else setPlainLyrics(rawSynced.replace(/\[\d+:\d+\.\d+\]/g, ''));
+            } else if (rawPlain) {
+              const parsed = parseLrc(rawPlain);
+              if (parsed.length > 0) setLyrics(parsed);
+              else setPlainLyrics(rawPlain);
             }
           }
         } catch (e) {

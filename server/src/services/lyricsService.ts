@@ -94,7 +94,7 @@ class AppleTokenManager {
   private cachedToken: string | null = null;
   private tokenExpiry = 0;
 
-  async getToken(): Promise<string> {
+  async getToken(): Promise<string | null> {
     const now = Date.now();
     if (this.cachedToken && now < this.tokenExpiry) {
       return this.cachedToken;
@@ -102,39 +102,61 @@ class AppleTokenManager {
 
     try {
       console.log('[LyricsService] Fetching new Apple Music developer token...');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      
       const pageRes = await fetch('https://beta.music.apple.com', {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-      });
+        },
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeout));
+
       if (!pageRes.ok) throw new Error(`Apple Music index returned status ${pageRes.status}`);
       const pageBody = await pageRes.text();
 
-      const indexJsRegex = /\/assets\/index~[^/]+\.js/;
-      const indexJsMatch = pageBody.match(indexJsRegex);
-      if (!indexJsMatch) throw new Error('Could not find Apple Music index JS URL');
+      const indexJsRegex = /\/assets\/(index|web-player|main|app)~?[^/"]+\.js/g;
+      const matches = Array.from(pageBody.matchAll(indexJsRegex));
+      
+      let token: string | null = null;
 
-      const indexJsUri = indexJsMatch[0];
-      const jsRes = await fetch(`https://beta.music.apple.com${indexJsUri}`, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      for (const match of matches) {
+        const indexJsUri = match[0];
+        try {
+          const jsController = new AbortController();
+          const jsTimeout = setTimeout(() => jsController.abort(), 2500);
+          const jsRes = await fetch(`https://beta.music.apple.com${indexJsUri}`, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            signal: jsController.signal
+          }).finally(() => clearTimeout(jsTimeout));
+
+          if (!jsRes.ok) continue;
+          const jsBody = await jsRes.text();
+
+          const tokenMatch = jsBody.match(/eyJhY2NvdW50SWQiOiIwI[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+|eyJh[a-zA-Z0-9_-]{30,}\.[a-zA-Z0-9_-]{30,}\.[a-zA-Z0-9_-]{10,}/);
+          if (tokenMatch) {
+            token = tokenMatch[0];
+            break;
+          }
+        } catch (e) {
+          // ignore
         }
-      });
-      if (!jsRes.ok) throw new Error(`Apple Music JS returned status ${jsRes.status}`);
-      const jsBody = await jsRes.text();
+      }
 
-      const tokenRegex = /eyJh([^"]*)/;
-      const tokenMatch = jsBody.match(tokenRegex);
-      if (!tokenMatch) throw new Error('Could not find Apple Music developer token inside JS');
+      if (!token) {
+        console.warn('[LyricsService] Could not extract Apple Music token from web JS, skipping Apple Music.');
+        return null;
+      }
 
-      const token = tokenMatch[0];
       this.cachedToken = token;
       this.tokenExpiry = now + 24 * 60 * 60 * 1000; // 24 hours validity
       console.log('[LyricsService] Successfully fetched Apple Music developer token');
       return token;
-    } catch (e) {
-      console.error('[LyricsService] Error fetching Apple Music developer token:', e);
-      throw e;
+    } catch (e: any) {
+      console.warn('[LyricsService] Error fetching Apple Music developer token:', e?.message || e);
+      return null;
     }
   }
 
@@ -647,13 +669,22 @@ async function fetchNetEaseLyrics(trackName: string, artistName: string): Promis
   try {
     console.log(`[LyricsService] Attempting NetEase fallback search for: ${artistName} - ${trackName}`);
     const searchUrl = `https://music.163.com/api/search/get/web?s=${encodeURIComponent(`${artistName} ${trackName}`)}&type=1&limit=5`;
-    const searchRes = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
+    const controller1 = new AbortController();
+    const timeout1 = setTimeout(() => controller1.abort(), 3000);
+    
+    let searchRes;
+    try {
+      searchRes = await fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        signal: controller1.signal
+      });
+    } finally {
+      clearTimeout(timeout1);
+    }
 
-    if (!searchRes.ok) return null;
+    if (!searchRes || !searchRes.ok) return null;
     const searchJson = await searchRes.json() as any;
     const songId = searchJson?.result?.songs?.[0]?.id;
 
@@ -663,13 +694,21 @@ async function fetchNetEaseLyrics(trackName: string, artistName: string): Promis
     }
 
     const lyricUrl = `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`;
-    const lyricRes = await fetch(lyricUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
+    const controller2 = new AbortController();
+    const timeout2 = setTimeout(() => controller2.abort(), 3000);
+    let lyricRes;
+    try {
+      lyricRes = await fetch(lyricUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        signal: controller2.signal
+      });
+    } finally {
+      clearTimeout(timeout2);
+    }
 
-    if (!lyricRes.ok) return null;
+    if (!lyricRes || !lyricRes.ok) return null;
     const lyricJson = await lyricRes.json() as any;
 
     const syncedLyrics = lyricJson?.lrc?.lyric || null;
