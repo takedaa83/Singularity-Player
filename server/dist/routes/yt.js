@@ -222,6 +222,16 @@ function downloadAndCache(videoId, quality) {
                 const child = (0, child_process_1.spawn)(youtubeService_1.YT_DLP_PATH, args, {
                     stdio: ['ignore', 'ignore', 'pipe']
                 });
+                child.on('error', (err) => {
+                    console.warn(`[Cache Manager] yt-dlp spawn error: ${err.message}. If running on Termux, install with: pkg install yt-dlp`);
+                    if (fs_1.default.existsSync(tempPath)) {
+                        try {
+                            fs_1.default.unlinkSync(tempPath);
+                        }
+                        catch { }
+                    }
+                    reject(err);
+                });
                 child.stderr?.on('data', (data) => {
                     const msg = data.toString().trim();
                     if (msg)
@@ -373,7 +383,7 @@ router.get('/proxy', async (req, res) => {
     }
     const rangeHeader = req.headers.range;
     const fetchHeaders = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'com.google.ios.youtube/21.03.1 (iPhone16,2; U; CPU iOS 18_2 like Mac OS X;)',
     };
     if (rangeHeader) {
         fetchHeaders['Range'] = rangeHeader;

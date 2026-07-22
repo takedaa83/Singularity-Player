@@ -436,32 +436,18 @@ function getClientKeysOrdered(clientKeyOverride?: string): string[] {
   }
 
   const allKeys = Object.keys(clients);
-  const isAndroid = (key: string) => key.startsWith("ANDROID");
-  const androids = allKeys.filter(isAndroid);
-  const nonAndroids = allKeys.filter(k => !isAndroid(k));
+  // Direct clients return raw stream URLs without signature cipher deobfuscation
+  const directClients = ["IOS", "ANDROID", "VISIONOS", "IPADOS", "ANDROID_VR", "ANDROID_MUSIC"];
+  const otherClients = allKeys.filter(k => !directClients.includes(k));
 
   const ordered: string[] = [];
 
-  // 1. Add lastSuccessfulClientKey if non-Android and available
-  if (lastSuccessfulClientKey && allKeys.includes(lastSuccessfulClientKey) && !isAndroid(lastSuccessfulClientKey)) {
+  if (lastSuccessfulClientKey && allKeys.includes(lastSuccessfulClientKey)) {
     ordered.push(lastSuccessfulClientKey);
   }
 
-  // 2. Add other non-Android clients
-  for (const k of nonAndroids) {
-    if (k !== lastSuccessfulClientKey) {
-      ordered.push(k);
-    }
-  }
-
-  // 3. Add lastSuccessfulClientKey if Android and available
-  if (lastSuccessfulClientKey && allKeys.includes(lastSuccessfulClientKey) && isAndroid(lastSuccessfulClientKey)) {
-    ordered.push(lastSuccessfulClientKey);
-  }
-
-  // 4. Add other Android clients
-  for (const k of androids) {
-    if (k !== lastSuccessfulClientKey) {
+  for (const k of [...directClients, ...otherClients]) {
+    if (clients[k] && !ordered.includes(k)) {
       ordered.push(k);
     }
   }

@@ -67,6 +67,9 @@ class DownloadManager extends events_1.EventEmitter {
             ], {
                 stdio: ['ignore', 'pipe', 'pipe'],
             });
+            child.on('error', (err) => {
+                console.warn(`[DownloadManager] yt-dlp spawn error for job ${jobId}: ${err.message}`);
+            });
             poolHandle.registerProcess(child);
             this.activeProcesses.set(jobId, child);
             child.stdout.on('data', (data) => {

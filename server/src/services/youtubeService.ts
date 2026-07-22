@@ -1048,6 +1048,9 @@ export async function spawnAudioStream(videoId: string, quality: 'high' | 'mediu
   const child = spawn(YT_DLP_PATH, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  child.on('error', (err: any) => {
+    console.warn(`[youtubeService] yt-dlp spawn error: ${err.message}. Install yt-dlp with: pkg install yt-dlp`);
+  });
   child.stderr?.on('data', (data: Buffer) => {
     const msg = data.toString().trim();
     if (msg) console.log(`[yt-dlp stderr] ${msg}`);

@@ -229,6 +229,14 @@ function downloadAndCache(videoId: string, quality: string): Promise<string> {
           stdio: ['ignore', 'ignore', 'pipe']
         });
 
+        child.on('error', (err: any) => {
+          console.warn(`[Cache Manager] yt-dlp spawn error: ${err.message}. If running on Termux, install with: pkg install yt-dlp`);
+          if (fs.existsSync(tempPath)) {
+            try { fs.unlinkSync(tempPath); } catch {}
+          }
+          reject(err);
+        });
+
         child.stderr?.on('data', (data) => {
           const msg = data.toString().trim();
           if (msg) console.log(`[Cache yt-dlp stderr] ${msg}`);
@@ -383,7 +391,7 @@ router.get('/proxy', async (req: Request, res: Response) => {
 
   const rangeHeader = req.headers.range;
   const fetchHeaders: Record<string, string> = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'com.google.ios.youtube/21.03.1 (iPhone16,2; U; CPU iOS 18_2 like Mac OS X;)',
   };
   if (rangeHeader) {
     fetchHeaders['Range'] = rangeHeader;
