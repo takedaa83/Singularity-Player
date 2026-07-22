@@ -527,7 +527,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
         }}
         style={{ touchAction: 'pan-y' }}
         onClick={() => setIsMobilePlayerOpen(true)}
-        className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden"
+        className="block sm:hidden fixed bottom-[calc(78px+env(safe-area-inset-bottom))] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden"
       >
         <MobileMiniProgressBar />
 

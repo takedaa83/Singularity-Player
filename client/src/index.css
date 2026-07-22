@@ -64,10 +64,6 @@ html, body, #root {
   -webkit-overflow-scrolling: touch;
 }
 
-main, .flex-1 {
-  overflow-x: hidden;
-}
-
 button, a, input, select, [role="button"] {
   touch-action: manipulation;
 }

@@ -773,7 +773,7 @@ const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
             gap: `${tokens.spacing.md}px`,
             overflowX: 'auto',
             overflowY: 'hidden',
-            touchAction: 'pan-x',
+            touchAction: 'pan-x pan-y',
             overscrollBehaviorX: 'contain',
             pb: 1,
             mx: -0.5,
@@ -1738,7 +1738,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               py: 0.5, 
               width: { xs: '100%', md: 'auto' },
               flex: { xs: '1 0 100%', md: '0 1 auto' },
-              touchAction: 'pan-x',
+              touchAction: 'pan-x pan-y',
               overscrollBehaviorX: 'contain',
               '&::-webkit-scrollbar': { display: 'none' } 
             }}
@@ -1931,7 +1931,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 gap: `${tokens.spacing.md}px`,
                 overflowX: 'auto',
                 overflowY: 'hidden',
-                touchAction: 'pan-x',
+                touchAction: 'pan-x pan-y',
                 overscrollBehaviorX: 'contain',
                 pb: 1.5,
                 mx: -0.5,

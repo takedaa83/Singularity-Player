@@ -410,7 +410,7 @@ export const App: React.FC = () => {
             onOpenSpotifyImport={() => setShowSpotifyImport(true)}
           />
 
-          <div className="flex-1 overflow-y-auto overscroll-x-none overscroll-y-contain px-4 sm:px-6 lg:px-8 py-6 pb-36 sm:pb-28 relative">
+          <div className="flex-1 overflow-y-auto overscroll-x-none overscroll-y-contain px-4 sm:px-6 lg:px-8 py-6 pb-44 sm:pb-32 relative">
             <Suspense fallback={<LazyFallback />}>
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>
