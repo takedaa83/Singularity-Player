@@ -11,6 +11,17 @@ export const useLibraryDB = () => {
     await db.put('tracks', track);
   };
 
+  const saveTracksBulk = async (tracks: Track[]): Promise<void> => {
+    if (tracks.length === 0) return;
+    const db = await initDB();
+    const tx = db.transaction('tracks', 'readwrite');
+    const store = tx.objectStore('tracks');
+    for (const track of tracks) {
+      await store.put(track);
+    }
+    await tx.done;
+  };
+
   const getAllTracks = async (): Promise<Track[]> => {
     const db = await initDB();
     
@@ -297,6 +308,7 @@ export const useLibraryDB = () => {
   return {
     // Tracks
     saveTrack,
+    saveTracksBulk,
     getAllTracks,
     deleteTrack,
     getTrackCount,

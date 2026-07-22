@@ -46,3 +46,12 @@ createRoot(document.getElementById('root')!).render(
     </DynamicThemeProvider>
   </StrictMode>,
 )
+
+// Register Service Worker for PWA Offline Mode
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('[PWA] Service Worker registration failed:', err);
+    });
+  });
+}

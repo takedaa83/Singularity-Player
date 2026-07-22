@@ -48,8 +48,11 @@ interface PlayerState {
   streamingQuality: 'high' | 'medium' | 'low';
   measuredAudioLatency: number;
   autoplay: boolean;
+  sleepTimerMinutes: number | null;
+  sleepTimerEndTimestamp: number | null;
   
   // Actions
+  setSleepTimer: (minutes: number | null) => void;
   setPlaying: (playing: boolean) => void;
   setAutoplay: (autoplay: boolean) => void;
   playTrack: (track: Track, newQueue?: Track[]) => void;
@@ -154,6 +157,19 @@ export const usePlayerStore = create<PlayerState>()(
       streamingQuality: 'high',
       measuredAudioLatency: 0,
       autoplay: true,
+      sleepTimerMinutes: null,
+      sleepTimerEndTimestamp: null,
+
+      setSleepTimer: (minutes) => {
+        if (!minutes || minutes <= 0) {
+          set({ sleepTimerMinutes: null, sleepTimerEndTimestamp: null });
+        } else {
+          set({
+            sleepTimerMinutes: minutes,
+            sleepTimerEndTimestamp: Date.now() + minutes * 60 * 1000
+          });
+        }
+      },
 
       setPlaying: (playing) => set({ isPlaying: playing }),
       setAutoplay: (autoplay) => set({ autoplay }),

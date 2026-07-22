@@ -343,7 +343,14 @@ async function proxyUrl(url, contentType, filesize, req, res, fallback) {
             headers['Content-Length'] = filesize.toString();
         res.writeHead(response.status === 206 ? 206 : 200, headers);
         if (response.body) {
-            stream_1.Readable.fromWeb(response.body).pipe(res);
+            const nodeStream = stream_1.Readable.fromWeb(response.body);
+            nodeStream.pipe(res);
+            req.on('close', () => {
+                try {
+                    nodeStream.destroy();
+                }
+                catch { }
+            });
         }
         else {
             res.end();

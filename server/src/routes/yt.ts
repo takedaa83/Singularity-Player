@@ -356,7 +356,11 @@ async function proxyUrl(
     res.writeHead(response.status === 206 ? 206 : 200, headers);
 
     if (response.body) {
-      Readable.fromWeb(response.body as any).pipe(res);
+      const nodeStream = Readable.fromWeb(response.body as any);
+      nodeStream.pipe(res);
+      req.on('close', () => {
+        try { nodeStream.destroy(); } catch {}
+      });
     } else {
       res.end();
     }

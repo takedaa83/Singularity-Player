@@ -143,6 +143,22 @@ export const App: React.FC = () => {
   // Keyboard shortcuts — seek is now stable (useCallback-memoized)
   useKeyboardShortcuts(seek);
 
+  // Sleep Timer Auto-Pause Engine
+  const sleepTimerEndTimestamp = usePlayerStore((s) => s.sleepTimerEndTimestamp);
+  const setPlaying = usePlayerStore((s) => s.setPlaying);
+  const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+
+  useEffect(() => {
+    if (!sleepTimerEndTimestamp) return;
+    const interval = setInterval(() => {
+      if (Date.now() >= sleepTimerEndTimestamp) {
+        setPlaying(false);
+        setSleepTimer(null);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [sleepTimerEndTimestamp, setPlaying, setSleepTimer]);
+
 
 
   // Playback session analytics tracking

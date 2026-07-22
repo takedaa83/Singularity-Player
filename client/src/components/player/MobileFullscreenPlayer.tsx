@@ -75,22 +75,45 @@ const MobileProgressSlider: React.FC<MobileProgressSliderProps> = ({ seek }) => 
   );
 };
 
+interface LrcWord {
+  word: string;
+  time: number;
+}
+
 interface LrcLine {
   time: number;
   text: string;
+  words?: LrcWord[];
 }
 
 const parseLrc = (lrc: string): LrcLine[] => {
   const lines = lrc.split('\n');
   const parsed: LrcLine[] = [];
-  const regex = /\[(\d{2}):(\d{2}(?:\.\d+)?)\](.*)/;
-  for (const line of lines) {
-    const match = regex.exec(line);
+  const lineRegex = /\[(\d{2}):(\d{2}(?:\.\d+)?)\](.*)/;
+  const wordRegex = /<(\d{2}):(\d{2}(?:\.\d+)?)>\s*([^<]+)/g;
+
+  for (const rawLine of lines) {
+    const match = lineRegex.exec(rawLine);
     if (match) {
       const minutes = parseInt(match[1], 10);
       const seconds = parseFloat(match[2]);
-      const text = match[3].trim();
-      parsed.push({ time: minutes * 60 + seconds, text });
+      const time = minutes * 60 + seconds;
+      const content = match[3].trim();
+      
+      const words: LrcWord[] = [];
+      let wMatch;
+      while ((wMatch = wordRegex.exec(content)) !== null) {
+        const wMin = parseInt(wMatch[1], 10);
+        const wSec = parseFloat(wMatch[2]);
+        words.push({ time: wMin * 60 + wSec, word: wMatch[3].trim() });
+      }
+
+      const plainText = content.replace(/<[^>]+>/g, '').trim();
+      parsed.push({
+        time,
+        text: plainText,
+        words: words.length > 0 ? words : undefined
+      });
     }
   }
   return parsed;
@@ -406,7 +429,27 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
                                    transformOrigin: 'left center'
                                  }}
                                >
-                                 {line.text || "♪"}
+                                 {line.words && line.words.length > 0 ? (
+                                    <span className="flex flex-wrap gap-1.5">
+                                      {line.words.map((w, wIdx) => {
+                                        const isWordActive = isActive && currentTime >= w.time;
+                                        return (
+                                          <span
+                                            key={wIdx}
+                                            className={`transition-all duration-200 inline-block ${
+                                              isWordActive 
+                                                ? 'text-white font-extrabold drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] scale-[1.05]' 
+                                                : 'text-white/40 font-medium'
+                                            }`}
+                                          >
+                                            {w.word}
+                                          </span>
+                                        );
+                                      })}
+                                    </span>
+                                  ) : (
+                                    line.text || "♪"
+                                  )}
                                </div>
                              )
                           })}
