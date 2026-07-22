@@ -18,7 +18,6 @@ import { X } from 'lucide-react';
 import { LoadingSkeleton } from './components/ui/LoadingSkeleton';
 import { MobileNav } from './components/layout/MobileNav';
 import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyticsTracker';
-import { OnboardingModal } from './components/ui/OnboardingModal';
 import { useSettingsStore } from './stores/settingsStore';
 import { api } from './utils/api';
 import { initDB } from './lib/db';
@@ -37,6 +36,7 @@ const ListeningInsightsPage = lazy(() => import('./components/analytics/Listenin
 const ArtistPage = lazy(() => import('./components/discovery/ArtistPage').then(m => ({ default: m.ArtistPage })));
 const AlbumPage = lazy(() => import('./components/discovery/AlbumPage').then(m => ({ default: m.AlbumPage })));
 const BatchDownloadsPage = lazy(() => import('./components/downloads/BatchDownloadsPage').then(m => ({ default: m.BatchDownloadsPage })));
+const OnboardingPage = lazy(() => import('./components/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 
 // Page transition variants
 const pageVariants = {
@@ -103,10 +103,10 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     const onboardingDone = localStorage.getItem('singularity_onboarding_completed');
-    if (!onboardingDone) {
-      setShowOnboarding(true);
+    if (!onboardingDone && location.pathname !== '/onboarding') {
+      navigate('/onboarding', { replace: true });
     }
-  }, []);
+  }, [location.pathname, navigate]);
 
   // Multi-select state for library
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -485,6 +485,9 @@ export const App: React.FC = () => {
                   <Route path="/album/:name" element={
                     <PageWrapper><AlbumPage /></PageWrapper>
                   } />
+                  <Route path="/onboarding" element={
+                    <OnboardingPage />
+                  } />
                   {/* Fallback to home */}
                   <Route path="*" element={
                     <PageWrapper>
@@ -552,12 +555,6 @@ export const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
-
-      {/* Onboarding Modal */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
-      />
 
       {/* Toast Notifications */}
       <ToastContainer />
