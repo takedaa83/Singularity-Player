@@ -119,12 +119,19 @@ export const SmartQueueService = {
       let relatedTracks: Track[] = [];
       try {
         const results = await api.ytRadio(videoId, currentTrack.title, currentTrack.artist);
-        if (results && results.length > 0) relatedTracks = results;
+        if (results && results.length > 0) {
+          relatedTracks = results.filter(t => !t.id.startsWith('demo-') && t.artist !== 'SoundHelix');
+        }
       } catch (err) {
         console.error('[SmartQueueService] Failed to fetch related tracks online:', err);
       }
 
-      if (relatedTracks.length === 0) relatedTracks = await db.getAll('tracks');
+      // If online radio returned top YouTube Music tracks, use them directly as high-quality recommendations
+      if (relatedTracks.length === 0) {
+        const localTracks = await db.getAll('tracks');
+        relatedTracks = localTracks.filter(t => !t.id.startsWith('demo-') && t.artist !== 'SoundHelix' && passesQualityFilter(t));
+      }
+
       if (relatedTracks.length === 0) return;
 
       // Limit candidate tracks from any single artist to at most 4 in the raw pool

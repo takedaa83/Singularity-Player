@@ -25,20 +25,18 @@ export const useLibraryDB = () => {
   const getAllTracks = async (): Promise<Track[]> => {
     const db = await initDB();
     
-    // Auto populate demo content on first launch
+    // Purge legacy SoundHelix demo tracks if present in IndexedDB
     const demoLoaded = await db.get('settings', 'demo_loaded');
     if (!demoLoaded) {
-      const tx = db.transaction('tracks', 'readwrite');
-      const store = tx.objectStore('tracks');
-      for (const track of DEMO_TRACKS) {
-        await store.put(track);
-      }
-      await tx.done;
+      await db.delete('tracks', 'demo-song-1');
+      await db.delete('tracks', 'demo-song-2');
+      await db.delete('tracks', 'demo-song-3');
       await db.put('settings', { key: 'demo_loaded', value: { key: 'demo_loaded', value: true } });
     }
 
     const tracks = await db.getAll('tracks');
-    return tracks.sort((a, b) => b.addedAt - a.addedAt); // newest first
+    const filteredTracks = tracks.filter(t => !t.id.startsWith('demo-song-') && t.artist !== 'SoundHelix');
+    return filteredTracks.sort((a, b) => b.addedAt - a.addedAt); // newest first
   };
 
   const deleteTrack = async (trackId: string): Promise<void> => {

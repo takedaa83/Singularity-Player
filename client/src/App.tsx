@@ -18,6 +18,7 @@ import { X } from 'lucide-react';
 import { LoadingSkeleton } from './components/ui/LoadingSkeleton';
 import { MobileNav } from './components/layout/MobileNav';
 import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyticsTracker';
+import { OnboardingModal } from './components/ui/OnboardingModal';
 import { useSettingsStore } from './stores/settingsStore';
 import { api } from './utils/api';
 import { initDB } from './lib/db';
@@ -98,6 +99,14 @@ export const App: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const onboardingDone = localStorage.getItem('singularity_onboarding_completed');
+    if (!onboardingDone) {
+      setShowOnboarding(true);
+    }
+  }, []);
 
   // Multi-select state for library
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -543,6 +552,12 @@ export const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
 
       {/* Toast Notifications */}
       <ToastContainer />

@@ -530,11 +530,11 @@ export class AudioEngine {
       this.mainGainNode.gain.value = 1.0;
 
       this.limiterNode = ctx.createDynamicsCompressor();
-      this.limiterNode.threshold.setValueAtTime(-3.0, ctx.currentTime);
-      this.limiterNode.knee.setValueAtTime(6.0, ctx.currentTime);
-      this.limiterNode.ratio.setValueAtTime(4.0, ctx.currentTime);
-      this.limiterNode.attack.setValueAtTime(0.001, ctx.currentTime);
-      this.limiterNode.release.setValueAtTime(0.15, ctx.currentTime);
+      this.limiterNode.threshold.setValueAtTime(-1.0, ctx.currentTime);
+      this.limiterNode.knee.setValueAtTime(12.0, ctx.currentTime);
+      this.limiterNode.ratio.setValueAtTime(2.5, ctx.currentTime);
+      this.limiterNode.attack.setValueAtTime(0.003, ctx.currentTime);
+      this.limiterNode.release.setValueAtTime(0.25, ctx.currentTime);
 
       // --- Static Graph Connections ---
       // 1. Bypass route (used when spatial audio is disabled)
