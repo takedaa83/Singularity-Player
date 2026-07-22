@@ -347,27 +347,23 @@ export const TrackScrollRowItem: React.FC<{
               <MusicNoteIcon sx={{ fontSize: 32, color: tokens.colors.textTertiary }} />
             </Box>
           )}
-          {/* Hover overlay with Spotify-style floating play button */}
-          {isActive && (
+          {/* Active playing indicator with real Web Audio frequency bars */}
+          {isActive && isPlaying && (
             <Box
               sx={{
                 position: 'absolute',
                 top: 8,
                 left: 8,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(8px)',
+                bgcolor: 'rgba(0,0,0,0.75)',
                 px: 1,
                 py: 0.5,
-                borderRadius: '12px',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '2px',
                 zIndex: 3,
               }}
             >
-              <span className="w-1 h-3 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.1s]" />
-              <span className="w-1 h-4 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-              <span className="w-1 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+              <RealAudioBars color={tokens.colors.primary} />
             </Box>
           )}
           <Box
@@ -465,6 +461,53 @@ export const TrackScrollRowItem: React.FC<{
 });
 TrackScrollRowItem.displayName = 'TrackScrollRowItem';
 
+const RealAudioBars: React.FC<{ color?: string }> = ({ color }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { getAnalyser } = useAudioEngine();
+
+  useEffect(() => {
+    let animId: number;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const render = () => {
+      const analyser = getAnalyser();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = color || 'var(--primary, #f59e0b)';
+
+      if (analyser) {
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+
+        const b1 = Math.max(0.2, (dataArray[2] || 0) / 255);
+        const b2 = Math.max(0.2, (dataArray[8] || 0) / 255);
+        const b3 = Math.max(0.2, (dataArray[16] || 0) / 255);
+
+        const barWidth = 3;
+        const gap = 2;
+
+        ctx.fillRect(0, canvas.height * (1 - b1), barWidth, canvas.height * b1);
+        ctx.fillRect(barWidth + gap, canvas.height * (1 - b2), barWidth, canvas.height * b2);
+        ctx.fillRect((barWidth + gap) * 2, canvas.height * (1 - b3), barWidth, canvas.height * b3);
+      } else {
+        ctx.fillRect(0, canvas.height - 4, 3, 4);
+        ctx.fillRect(5, canvas.height - 10, 3, 10);
+        ctx.fillRect(10, canvas.height - 6, 3, 6);
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+    return () => cancelAnimationFrame(animId);
+  }, [getAnalyser, color]);
+
+  return <canvas ref={canvasRef} width={13} height={14} className="inline-block shrink-0 ml-1.5" />;
+};
+
 interface QuickPlayGridItemProps {
   item: any;
   idx: number;
@@ -509,20 +552,18 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
           display: 'flex',
           alignItems: 'center',
           height: 64,
-          bgcolor: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          bgcolor: tokens.colors.surface,
           borderRadius: '12px',
           overflow: 'hidden',
           cursor: 'pointer',
           transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
-          border: isCurrentlyActive ? '1px solid rgba(var(--primary-rgb), 0.6)' : '1px solid rgba(255, 255, 255, 0.06)',
+          border: isCurrentlyActive ? '1px solid rgba(var(--primary-rgb), 0.6)' : '1px solid var(--border-subtle)',
           boxShadow: isCurrentlyActive ? '0 0 20px rgba(var(--primary-rgb), 0.25)' : 'none',
           '&:hover': {
-            bgcolor: 'rgba(255, 255, 255, 0.12)',
-            transform: 'scale(1.02) translateY(-2px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            bgcolor: 'var(--surface-hover)',
+            transform: 'translateY(-2px)',
+            border: '1px solid var(--border-strong)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             '& .quick-play-btn': {
               opacity: 1,
@@ -582,6 +623,7 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
                 width: '100%',
                 height: '100%',
                 objectFit: 'cover',
+                borderRight: '1px solid rgba(var(--primary-rgb), 0.25)',
               }}
             />
           ) : (
@@ -615,13 +657,7 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
             >
               {item.title}
             </Typography>
-            {isCurrentlyActive && (
-              <div className="inline-flex items-center gap-0.5 shrink-0">
-                <span className="w-0.5 h-3 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
-                <span className="w-0.5 h-4 bg-primary rounded-full animate-bounce [animation-delay:0.3s]" />
-                <span className="w-0.5 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-              </div>
-            )}
+            {isCurrentlyActive && <RealAudioBars color={tokens.colors.primary} />}
           </div>
           {item.subtitle && (
             <Typography
