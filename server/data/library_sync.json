@@ -58,6 +58,18 @@
       "addedAt": 1780568130028
     },
     {
+      "id": "yt---PpOW-RtiY",
+      "title": "Tek It (Acoustic)",
+      "artist": "Cafuné",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/qAw2MLzAssVgMWEAKV5s2ABnialuH_7wNBriwcnW3LUkWcCkr03s-OXbMtFAiR1PC-LcS0W249Jz2WaM=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/--PpOW-RtiY",
+      "videoId": "--PpOW-RtiY",
+      "addedAt": 1784703474500
+    },
+    {
       "id": "yt--2AfeMnpiRI",
       "title": "ROS",
       "artist": "Mac Miller",
@@ -88,6 +100,18 @@
       "skipCount": 0,
       "lastPlayedAt": 1781095623084,
       "totalListenDuration": 17
+    },
+    {
+      "id": "yt--3SJ0DF3zME",
+      "title": "Hawa Banke",
+      "artist": "Rito Riba, Neha Kakkar, Rajat Nagpal, Vicky Sandhu",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/5STGT6JhaHnredwknGNfOU_SEjihVP3Be7RoaAg4XyXWWfso5e1Q2MAFo0KptfwWS1xZzWw8Ep4SXzY=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/-3SJ0DF3zME",
+      "videoId": "-3SJ0DF3zME",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt--3vUz7QPljM",
@@ -146,6 +170,18 @@
       "totalListenDuration": 12
     },
     {
+      "id": "yt--UU9J-LbfB8",
+      "title": "Samjhawan (Unplugged by Alia Bhatt) [From \"Humpty Sharma Ki Dulhania\"]",
+      "artist": "Jawad Ahmed, Sharib Toshi, Alia Bhatt",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6VtYycU2Dg7hg_F5Y0vWz-8cc27RN9CPrzT6QiePOWdfoBccEjOBkDKj3mAblmOFDQQvKXTbx53NuBM=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/-UU9J-LbfB8",
+      "videoId": "-UU9J-LbfB8",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt--WE_iBqLmMI",
       "title": "Jhol - Acoustic",
       "artist": "Maanu, Annural Khalid, Asfand, Abdullah Siddiqui",
@@ -172,10 +208,10 @@
       "streamUrl": "/api/yt/stream/-XI2_610F0s",
       "videoId": "-XI2_610F0s",
       "addedAt": 1780989041685,
-      "playCount": 3,
+      "playCount": 4,
       "skipCount": 1,
-      "lastPlayedAt": 1781026128796,
-      "totalListenDuration": 139
+      "lastPlayedAt": 1784640254505,
+      "totalListenDuration": 144
     },
     {
       "id": "yt--gztlYsjRUg",
@@ -222,6 +258,18 @@
       "addedAt": 1781077766586
     },
     {
+      "id": "yt--rSOvmWRG4Y",
+      "title": "Uff Teri Adaa",
+      "artist": "Shankar Mahadevan | Alyssa Mendonca",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/M8U6EwzmX8rCOI2REWchluaOX4kNLrznwK5anO5a-_etesGvi011XD1EmXcZlc6uHCvVJd-gFXHjPBFpuw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/-rSOvmWRG4Y",
+      "videoId": "-rSOvmWRG4Y",
+      "addedAt": 1784412408922
+    },
+    {
       "id": "yt-050XLSXhbds",
       "title": "Tere Husn Te",
       "artist": "anonymousX",
@@ -232,6 +280,18 @@
       "streamUrl": "/api/yt/stream/050XLSXhbds",
       "videoId": "050XLSXhbds",
       "addedAt": 1781077766586
+    },
+    {
+      "id": "yt-0780Oz21Qtc",
+      "title": "Dil Hi Toh Hai",
+      "artist": "Pritam, Arijit Singh, Antara Mitra, Nikhil D'Souza",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KGgA4eJDXP9nzUQCCc89d8QXDY7RpvELHzUWBf5Iukm9Yr7kt6J6Kx5bR1De4QH-Dodazpb0iowMq0s=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/0780Oz21Qtc",
+      "videoId": "0780Oz21Qtc",
+      "addedAt": 1784414173396
     },
     {
       "id": "yt-0818KaCATWU",
@@ -370,6 +430,18 @@
       "addedAt": 1784268643136
     },
     {
+      "id": "yt-14eL3TLUjUk",
+      "title": "Naam Adaa Likhna",
+      "artist": "Shaan, Shreya Ghoshal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/06gT3GjHYxsV2vQAPEyqCWzZrksmJhc9ooPJ34zxW5zsA8X2Ljbaygv2qCPoFWT6gqL-JBBnHgZvkU5e=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/14eL3TLUjUk",
+      "videoId": "14eL3TLUjUk",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-1E2ihUl6ed4",
       "title": "Bad Habit",
       "artist": "Steve Lacy",
@@ -404,6 +476,18 @@
       "streamUrl": "/api/yt/stream/1KAa13ENlPo",
       "videoId": "1KAa13ENlPo",
       "addedAt": 1781007495750
+    },
+    {
+      "id": "yt-1NqkxdNQPtE",
+      "title": "Ay Hairathe",
+      "artist": "A.R. Rahman, Hariharan, Alka Yagnik, Mohammed Aslam",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Akf-6ffS5o97tjerWba-fSDBGplF1kg6VjRYzb_BXbmC2qBHTIu5WX5hxBY9Y-JxHcxzwvRNq4Yysj7vzg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/1NqkxdNQPtE",
+      "videoId": "1NqkxdNQPtE",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-1Nxnu3cGHdA",
@@ -451,7 +535,23 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/1ZkN7Hkda4c",
       "videoId": "1ZkN7Hkda4c",
-      "addedAt": 1784277200968
+      "addedAt": 1784277200968,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1784414445415,
+      "totalListenDuration": 21
+    },
+    {
+      "id": "yt-1eDHqoJmstU",
+      "title": "Romantic Homicide",
+      "artist": "d4vd",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/dG_GEx3FUyM1LHG0H2WTt8hFnmlnS7wd1ac5CDJHUA19vP1YfvwAzZiYF8U_15iZ0J0nmYjO_nif6bl8=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/1eDHqoJmstU",
+      "videoId": "1eDHqoJmstU",
+      "addedAt": 1784703474500
     },
     {
       "id": "yt-1gcG6j_RD1k",
@@ -466,6 +566,18 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-1maBkyzY7IA",
+      "title": "Der Lagi Lekin",
+      "artist": "Shankar Mahadevan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FgYMxJ3LGubtPl2bnTZo1QycILXaw19rXO8-QsP26vvQJN6MTHz--1FoM6t7FdkKvRvMv6ZMI2DYWfT5Gw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/1maBkyzY7IA",
+      "videoId": "1maBkyzY7IA",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-1nhCP6BXw7k",
       "title": "Unakkul Naane (slowed + reverbed)",
       "artist": "Pritt, Dilushselva",
@@ -476,6 +588,18 @@
       "streamUrl": "/api/yt/stream/1nhCP6BXw7k",
       "videoId": "1nhCP6BXw7k",
       "addedAt": 1781006190518
+    },
+    {
+      "id": "yt-1q65CU2JoXg",
+      "title": "Iktara",
+      "artist": "Amit Trivedi, Kavita Seth, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PZdEJ5f26bbNwJnbeir--VznsQ332Hewj8SoAB9jgXRpC2ZJ5pEM-DQUulnXnx0vlcgurSIHNWgm9Pfv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/1q65CU2JoXg",
+      "videoId": "1q65CU2JoXg",
+      "addedAt": 1784639274615
     },
     {
       "id": "yt-1qgjd8hQlL0",
@@ -550,6 +674,18 @@
       "addedAt": 1780989041684
     },
     {
+      "id": "yt-26ahkIGlBO0",
+      "title": "So High (feat. Ghost Loft)",
+      "artist": "Wiz Khalifa",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/c8LAi_fJycWtOwMsLZlsNZLhFKOIHDEHcU5-6l0fXIFwI-ZKf1L3DNSwPii-ojJPS0S2w9gauAGabIulIA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/26ahkIGlBO0",
+      "videoId": "26ahkIGlBO0",
+      "addedAt": 1784641609951
+    },
+    {
       "id": "yt-2U_bbri5w08",
       "title": "Sajda Ve",
       "artist": "Salim-Sulaiman, Salman Ali, Anmol Jaswal",
@@ -566,6 +702,18 @@
       "totalListenDuration": 40
     },
     {
+      "id": "yt-2g-p76-r33I",
+      "title": "Zehnaseeb",
+      "artist": "Vishal & Shekhar, Chinmayi, Shekhar Ravjiani",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/nQ2kwOCjGypfPiswM38DaWIhY7pjVgIfi6n6AOkZrkqMPmij87_AQvxcCHIHKsXyrLiE0i_HbVRetrI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/2g-p76-r33I",
+      "videoId": "2g-p76-r33I",
+      "addedAt": 1784704157088
+    },
+    {
       "id": "yt-2nR1zrNzgcY",
       "title": "FE!N (feat. Playboi Carti)",
       "artist": "Travis Scott",
@@ -576,6 +724,18 @@
       "streamUrl": "/api/yt/stream/2nR1zrNzgcY",
       "videoId": "2nR1zrNzgcY",
       "addedAt": 1780991151810
+    },
+    {
+      "id": "yt-2sbbgZJkAXU",
+      "title": "Safar (From \"Jab Harry Met Sejal\")",
+      "artist": "Pritam, Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cuHSivkUikrBh3dr2Kj24yQelxdRCYAM21N0Uls85PWrog1vUBj9eMPYsxFLlGx9AJ6pTOuVF2hduok=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/2sbbgZJkAXU",
+      "videoId": "2sbbgZJkAXU",
+      "addedAt": 1784414173699
     },
     {
       "id": "yt-2xUQO-qj3pc",
@@ -604,6 +764,30 @@
       "skipCount": 1,
       "lastPlayedAt": 1780989307271,
       "totalListenDuration": 6
+    },
+    {
+      "id": "yt-356IP3REotU",
+      "title": "Suno Aisha",
+      "artist": "Amit Trivedi, Nakash Aziz, Ash King",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/M-8w6UiPfVxdRI0mbrDrh-tnMBGVDg49E14ZXduB8YaIQAUdfWXmh9GZo4k5Nc5Wt-4ZrpKbNoSCeQ4B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/356IP3REotU",
+      "videoId": "356IP3REotU",
+      "addedAt": 1784438210527
+    },
+    {
+      "id": "yt-3HlzLiCL9Xs",
+      "title": "Jaan Nisaar (Arijit)",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/1CFGx2RBIDDhqxli7xazjUkr0B1IxH58cEYWE6VeVxeq7cIQ-HXZpYABghCsXa8sk_KysYYo7mJAOKt-=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/3HlzLiCL9Xs",
+      "videoId": "3HlzLiCL9Xs",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-3cKQcs3_TSs",
@@ -730,6 +914,18 @@
       "totalListenDuration": 6
     },
     {
+      "id": "yt-40Ds15HK3Io",
+      "title": "Snehidhane - AJX Lofi",
+      "artist": "AJX, Sadhana Sargam, Srinivas",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_ASUC8dJvBPTH1E45guu4lC-IFQM1u8JRhRAk8VLzkvvNl6oMuhdl3MWvf9sDF2hY5EY_jOukt1vCIPB=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/40Ds15HK3Io",
+      "videoId": "40Ds15HK3Io",
+      "addedAt": 1784639598664
+    },
+    {
       "id": "yt-4BrziEPQrOQ",
       "title": "Dil Tu Jaan Tu",
       "artist": "Gurnazar",
@@ -814,6 +1010,18 @@
       "addedAt": 1780989541246
     },
     {
+      "id": "yt-4g0QivOeup0",
+      "title": "Khaabon Ke Parinday",
+      "artist": "Alyssa Mendonca | Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FgYMxJ3LGubtPl2bnTZo1QycILXaw19rXO8-QsP26vvQJN6MTHz--1FoM6t7FdkKvRvMv6ZMI2DYWfT5Gw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/4g0QivOeup0",
+      "videoId": "4g0QivOeup0",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-4kbSC3HXfJw",
       "title": "Slow Down",
       "artist": "Chase Atlantic",
@@ -824,6 +1032,18 @@
       "streamUrl": "/api/yt/stream/4kbSC3HXfJw",
       "videoId": "4kbSC3HXfJw",
       "addedAt": 1780990069082
+    },
+    {
+      "id": "yt-4lZ2vJOatfU",
+      "title": "Hairat",
+      "artist": "Lucky Ali, Vishal-Shekhar, Vishal Dadlani",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cwOkgYhp7e82Wnsi37elBYvbsB_xDQaD6C1bxyclP5QnJGjnp_p8x68G_prl0rthtlnACcqlUeWIN64B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/4lZ2vJOatfU",
+      "videoId": "4lZ2vJOatfU",
+      "addedAt": 1784414173396
     },
     {
       "id": "yt-4mEPJg9q23Q",
@@ -896,6 +1116,18 @@
       "streamUrl": "/api/yt/stream/589fbH7M1QM",
       "videoId": "589fbH7M1QM",
       "addedAt": 1781078346507
+    },
+    {
+      "id": "yt-5JOApjIhofw",
+      "title": "Tumse Hi Tumse",
+      "artist": "Shekhar Ravjiani, Caralisa, Vishal-Shekhar, Amitabh Bhattacharya, and Anvita Dutt Guptan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cwOkgYhp7e82Wnsi37elBYvbsB_xDQaD6C1bxyclP5QnJGjnp_p8x68G_prl0rthtlnACcqlUeWIN64B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/5JOApjIhofw",
+      "videoId": "5JOApjIhofw",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-5MvAmztKkzw",
@@ -974,6 +1206,34 @@
       "addedAt": 1781096527020
     },
     {
+      "id": "yt-5nyvC8-YUTg",
+      "title": "Jab Mila Tu",
+      "artist": "Vishal & Shekhar",
+      "album": "Single",
+      "duration": 252,
+      "coverArtUrl": "https://yt3.googleusercontent.com/WLCy6Z_QkIzOtEKkjN1DQmURaOkkwM8jc242pXNk3S8pAdXjDKvD8IIH2B4sOX0P-0hsMrLo2MmzvfwS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/5nyvC8-YUTg",
+      "videoId": "5nyvC8-YUTg",
+      "addedAt": 1784408214704,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1784413857934,
+      "totalListenDuration": 10
+    },
+    {
+      "id": "yt-5oKFcSeHTSU",
+      "title": "Dil Ye Bekarar Kyun Hai",
+      "artist": "Pritam, Mohit Chauhan, Shreya Ghoshal, and Ashish Pandit",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/827yoATa8U6Swu9gB8RIvhhY_WNe9LrB7NOHtmyDe529oKxpxQM0h-sLGaXFpa7Ymt7SWojWBPVrX9eE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/5oKFcSeHTSU",
+      "videoId": "5oKFcSeHTSU",
+      "addedAt": 1784414173396
+    },
+    {
       "id": "yt-5zivz7kVKNo",
       "title": "2009",
       "artist": "Mac Miller",
@@ -1002,6 +1262,18 @@
       "addedAt": 1781030922569
     },
     {
+      "id": "yt-60ZbJri71M0",
+      "title": "Sau Aasmaan",
+      "artist": "Armaan Malik, Neeti Mohan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/EnAU_lisKXK2cCE9jI6k9dfPBnLIbOisqwGiAkczntFQ-zfhPFhIaIPOJ-paPM4hNvOz_C5wzGUvsfyK=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/60ZbJri71M0",
+      "videoId": "60ZbJri71M0",
+      "addedAt": 1784412408922
+    },
+    {
       "id": "yt-623cqAoFa6Q",
       "title": "Afsos X Talha Anjum Mashup - Prod.Tanzim Kazi | 2K25",
       "artist": "Unknown Artist",
@@ -1012,6 +1284,18 @@
       "streamUrl": "/api/yt/stream/623cqAoFa6Q",
       "videoId": "623cqAoFa6Q",
       "addedAt": 1781095611772
+    },
+    {
+      "id": "yt-63Lz4gZ6Jkw",
+      "title": "MAAHI VE",
+      "artist": "A.R. Rahman",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/SiZiT6QJn3n1tcWd3DVlY9dU8fDTRauuMrkaQpAh8UBAUzf7OK8flE1NzlZHNRCogerHcubb5qbQJhA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/63Lz4gZ6Jkw",
+      "videoId": "63Lz4gZ6Jkw",
+      "addedAt": 1784704152982
     },
     {
       "id": "yt-648IE9Vs6NA",
@@ -1050,6 +1334,18 @@
       "addedAt": 1780989541246
     },
     {
+      "id": "yt-6XvyKlvl31o",
+      "title": "Manja (From \"Kai Po Che\")",
+      "artist": "Amit Trivedi, Mohan Kannan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Wy7kFZSU9cPbIByVn40ZSIFRETXnayTHwMIk_smz2NZ6Fh1yPceXSneq-OY9SNrAIFyQd_6qqvQ-ALc=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/6XvyKlvl31o",
+      "videoId": "6XvyKlvl31o",
+      "addedAt": 1784639274615
+    },
+    {
       "id": "yt-6eW99oNNRvI",
       "title": "Love Me Like You Do (From \"Fifty Shades Of Grey\")",
       "artist": "Ellie Goulding",
@@ -1086,6 +1382,18 @@
       "addedAt": 1784267975151
     },
     {
+      "id": "yt-6q3NVJYAJdY",
+      "title": "Pashmina",
+      "artist": "Amit Trivedi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Q2jfy06cP6kXvF2XGm-lwiwxNbxjxlPUCp3-x1-ct3dS4dRyrLp8SH3vZiH1xY9HAWMUWBsnZOjhipV5=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/6q3NVJYAJdY",
+      "videoId": "6q3NVJYAJdY",
+      "addedAt": 1784414173396
+    },
+    {
       "id": "yt-6r4qTcvl01Y",
       "title": "Jodi Abar",
       "artist": "Angel Noor",
@@ -1098,6 +1406,30 @@
       "addedAt": 1781206230338
     },
     {
+      "id": "yt-7-Qtp5hszp0",
+      "title": "Life's A Mess",
+      "artist": "Juice WRLD, Halsey",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_5p3dcM_IaUsTrqeojs_zDYllyOeDiwIBcmCFmcjiLxydblWQoCZJP_SUY5PvJScnLy84gUJzgHNY48=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/7-Qtp5hszp0",
+      "videoId": "7-Qtp5hszp0",
+      "addedAt": 1784643640296
+    },
+    {
+      "id": "yt-70xrMgL395Y",
+      "title": "MANMARZIYAN",
+      "artist": "SHILPA RAO, AMITABH BHATTACHARYA, AMIT TRIVEDI",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/CAVcFzRurER9murBz7X5VEnbKyF1jtnFGSFqcdwPteInbjA8kHONRcZzuwWP3C3nM5mlHJz7kCSJv_w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/70xrMgL395Y",
+      "videoId": "70xrMgL395Y",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-73XdHut8Kl0",
       "title": "Main tera ho gaya",
       "artist": "Karneast, Riya, Simon Vikram",
@@ -1108,6 +1440,18 @@
       "streamUrl": "/api/yt/stream/73XdHut8Kl0",
       "videoId": "73XdHut8Kl0",
       "addedAt": 1781010995854
+    },
+    {
+      "id": "yt-7E17EioNkCI",
+      "title": "Patient",
+      "artist": "Post Malone",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zynDFbA-mfOMc_aepq3p4vAqV_0d71BLJRVF5rblgqkIkIh8LOrZgOy54Pmm--3Wa54c8VwGV6zzVGuE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/7E17EioNkCI",
+      "videoId": "7E17EioNkCI",
+      "addedAt": 1784641609951
     },
     {
       "id": "yt-7FJwRCvDQuM",
@@ -1132,6 +1476,18 @@
       "streamUrl": "/api/yt/stream/7JWr6q2_XZs",
       "videoId": "7JWr6q2_XZs",
       "addedAt": 1784275961199
+    },
+    {
+      "id": "yt-7ZgkN5lI904",
+      "title": "ZINDA",
+      "artist": "AMIT TRIVEDI, AMITABH BHATTACHARYA",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/CAVcFzRurER9murBz7X5VEnbKyF1jtnFGSFqcdwPteInbjA8kHONRcZzuwWP3C3nM5mlHJz7kCSJv_w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/7ZgkN5lI904",
+      "videoId": "7ZgkN5lI904",
+      "addedAt": 1784414173699
     },
     {
       "id": "yt-7enmkIJPAdo",
@@ -1288,6 +1644,18 @@
       "streamUrl": "/api/yt/stream/8gq3S53aH3Y",
       "videoId": "8gq3S53aH3Y",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-8r28fYHs7-U",
+      "title": "JUGNI (QUEEN)",
+      "artist": "AMIT TRIVEDI & ANVITA DUTT GUPTAN",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/u_CSD9QK1aLce-y2NCuX8g8wP_9pUmIGyz6Pzt3a7GUQckq-Zq5xqv365XEdGsx36Dn6ztadpZoTHO0=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/8r28fYHs7-U",
+      "videoId": "8r28fYHs7-U",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-8zkUFoXku0Y",
@@ -1490,6 +1858,18 @@
       "addedAt": 1781008998695
     },
     {
+      "id": "yt-9n3Me5rXcLQ",
+      "title": "Agar Tum Saath Ho / Maahi Ve (From \"T-Series Mixtape\")",
+      "artist": "Jubin Nautiyal, Prakriti Kakar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/DZ41tmGOlvTGZRzyStGg8xQWnzFjazKX-IiXTirC7u9r4IbW4LbehyrqzC9kaXw106jD5ojafVEa-8E5=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/9n3Me5rXcLQ",
+      "videoId": "9n3Me5rXcLQ",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-9nRvqemGydw",
       "title": "Arabic Kuthu - Halamithi Habibo (From \"Beast\")",
       "artist": "Anirudh Ravichander, Jonita Gandhi",
@@ -1500,6 +1880,30 @@
       "streamUrl": "/api/yt/stream/9nRvqemGydw",
       "videoId": "9nRvqemGydw",
       "addedAt": 1780989041684
+    },
+    {
+      "id": "yt-9onQEY15mOs",
+      "title": "Sheher Mein",
+      "artist": "Mohit Chauhan, Karthik",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KYw74XSQwtKPbZTrHMNEBAnEMg1P1gNGwymnZwBSjstbqSE-MpigGlTIy6IZvC-ERlRkeP0c7VTiZObS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/9onQEY15mOs",
+      "videoId": "9onQEY15mOs",
+      "addedAt": 1784414173699
+    },
+    {
+      "id": "yt-9z4035g8v74",
+      "title": "Vaseegara - Lofi",
+      "artist": "AJX, Bombay Jayashri",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_ASUC8dJvBPTH1E45guu4lC-IFQM1u8JRhRAk8VLzkvvNl6oMuhdl3MWvf9sDF2hY5EY_jOukt1vCIPB=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/9z4035g8v74",
+      "videoId": "9z4035g8v74",
+      "addedAt": 1784639598664
     },
     {
       "id": "yt-A422txjLsUM",
@@ -1524,6 +1928,18 @@
       "streamUrl": "/api/yt/stream/A50xTWXoMC0",
       "videoId": "A50xTWXoMC0",
       "addedAt": 1784267975801
+    },
+    {
+      "id": "yt-AGsOTkX7ssM",
+      "title": "Kya Karoon?",
+      "artist": "Shankar Ehsaan Loy, Clinton Cerejo, Dominique Cerejo, Loy Mendonsa",
+      "album": "Single",
+      "duration": 236,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PZdEJ5f26bbNwJnbeir--VznsQ332Hewj8SoAB9jgXRpC2ZJ5pEM-DQUulnXnx0vlcgurSIHNWgm9Pfv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/AGsOTkX7ssM",
+      "videoId": "AGsOTkX7ssM",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-AMCwYdTJ_PE",
@@ -1598,6 +2014,30 @@
       "addedAt": 1781008998695
     },
     {
+      "id": "yt-AsLPGPs5iQk",
+      "title": "Jeena Jeena",
+      "artist": "Sachin-Jigar, Atif Aslam",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/AB_KrbJKMIQ7bER9z_flB51pSYYlgGhq_-EVbjSMR6gs2069j4C5oGivjm06L_DlFxOisQjdRlj3Jxnw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/AsLPGPs5iQk",
+      "videoId": "AsLPGPs5iQk",
+      "addedAt": 1784704454634
+    },
+    {
+      "id": "yt-AsieVqOTRs0",
+      "title": "Mitwa",
+      "artist": "Shankar Ehsaan Loy, Shankar Mahadevan, Caralisa Monteiro, Shafqat Amanat Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/f3s_CbLaAVDjo-6BFnNNAtrU316Ju7uqywgvMZ9kugxp7-yiDExrNWcrOXfr-8w6ugHGt6OCtWMWvXDg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/AsieVqOTRs0",
+      "videoId": "AsieVqOTRs0",
+      "addedAt": 1784704152982
+    },
+    {
       "id": "yt-AvupMcfm8O4",
       "title": "Nadaaniyan - Remix | Minimal Progressive House | Akshath | AMY x VØLTX",
       "artist": "Unknown Artist",
@@ -1634,6 +2074,18 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-BCscH3WHHew",
+      "title": "Laila Laila",
+      "artist": "Amit Trivedi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ry2psr0826XFpfuyphY1xwjp6vjcV6PQQmPCy1Hh44DVOmfUR3u_DYwOKz6UT5JItx6mWmlFOokBL1meww=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BCscH3WHHew",
+      "videoId": "BCscH3WHHew",
+      "addedAt": 1784412408922
+    },
+    {
       "id": "yt-BDS87tD4jv4",
       "title": "Kashish",
       "artist": "Ashish Bhatia, Omkar Singh, Kashish Ratnani",
@@ -1644,6 +2096,42 @@
       "streamUrl": "/api/yt/stream/BDS87tD4jv4",
       "videoId": "BDS87tD4jv4",
       "addedAt": 1781077572893
+    },
+    {
+      "id": "yt-BDTee709trU",
+      "title": "Main Kya Karoon",
+      "artist": "Pritam, Nikhil Paul George",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/W3crfuGhM-7bR81I9dSXDfM99SGWeGLEqSS29DtIw23ITd7nlLzTC1dXHgMxsxLxlPTcvqFp2Hnq4D3V=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BDTee709trU",
+      "videoId": "BDTee709trU",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-BEJKkdDdKmQ",
+      "title": "Journey Song",
+      "artist": "Anupam Roy, Shreya Ghoshal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/0_R3JXDajs90vEHUOU0JnoCKvS6NoXhw3O5_QZJMk6LAvObMon5FTwHHvtTF3Br00TOAqGbzdOHIUsnj=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BEJKkdDdKmQ",
+      "videoId": "BEJKkdDdKmQ",
+      "addedAt": 1784414173855
+    },
+    {
+      "id": "yt-BGU1YL9LNr4",
+      "title": "Tere Hawale (Arijit - Shreya Duet)",
+      "artist": "Pritam, Arijit Singh, Shreya Ghoshal, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FDqrX36uGJxHvuJ-ZzljNxooFhv1Gg-UluutNDYpzxj0zocWxhIGvXgyfcaCpvfQ-PZ3AThb4oT38tzk=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BGU1YL9LNr4",
+      "videoId": "BGU1YL9LNr4",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-BHep3SgCplM",
@@ -1718,6 +2206,22 @@
       "addedAt": 1780997170000
     },
     {
+      "id": "yt-BnYokCSJDfw",
+      "title": "ADHOORE",
+      "artist": "VISHAL-SHEKHAR, VISHAL DADLANI, ALYSSA MENDONSA",
+      "album": "Single",
+      "duration": 264,
+      "coverArtUrl": "https://yt3.googleusercontent.com/oAJRuvubWFcs-jb1rCnlcl9aP9PGWAr_FlV7tOhpV88ZuyzF1ot-3iKO5cABqzNyw8tJnAWeK6Vrqmb9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BnYokCSJDfw",
+      "videoId": "BnYokCSJDfw",
+      "addedAt": 1784408214704,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1784413605624,
+      "totalListenDuration": 2
+    },
+    {
       "id": "yt-BnrkUwzIgyM",
       "title": "Zara Zara - Bengali Version",
       "artist": "Sayan Das",
@@ -1728,6 +2232,42 @@
       "streamUrl": "/api/yt/stream/BnrkUwzIgyM",
       "videoId": "BnrkUwzIgyM",
       "addedAt": 1784267975151
+    },
+    {
+      "id": "yt-Bvyqm72k4pQ",
+      "title": "REHNA TU",
+      "artist": "A.R. RAHMAN, PRASOON JOSHI",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/EUaymIrfyWRj0_-Q-My5ZnZhmDihHPC2SQ935X3jj6YirVIOd3B-gogG173wLegV8tny2CG-615Gt3dmig=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Bvyqm72k4pQ",
+      "videoId": "Bvyqm72k4pQ",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-BwJxCh_3PgM",
+      "title": "Tu Hi Hai (Ali Zafar Version) [From \"Dear Zindagi\"]",
+      "artist": "Amit Trivedi, Ali Zafar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/sQFxlt-Phsa0an2h9GCaHE5_1gmsJwOxw7g4itFGNFs8v5qaaCKW0vCHJ4Ns60fabV_WCSj_39bdKNqV=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BwJxCh_3PgM",
+      "videoId": "BwJxCh_3PgM",
+      "addedAt": 1784408214704
+    },
+    {
+      "id": "yt-BwV6UchilEM",
+      "title": "The Plan (feat. Juicy J)",
+      "artist": "Wiz Khalifa",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/UwhYMdSMNVy79fS2o7wXGDiIfGRQrvdH6DU3jdDnPZPs7wiEt2xl14nQW2WcBp6Jn-n0kzRyM0pw45c=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/BwV6UchilEM",
+      "videoId": "BwV6UchilEM",
+      "addedAt": 1784641609951
     },
     {
       "id": "yt-C14askJ1tO8",
@@ -1784,6 +2324,18 @@
       "streamUrl": "/api/yt/stream/CQBL3mpvabI",
       "videoId": "CQBL3mpvabI",
       "addedAt": 1781077767463
+    },
+    {
+      "id": "yt-CWz7zABB3nQ",
+      "title": "Paranoid",
+      "artist": "Post Malone",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/2tVo4wzeIZp713873Nf0kC-XFl2-7OGaWiPPXIdQcvbW60ckARocPuaOnOBQh-Rj75Mf-dHoMgQP-H8=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/CWz7zABB3nQ",
+      "videoId": "CWz7zABB3nQ",
+      "addedAt": 1784643640296
     },
     {
       "id": "yt-Cc5oZAR4E6Y",
@@ -1850,6 +2402,30 @@
       "addedAt": 1780989541246
     },
     {
+      "id": "yt-CwT9-022coQ",
+      "title": "Nainowale Ne",
+      "artist": "JAnkit",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/mYrK_9he0QDYZBf2ObQMR5b6S5bjuLHgPk3tWn7pEqBIe2bCgrL8Y028we3uG_73hmLd6MVchtGKxslv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/CwT9-022coQ",
+      "videoId": "CwT9-022coQ",
+      "addedAt": 1784639598664
+    },
+    {
+      "id": "yt-D395bK70m3w",
+      "title": "MASAKALI",
+      "artist": "Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/EUaymIrfyWRj0_-Q-My5ZnZhmDihHPC2SQ935X3jj6YirVIOd3B-gogG173wLegV8tny2CG-615Gt3dmig=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/D395bK70m3w",
+      "videoId": "D395bK70m3w",
+      "addedAt": 1784704152982
+    },
+    {
       "id": "yt-D5v0P2-WLSo",
       "title": "Maand",
       "artist": "Bayaan, Hasan Raheem, & Rovalio",
@@ -1860,6 +2436,18 @@
       "streamUrl": "/api/yt/stream/D5v0P2-WLSo",
       "videoId": "D5v0P2-WLSo",
       "addedAt": 1784276195167
+    },
+    {
+      "id": "yt-D9zidy7SxPE",
+      "title": "Luka Chuppi",
+      "artist": "A.R. Rahman, Lata Mangeshkar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/yHEQOZJAIi7wZ4vgBF6VFMRhIiwqCGrnapNPa2SyG7htt_FiXU7QbMrWyZ3USDliDRaovbUVe1YlG6v5qQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/D9zidy7SxPE",
+      "videoId": "D9zidy7SxPE",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-DBXZjeotXSU",
@@ -1886,6 +2474,34 @@
       "addedAt": 1781096257193
     },
     {
+      "id": "yt-DGTlOQLQApw",
+      "title": "Aaj Kal Zindagi",
+      "artist": "Shankar Ehsaan Loy, Shankar Mahadevan",
+      "album": "Single",
+      "duration": 255,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PZdEJ5f26bbNwJnbeir--VznsQ332Hewj8SoAB9jgXRpC2ZJ5pEM-DQUulnXnx0vlcgurSIHNWgm9Pfv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/DGTlOQLQApw",
+      "videoId": "DGTlOQLQApw",
+      "addedAt": 1784414173396,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1784414195443,
+      "totalListenDuration": 17
+    },
+    {
+      "id": "yt-DGgz_C2rn68",
+      "title": "Dildaara (Stand By Me)",
+      "artist": "Vishal-Shekhar, Shafqat Amanat Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ODhreTQufJgEezdnPVmP8OF5nefXi4Q9y5dm2CjpjFGks0f5SXKe5sYsd1oiRnB_1Bz1Ghj7Sat2guwp=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/DGgz_C2rn68",
+      "videoId": "DGgz_C2rn68",
+      "addedAt": 1784704152982
+    },
+    {
       "id": "yt-DRZHVrSmcWU",
       "title": "Barbaad (Movie: Saiyaara)",
       "artist": "Jubin Nautiyal, The Rish",
@@ -1896,6 +2512,30 @@
       "streamUrl": "/api/yt/stream/DRZHVrSmcWU",
       "videoId": "DRZHVrSmcWU",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-DSMneXn238o",
+      "title": "Roobaroo",
+      "artist": "A.R. Rahman",
+      "album": "Single",
+      "duration": 283,
+      "coverArtUrl": "https://yt3.googleusercontent.com/yHEQOZJAIi7wZ4vgBF6VFMRhIiwqCGrnapNPa2SyG7htt_FiXU7QbMrWyZ3USDliDRaovbUVe1YlG6v5qQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/DSMneXn238o",
+      "videoId": "DSMneXn238o",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-Dp-ZVc40I5o",
+      "title": "Man Lafanga",
+      "artist": "Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/JbCpRfZvI3urcndPVCyj9dBVsBkIweONA7j3zvkDaFnfLbI2REw6snDx9nNawShtNpgPSYXOXkCeJNmV=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Dp-ZVc40I5o",
+      "videoId": "Dp-ZVc40I5o",
+      "addedAt": 1784414173699
     },
     {
       "id": "yt-DqO1lLavWGo",
@@ -1998,6 +2638,30 @@
       "addedAt": 1781011346570
     },
     {
+      "id": "yt-EW9opRK1MPk",
+      "title": "Ishq Wala Love (Hip Hop Remix)",
+      "artist": "Neeti Mohan, Shekhar Ravjiani, Salim Sadruddin Merchant, and Nilesh P.",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/2SrbiDLUiLdoIpU9gbPtALKdSXN2k5XXTLAy-9wvArcwZA9pIyrahDlfZ0wgVp6teaHeQTFTWlFSvdQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/EW9opRK1MPk",
+      "videoId": "EW9opRK1MPk",
+      "addedAt": 1784639598664
+    },
+    {
+      "id": "yt-EYgSirZikfw",
+      "title": "Iktara (From \"Wake Up Sid\") (Male Version)",
+      "artist": "Amit Trivedi, Tochi Raina, Amitabh Bhattacharya, Raman Mahadevan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ylCWnJW6hb4esfRLZfst0M8IH6nesz8kIaMCDfW39INeu13TQwvMvzhAdSEKbaml7JySvFJsmQUtTjGm=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/EYgSirZikfw",
+      "videoId": "EYgSirZikfw",
+      "addedAt": 1784704157088
+    },
+    {
       "id": "yt-EZE62LpaqHg",
       "title": "See You Again (feat. Kali Uchis)",
       "artist": "Tyler, The Creator",
@@ -2016,10 +2680,10 @@
       "filePath": null,
       "addedAt": 1781031205508,
       "videoId": "EZE62LpaqHg",
-      "playCount": 4,
+      "playCount": 6,
       "skipCount": 1,
-      "lastPlayedAt": 1781066953921,
-      "totalListenDuration": 136
+      "lastPlayedAt": 1784640435318,
+      "totalListenDuration": 173
     },
     {
       "id": "yt-Ef6gbxG9bzs",
@@ -2058,6 +2722,18 @@
       "addedAt": 1781007691026
     },
     {
+      "id": "yt-Eu_81ewUBsQ",
+      "title": "Chedkhaniyaan",
+      "artist": "Shankar Ehsaan Loy, Shivam Mahadevan, Pratibha Singh Baghel",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/2-meiegu4W57LN0lr88TV17aAOzE9racyTbzctGq-jAwI04zemhOGsF7nyIXHWKZ4Vxi_QSjAEYK4MUm=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Eu_81ewUBsQ",
+      "videoId": "Eu_81ewUBsQ",
+      "addedAt": 1784408214704
+    },
+    {
       "id": "yt-Ew96Ap4FC8c",
       "title": "4U",
       "artist": "Maanu",
@@ -2080,6 +2756,18 @@
       "streamUrl": "/api/yt/stream/Exs7OYnvO4w",
       "videoId": "Exs7OYnvO4w",
       "addedAt": 1784275971170
+    },
+    {
+      "id": "yt-F-A_hUV34_k",
+      "title": "Achha Lagta Hai",
+      "artist": "Shankar Ehsaan Loy, Mohit Chauhan, Shreya Ghoshal, Neuman Pinto",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/-mGODffi2u07O7J7w3XD_Wm9xwLS-cY8160-auOKYlFuhx1elYB4lDTaffy194wK9iOjxldGpZ2KrQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/F-A_hUV34_k",
+      "videoId": "F-A_hUV34_k",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-F3JhMHuoRAw",
@@ -2120,6 +2808,18 @@
       "skipCount": 0,
       "lastPlayedAt": 1780992712621,
       "totalListenDuration": 34
+    },
+    {
+      "id": "yt-FCRUrHJW468",
+      "title": "SAFARNAMA",
+      "artist": "Lucky Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/AT2wfk1PvKjnHO7BzH2i2NkAvqRy_oZNEq48QGBlLJb51AuguCiR3mzp99X1uFdZezAkoSJ2WGjUU-HXZg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/FCRUrHJW468",
+      "videoId": "FCRUrHJW468",
+      "addedAt": 1784414173855
     },
     {
       "id": "yt-FFhGqNa-Waw",
@@ -2224,6 +2924,30 @@
       "streamUrl": "/api/yt/stream/G8Voqp9rR8E",
       "videoId": "G8Voqp9rR8E",
       "addedAt": 1781015620562
+    },
+    {
+      "id": "yt-G8vzpq6OGFw",
+      "title": "Chor Bazaari",
+      "artist": "Pritam, Neeraj Shridhar, Sunidhi Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/bI7fR_s3N9aO5HJ5O4B4rZdrJ-6ZUx7nWjvzC3u8c0-J3EFS8kFwmIoNjfoHSD9YO0L-wic4F2olS5so=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/G8vzpq6OGFw",
+      "videoId": "G8vzpq6OGFw",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-GDK3B_g7XFw",
+      "title": "PHIR KABHI-REPRISE",
+      "artist": "ARIJIT SINGH, AMAAL MALLIK",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/MYRG8Q-5xSnpsxvip4lU7uPlu9SJ08f5VzDLUBeu2S2HUMLtGqR9hkezoDjs-89e9QEJCo4_CQeGFxtp=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/GDK3B_g7XFw",
+      "videoId": "GDK3B_g7XFw",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-GHTg-EzUr4M",
@@ -2332,10 +3056,10 @@
       "filePath": null,
       "addedAt": 1781008985327,
       "videoId": "Gs5WlUzk_Ec",
-      "playCount": 5,
+      "playCount": 6,
       "skipCount": 0,
-      "lastPlayedAt": 1781087521543,
-      "totalListenDuration": 271
+      "lastPlayedAt": 1784640242451,
+      "totalListenDuration": 273
     },
     {
       "id": "yt-GtXvzJRuH9M",
@@ -2348,6 +3072,18 @@
       "streamUrl": "/api/yt/stream/GtXvzJRuH9M",
       "videoId": "GtXvzJRuH9M",
       "addedAt": 1781103605776
+    },
+    {
+      "id": "yt-Gz7K9cExLpY",
+      "title": "Bawara Mann",
+      "artist": "Jubin Nautiyal, Neeti Mohan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/uiljaWaSTHWEHxq_ufZC3vxSHN9aYZPYRnKQrOTK3cG_ig2Ci03TDdM-GrBcvI1mbakXz9wIB-p10l0=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Gz7K9cExLpY",
+      "videoId": "Gz7K9cExLpY",
+      "addedAt": 1784639274615
     },
     {
       "id": "yt-H89qGpQo7NA",
@@ -2474,6 +3210,18 @@
       "addedAt": 1781077767463
     },
     {
+      "id": "yt-Heuxm7pZ-Fs",
+      "title": "Pretty Girl",
+      "artist": "Clairo",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ADGTa3OCeFDLR04x4fQmp3r0Ca_dupT5XkctHABKwLiz-2bP3gYreGsdEMBr8RbneWz-SFkife4hE5FoJg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Heuxm7pZ-Fs",
+      "videoId": "Heuxm7pZ-Fs",
+      "addedAt": 1784639267950
+    },
+    {
       "id": "yt-HfFSk8dHHR8",
       "title": "Tu Chodiyon Na",
       "artist": "Ronit Vinta",
@@ -2546,6 +3294,18 @@
       "addedAt": 1780991151810
     },
     {
+      "id": "yt-ICcGU7BrSvQ",
+      "title": "Tu Hai",
+      "artist": "Darshan Raval, Prakriti Giri",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/S3tkiG6ukSqLbwEUM2xodqCR_BYpJHxj__2MQiygWOVxl2arFqUOClD0xchZfjnfiaLFDkMS9a68c0TE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ICcGU7BrSvQ",
+      "videoId": "ICcGU7BrSvQ",
+      "addedAt": 1784639278018
+    },
+    {
       "id": "yt-ICil9jv76Uo",
       "title": "Janiye (8D Audio) Bass Boosted | Chor Nikal Ke Bhaga",
       "artist": "Unknown Artist",
@@ -2556,6 +3316,18 @@
       "streamUrl": "/api/yt/stream/ICil9jv76Uo",
       "videoId": "ICil9jv76Uo",
       "addedAt": 1780989541246
+    },
+    {
+      "id": "yt-IER1IoUSnac",
+      "title": "Zindagi Tere Naam (Soul Version)",
+      "artist": "Vishal Mishra",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/4elreGo96wj3b0bsDcsEeElggZ-67A_XUM4qBPgmSLR3IDr5LqI4Q6YFZnT15VzHF3D1iR1F7Hog9rU=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/IER1IoUSnac",
+      "videoId": "IER1IoUSnac",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-IMvsGFNlFzE",
@@ -2778,6 +3550,42 @@
       "addedAt": 1781030922569
     },
     {
+      "id": "yt-JWsgL5Tmo6g",
+      "title": "Jaise Mera Tu",
+      "artist": "Sachin-Jigar, Arijit Singh, Priya Saraiya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/3EbAChKsh-alP4P9q54j6ihNO8GGhjzDSmImI55BxGpABhIKPllRCUrGv62zdrVB3sBHD8nbmDXsdsZP=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/JWsgL5Tmo6g",
+      "videoId": "JWsgL5Tmo6g",
+      "addedAt": 1784408214704
+    },
+    {
+      "id": "yt-JXLdZpCW5NY",
+      "title": "Tum Tum (From \"Enemy - Telugu\")",
+      "artist": "Thaman S, Harini Ivaturi, & Sahiti Chaganti",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/RHol1N-iWy-3ujex0yeTCDh10lIxkzRA0K-eaCV9qDgLtH1c9nkU2tTRc7APZTVg2vARstlczgnQPeOllQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/JXLdZpCW5NY",
+      "videoId": "JXLdZpCW5NY",
+      "addedAt": 1784639598664
+    },
+    {
+      "id": "yt-JeiZTnRfrbM",
+      "title": "Saibo",
+      "artist": "Sachin-Jigar, Shreya Ghoshal, Tochi Raina",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/XE3qAfHTRLMel5ttmXnu3lq3MXtm8YGbvs64lQJiA9tX5CTAdFgrdUu6_VNWStU3VfYHLAgHxPMX0xE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/JeiZTnRfrbM",
+      "videoId": "JeiZTnRfrbM",
+      "addedAt": 1784704157088
+    },
+    {
       "id": "yt-JmLhGLM4Uqc",
       "title": "Maari Thara Local (Here Comes Maari)",
       "artist": "Anirudh Ravichander, Dhanush",
@@ -2788,6 +3596,18 @@
       "streamUrl": "/api/yt/stream/JmLhGLM4Uqc",
       "videoId": "JmLhGLM4Uqc",
       "addedAt": 1780989041685
+    },
+    {
+      "id": "yt-JoYOBoMt0vo",
+      "title": "Pyaar Aata Hai",
+      "artist": "Rito Riba, Shreya Ghoshal, Rajat Nagpal, Rana Sotal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/tgNLHH4ZXrdgJuNrQqpMImnVHpLxDerSJR7jo3qiqVHgCk_8Yp8fo3Z5b2vlnK6qrsbCekIX1XFIXh5z=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/JoYOBoMt0vo",
+      "videoId": "JoYOBoMt0vo",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-K0pKc935Y98",
@@ -2852,6 +3672,30 @@
       "skipCount": 0,
       "lastPlayedAt": 1781026840747,
       "totalListenDuration": 32
+    },
+    {
+      "id": "yt-KKbjgYD3wbQ",
+      "title": "Meethi Boliyaan (From \"Kai Po Che\")",
+      "artist": "Amit Trivedi, Mili Nair",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Wy7kFZSU9cPbIByVn40ZSIFRETXnayTHwMIk_smz2NZ6Fh1yPceXSneq-OY9SNrAIFyQd_6qqvQ-ALc=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/KKbjgYD3wbQ",
+      "videoId": "KKbjgYD3wbQ",
+      "addedAt": 1784639274615
+    },
+    {
+      "id": "yt-KMQL4X7cTYU",
+      "title": "Shaam Shaandaar",
+      "artist": "Amit Trivedi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/q1qjwAiK2IZo7XH6gtfyRGEJgfvT65hbQvcrzGh0epZBoD5kqcWYm0bW4wyyUS6dA3kfBsqX8QVFf2Fh2g=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/KMQL4X7cTYU",
+      "videoId": "KMQL4X7cTYU",
+      "addedAt": 1784438210527
     },
     {
       "id": "yt-KRU-6509ZiI",
@@ -3026,8 +3870,8 @@
       "addedAt": 1780989041685,
       "playCount": 4,
       "skipCount": 1,
-      "lastPlayedAt": 1781010994096,
-      "totalListenDuration": 184
+      "lastPlayedAt": 1784412825150,
+      "totalListenDuration": 207
     },
     {
       "id": "yt-LcDYFaNObqs",
@@ -3042,6 +3886,18 @@
       "addedAt": 1781007495750
     },
     {
+      "id": "yt-LhfulbP46i0",
+      "title": "PATAKHA GUDDI (MALE VERSION)",
+      "artist": "A.R. Rahman",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/SiZiT6QJn3n1tcWd3DVlY9dU8fDTRauuMrkaQpAh8UBAUzf7OK8flE1NzlZHNRCogerHcubb5qbQJhA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/LhfulbP46i0",
+      "videoId": "LhfulbP46i0",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-Ljz0tdAJL-4",
       "title": "Tumse Behtar (From \"Sunny Sanskari Ki Tulsi Kumari\")",
       "artist": "Arijit Singh, Tanishk Bagchi, Manoj Muntashir",
@@ -3052,6 +3908,42 @@
       "streamUrl": "/api/yt/stream/Ljz0tdAJL-4",
       "videoId": "Ljz0tdAJL-4",
       "addedAt": 1784277200968
+    },
+    {
+      "id": "yt-LmOtt05jB2k",
+      "title": "Deewani",
+      "artist": "Sachet Tandon, Parampara Tandon, Sachet-Parampara",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/B_iTpm98oKlLuxSM4TrEsw3JcJUxIrTHwQus71SMIncL2jW-3g4aZRNe7gNzPkqozyRWeN0VYcbG7NhRNA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/LmOtt05jB2k",
+      "videoId": "LmOtt05jB2k",
+      "addedAt": 1784639278018
+    },
+    {
+      "id": "yt-LuW1IdlPEvg",
+      "title": "NAYAN TARSE",
+      "artist": "AMIT TRIVEDI, AMITABH BHATTACHARYA",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/tqlTeBF7HQZj1ZwjYrAFj3YSx51b3Da_uFqqdoJqs7Va7KIdpgxup8yjPXYPSr_8VM3r9ISxk2B_JkVk=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/LuW1IdlPEvg",
+      "videoId": "LuW1IdlPEvg",
+      "addedAt": 1784414173699
+    },
+    {
+      "id": "yt-Lv3TjjwDjMo",
+      "title": "Tu Hi Hai",
+      "artist": "Amit Trivedi, Arijit Singh, & Kausar Munir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/LRTBoUiqS2-CIxrcHouvY4iBi3fjl_6qNG1X14nAUbXWn3R3vpYCH6F7KEg7qhy6LTyQd3_eKPSSKD4tNg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Lv3TjjwDjMo",
+      "videoId": "Lv3TjjwDjMo",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-LvEamw9flNs",
@@ -3124,6 +4016,18 @@
       "streamUrl": "/api/yt/stream/MEZCknGf1E4",
       "videoId": "MEZCknGf1E4",
       "addedAt": 1784268643136
+    },
+    {
+      "id": "yt-MGCj07ThRAI",
+      "title": "Jaadui",
+      "artist": "Jubin Nautiyal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/3KkjFrmhYWsKJJ7JYaeQB_se2hy4NTfRnHnbTjkG8mHDK2uccgyYDkOMQPClHcC4iwSWHI6IqlnFXLvB-Q=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/MGCj07ThRAI",
+      "videoId": "MGCj07ThRAI",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-Mc1MZkvMvCk",
@@ -3202,6 +4106,18 @@
       "addedAt": 1780990069082
     },
     {
+      "id": "yt-MynfiF7YtmM",
+      "title": "96 (Theme) (From \"96\")",
+      "artist": "Govind Vasantha, Chinmayi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/BCyjvz9Xfp7ZP_kCnPfhV--3CZOJ7QnM7MrglZk6nbs4Krhl4in3lvBMzw94K_Mb1yNbWGvwmtkEm1w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/MynfiF7YtmM",
+      "videoId": "MynfiF7YtmM",
+      "addedAt": 1784639598664
+    },
+    {
       "id": "yt-MzKvcV0Re7U",
       "title": "Itni Si Baat Hain",
       "artist": "Arijit Singh, Antara Mitra",
@@ -3212,6 +4128,18 @@
       "streamUrl": "/api/yt/stream/MzKvcV0Re7U",
       "videoId": "MzKvcV0Re7U",
       "addedAt": 1781078346507
+    },
+    {
+      "id": "yt-N0ngg3KnFVs",
+      "title": "Aabaad Barbaad",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zGFcAYxVlF2EMownjuog-wkVw2ymmWmwThQ2u6LImCeDa4FAoJFaKstNBWHkHt3gEvG1FgOJ-8p849mYiw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/N0ngg3KnFVs",
+      "videoId": "N0ngg3KnFVs",
+      "addedAt": 1784639274615
     },
     {
       "id": "yt-N7bdud7HCTs",
@@ -3235,7 +4163,11 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/N7jDUBRVQVA",
       "videoId": "N7jDUBRVQVA",
-      "addedAt": 1781015620562
+      "addedAt": 1781015620562,
+      "playCount": 1,
+      "skipCount": 0,
+      "lastPlayedAt": 1784412420342,
+      "totalListenDuration": 3
     },
     {
       "id": "yt-NBuwzNSrUpc",
@@ -3248,6 +4180,18 @@
       "streamUrl": "/api/yt/stream/NBuwzNSrUpc",
       "videoId": "NBuwzNSrUpc",
       "addedAt": 1781096259557
+    },
+    {
+      "id": "yt-NEtt_omY00k",
+      "title": "SOCHA HAI",
+      "artist": "FARHAN AKHTAR, SHANKAR-EHSAAN-LOY, JAVED AKHTAR",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ghYV_4VZysxR1uQTQcdoJNoiYY1n2EvYVJ3ppEiUeo9IvMkFYQ_anyOpHdnFXEGpglLuncep4jETqkad=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/NEtt_omY00k",
+      "videoId": "NEtt_omY00k",
+      "addedAt": 1784414173855
     },
     {
       "id": "yt-NGS655KAf8o",
@@ -3283,7 +4227,11 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/NQbkGDoD7B0",
       "videoId": "NQbkGDoD7B0",
-      "addedAt": 1780991151810
+      "addedAt": 1780991151810,
+      "playCount": 0,
+      "skipCount": 1,
+      "lastPlayedAt": 1784642411792,
+      "totalListenDuration": 11
     },
     {
       "id": "yt-NZm-iXho1Ww",
@@ -3386,6 +4334,18 @@
       "addedAt": 1781103605776
     },
     {
+      "id": "yt-OZHzmIBwY54",
+      "title": "Dil Jhoom",
+      "artist": "Mithoon & Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/g31Z4F_YCGr8TrUGG1D1aeC3X9JabGvXUUcPQBIjB7LvraKYhvKvz7PDVDbEfcyE28irRlRHUsqscz7Bgg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/OZHzmIBwY54",
+      "videoId": "OZHzmIBwY54",
+      "addedAt": 1784704454634
+    },
+    {
       "id": "yt-O_0-QjZfoGs",
       "title": "I NEVER EXISTED",
       "artist": "Chase Atlantic",
@@ -3486,6 +4446,18 @@
       "addedAt": 1781008998695
     },
     {
+      "id": "yt-PBdmC09IBwc",
+      "title": "Diwali (From \"Apurva\")",
+      "artist": "Vishal Mishra",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Olw2S80oev91YM5_8AKLXzmvuU7zKimXIhIhB6y38vD_whs-wtue90eiLdHb83UJGT50m6ZD8lUX4ZKQlg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/PBdmC09IBwc",
+      "videoId": "PBdmC09IBwc",
+      "addedAt": 1784639278018
+    },
+    {
       "id": "yt-PEQs_J-qGiU",
       "title": "Hua Main x Finding Her (sped up)",
       "artist": "Unknown Artist",
@@ -3496,6 +4468,22 @@
       "streamUrl": "/api/yt/stream/PEQs_J-qGiU",
       "videoId": "PEQs_J-qGiU",
       "addedAt": 1781018010758
+    },
+    {
+      "id": "yt-PXrY9ohnAVM",
+      "title": "OFFO",
+      "artist": "ADITI SINGH SHARMA, AMITABH BHATTACHARYA, SHANKAR-EHSAAN-LOY",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Ts7Cq8wZLet-n5aiCpntn1G2GNqq3kTHqhp4ERaY5lmowCuAlmEhiuOGb3EITX8RxMJQ3g0Cm8S5Vpee=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/PXrY9ohnAVM",
+      "videoId": "PXrY9ohnAVM",
+      "addedAt": 1784413859142,
+      "playCount": 1,
+      "skipCount": 0,
+      "lastPlayedAt": 1784704148722,
+      "totalListenDuration": 6
     },
     {
       "id": "yt-PZPyTMEiMSQ",
@@ -3526,6 +4514,18 @@
       "totalListenDuration": 147
     },
     {
+      "id": "yt-PeN-V-wTxOs",
+      "title": "Tere Bina",
+      "artist": "Shreea Kaul",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/aRoc3J6r_viiA1RMn8uPW9houoojrGFbGUrw80UwkX52SX9Kc1HKh_lnkscE5-hBv0nSMkj1hJZ7xhbt=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/PeN-V-wTxOs",
+      "videoId": "PeN-V-wTxOs",
+      "addedAt": 1784639598664
+    },
+    {
       "id": "yt-PjYJFzGMQ_Q",
       "title": "Sadiyaan",
       "artist": "Ajey Kr",
@@ -3538,6 +4538,18 @@
       "addedAt": 1781077767463
     },
     {
+      "id": "yt-Pm0Ga7R-vrM",
+      "title": "Tujhe Kitna Chahne Lage (From \"Kabir Singh\")",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/HDzoC7TKz9WrWyeQoSOgqooZkQspGJZvjrJ7-UIU49a6hJpjzExiQ-ApWDx-FCvjqooycKjbYitZyGee=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Pm0Ga7R-vrM",
+      "videoId": "Pm0Ga7R-vrM",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-Ppa3f4X8qQg",
       "title": "Rosary (feat. Travis Scott)",
       "artist": "Don Toliver",
@@ -3548,6 +4560,30 @@
       "streamUrl": "/api/yt/stream/Ppa3f4X8qQg",
       "videoId": "Ppa3f4X8qQg",
       "addedAt": 1780990731154
+    },
+    {
+      "id": "yt-Pqo8o_JcetA",
+      "title": "Jashn-E-Bahaaraa",
+      "artist": "A.R. Rahman, Javed Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/gEeH3573jsHPgZNkhBBw7c8eeX94QIU14EvdXXit7PB2qpL7zIrza00-rryRsNEvPMQUr9eXKtRNrGk=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Pqo8o_JcetA",
+      "videoId": "Pqo8o_JcetA",
+      "addedAt": 1784704157088
+    },
+    {
+      "id": "yt-PvM79DJ2PmM",
+      "title": "The Less I Know The Better",
+      "artist": "Tame Impala",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/J67cuSWAzGMlj8d9orcAZjPHsl8RWcXIXkT1d8mGmx9jmXPvXkYpFzuLnucmaqJwVMqxPlSq1GbqPeQy=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/PvM79DJ2PmM",
+      "videoId": "PvM79DJ2PmM",
+      "addedAt": 1784639267950
     },
     {
       "id": "yt-Q6FarZpy67M",
@@ -3574,6 +4610,18 @@
       "addedAt": 1784269660756
     },
     {
+      "id": "yt-QN507xqvG0w",
+      "title": "Ok Jaanu Title Track (From \"OK Jaanu\")",
+      "artist": "A.R. Rahman, Srinidhi Venkatesh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/k17OXKY3_HPQl5XDm0FpiC05PpvRJPMuqKSwS1C1lVx8ZeDawT0CkMHV6LUXVg_onKwyRFF0vsyzQGo=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/QN507xqvG0w",
+      "videoId": "QN507xqvG0w",
+      "addedAt": 1784408214704
+    },
+    {
       "id": "yt-QQVa4xCf8JY",
       "title": "Before You Go",
       "artist": "Lewis Capaldi",
@@ -3584,6 +4632,30 @@
       "streamUrl": "/api/yt/stream/QQVa4xCf8JY",
       "videoId": "QQVa4xCf8JY",
       "addedAt": 1781103605776
+    },
+    {
+      "id": "yt-QdNYfcaJ0os",
+      "title": "Life Is Crazy",
+      "artist": "Shankar Ehsaan Loy, Uday Benegal, Shankar Mahadevan, Loy Mendonsa",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PZdEJ5f26bbNwJnbeir--VznsQ332Hewj8SoAB9jgXRpC2ZJ5pEM-DQUulnXnx0vlcgurSIHNWgm9Pfv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/QdNYfcaJ0os",
+      "videoId": "QdNYfcaJ0os",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-Qfm61nnFkO0",
+      "title": "DOORIYAN HAIN ZAROORI",
+      "artist": "VISHAL-SHEKHAR, MONICA DOGRA, VISHAL DADLANI",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/oAJRuvubWFcs-jb1rCnlcl9aP9PGWAr_FlV7tOhpV88ZuyzF1ot-3iKO5cABqzNyw8tJnAWeK6Vrqmb9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Qfm61nnFkO0",
+      "videoId": "Qfm61nnFkO0",
+      "addedAt": 1784639158708
     },
     {
       "id": "yt-Qh5eSojwo0Y",
@@ -3668,6 +4740,18 @@
       "streamUrl": "/api/yt/stream/RIPPthvJ9-U",
       "videoId": "RIPPthvJ9-U",
       "addedAt": 1784267973271
+    },
+    {
+      "id": "yt-RJqgI5LqbRU",
+      "title": "Sundress",
+      "artist": "A$AP Rocky",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Dhw428DeOC0gZJ_QYdPphURpKxMwEj9-B-G033bEgFoAPwdLqXOwX_8dN8Hef3ddbrX7U56AEFvpCQgI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/RJqgI5LqbRU",
+      "videoId": "RJqgI5LqbRU",
+      "addedAt": 1784639267950
     },
     {
       "id": "yt-RKD8sVVTEAA",
@@ -3766,6 +4850,30 @@
       "addedAt": 1780997170000
     },
     {
+      "id": "yt-S0V9zehc_h8",
+      "title": "Where'd All the Time Go?",
+      "artist": "Dr. Dog",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/L8lG7PSL6IE-J2ZOAsWddVJiPBeP-79557vQBQy7gRfBfhHkcQQmXFqY8yQhZfn0Hp-8UUWUSePFBQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/S0V9zehc_h8",
+      "videoId": "S0V9zehc_h8",
+      "addedAt": 1784639267950
+    },
+    {
+      "id": "yt-S9yx4Q5ZCdY",
+      "title": "Kudi Nu Nachne De (From \"Angrezi Medium\")",
+      "artist": "Vishal Dadlani, Sachin-Jigar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FGYsdteN2J6twltqojOmSQsZAX5K6EaZ44ZcqGUb-dgLQ3m589jQxi2cRX5aRYsu_jVxRcI1unOFd7Ri=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/S9yx4Q5ZCdY",
+      "videoId": "S9yx4Q5ZCdY",
+      "addedAt": 1784412881689
+    },
+    {
       "id": "yt-SBOwcGnwuKM",
       "title": "Udi Udi",
       "artist": "Aneesh, Sarkar, Hruday",
@@ -3850,6 +4958,18 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-SKa80jB_HUM",
+      "title": "Voh Dekhnay Mein",
+      "artist": "Ali Zafar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/XSksil7WwGSk53e7JLhEyQq0AW3l6DD5WHPj0GOV7_6nUzGV6h3Pz9TW7G_d3AelwHxw3s-80xhkRyrU=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/SKa80jB_HUM",
+      "videoId": "SKa80jB_HUM",
+      "addedAt": 1784408214704
+    },
+    {
       "id": "yt-SLJhDvivxn4",
       "title": "HIGHEST IN THE ROOM",
       "artist": "Z#X DRIGGERJION, Enji",
@@ -3876,6 +4996,18 @@
       "skipCount": 1,
       "lastPlayedAt": 1781076868470,
       "totalListenDuration": 7
+    },
+    {
+      "id": "yt-SQcZ3__0MfY",
+      "title": "Gulaabo",
+      "artist": "Vishal Dadlani, Anusha Mani",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/q1qjwAiK2IZo7XH6gtfyRGEJgfvT65hbQvcrzGh0epZBoD5kqcWYm0bW4wyyUS6dA3kfBsqX8QVFf2Fh2g=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/SQcZ3__0MfY",
+      "videoId": "SQcZ3__0MfY",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-SRVBRl4C4zE",
@@ -3986,6 +5118,18 @@
       "addedAt": 1781202866597
     },
     {
+      "id": "yt-TTReFZIAnpU",
+      "title": "Kingston",
+      "artist": "Faye Webster",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/4JBtJinVNSllKP1HRTrAbUY2iDpCkKOX4JB2S28j8jOTC-AXqHD2B8vhvRarsvxsZAYlnItVnNl24_yoag=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/TTReFZIAnpU",
+      "videoId": "TTReFZIAnpU",
+      "addedAt": 1784639785449
+    },
+    {
       "id": "yt-TUnEJM6W-Fw",
       "title": "Say You Won't Let Go",
       "artist": "James Arthur",
@@ -3996,6 +5140,18 @@
       "streamUrl": "/api/yt/stream/TUnEJM6W-Fw",
       "videoId": "TUnEJM6W-Fw",
       "addedAt": 1781103605776
+    },
+    {
+      "id": "yt-TWHdwAWhcfs",
+      "title": "Khalbali (From \"Rang De Basanti\")",
+      "artist": "A.R. Rahman, Nacim, & Mohammed Aslam",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ECShAkD3e9lwSPZHc8N3_DFaW-wlt2skzFVITPY2e9-Z9AZG3in2QBsBIhk6KBmvZYfEMmiP8iHTk91t-Q=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/TWHdwAWhcfs",
+      "videoId": "TWHdwAWhcfs",
+      "addedAt": 1784414173699
     },
     {
       "id": "yt-T_OWvLDIyno",
@@ -4050,20 +5206,56 @@
       "totalListenDuration": 533
     },
     {
+      "id": "yt-TjsfgUkT0eg",
+      "title": "Plug Walk",
+      "artist": "Rich The Kid",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/fhNizhyoa4bJCqa6pEWO7apgiSljNFWprBCPCkB5-rXDpxT07rjqzJeQQOqjsembmh3ZCH92_plcBEZi=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/TjsfgUkT0eg",
+      "videoId": "TjsfgUkT0eg",
+      "addedAt": 1784639394987
+    },
+    {
+      "id": "yt-To27sK7tSmo",
+      "title": "TAAKE JHANKE",
+      "artist": "ARIJIT SINGH, AMIT TRIVEDI, & ANVITA DUTT GUPTAN",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/u_CSD9QK1aLce-y2NCuX8g8wP_9pUmIGyz6Pzt3a7GUQckq-Zq5xqv365XEdGsx36Dn6ztadpZoTHO0=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/To27sK7tSmo",
+      "videoId": "To27sK7tSmo",
+      "addedAt": 1784438210527
+    },
+    {
       "id": "yt-ToO4VFCoR7U",
       "title": "White Ferrari",
       "artist": "Frank Ocean",
       "album": "Blonde",
-      "duration": 0,
+      "duration": 249,
       "coverArtUrl": "https://yt3.googleusercontent.com/TWBi2M7D8gIwoo3NmhGfoVKI-PuzDunLVYpmLCbeP8Uw2YWpnjttlxmVvpVaO8uSjmLPjHgy6iGXxlPF=w120-h120-l90-rj",
       "source": "youtube",
       "streamUrl": "/api/yt/stream/ToO4VFCoR7U",
       "videoId": "ToO4VFCoR7U",
       "addedAt": 1781031240077,
-      "playCount": 1,
+      "playCount": 4,
       "skipCount": 0,
-      "lastPlayedAt": 1781075906201,
-      "totalListenDuration": 291
+      "lastPlayedAt": 1784704130409,
+      "totalListenDuration": 429
+    },
+    {
+      "id": "yt-TsAdXd9v4Qo",
+      "title": "Tu Hai Meri (From \"Sunny Sanskari Ki Tulsi Kumari\")",
+      "artist": "Sachet-Parampara, Sachet Tandon, Parampara Tandon, Kausar Munir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/32X0jeAahsfIjghatD9pbFk9FRFzb39wckarnkZimJw24MASMPVfJsNOUrnRY0x5KTPmlKK95VqwaqlO=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/TsAdXd9v4Qo",
+      "videoId": "TsAdXd9v4Qo",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-TwEYsxFsW5M",
@@ -4112,6 +5304,30 @@
       "streamUrl": "/api/yt/stream/U1Gtd0hM4X0",
       "videoId": "U1Gtd0hM4X0",
       "addedAt": 1781010995854
+    },
+    {
+      "id": "yt-UFIV8ELiQvU",
+      "title": "MATARGASHTI",
+      "artist": "Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/AT2wfk1PvKjnHO7BzH2i2NkAvqRy_oZNEq48QGBlLJb51AuguCiR3mzp99X1uFdZezAkoSJ2WGjUU-HXZg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/UFIV8ELiQvU",
+      "videoId": "UFIV8ELiQvU",
+      "addedAt": 1784408214704
+    },
+    {
+      "id": "yt-UHOw6RBIrDs",
+      "title": "Agar Ho Tum (From \"Mr. And Mrs. Mahi\")",
+      "artist": "Tanishk Bagchi, Kausar Munir, Jubin Nautiyal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zqKtmbqitlfOXhC6DgL2sjKiTtq7VW4sjfM_pjy6nkPjpQmtfMiU95FHnZWakDS5DBHZLmmuw1fklcI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/UHOw6RBIrDs",
+      "videoId": "UHOw6RBIrDs",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-UQNebFZnEQQ",
@@ -4168,10 +5384,10 @@
       "filePath": null,
       "addedAt": 1780990064693,
       "videoId": "UY7dDx1pbA8",
-      "playCount": 3,
+      "playCount": 4,
       "skipCount": 1,
-      "lastPlayedAt": 1781087345569,
-      "totalListenDuration": 249
+      "lastPlayedAt": 1784640249018,
+      "totalListenDuration": 253
     },
     {
       "id": "yt-U_nAFr9tLYg",
@@ -4250,6 +5466,18 @@
       "addedAt": 1781096527020
     },
     {
+      "id": "yt-VFrW9Lalw9g",
+      "title": "Heeriye",
+      "artist": "Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/WY1AQ271bVhs26aF9EZO4bpwjTVgsgVlbMcbMFd_PtauEdQMQ1KaDyDEwc6JfSknYwMbQCg5x97Eq73I=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/VFrW9Lalw9g",
+      "videoId": "VFrW9Lalw9g",
+      "addedAt": 1784412881689
+    },
+    {
       "id": "yt-VK71Gp0uvdQ",
       "title": "Mishri",
       "artist": "Anuv Jain",
@@ -4284,6 +5512,30 @@
       "streamUrl": "/api/yt/stream/VKC_hzJ3jzg",
       "videoId": "VKC_hzJ3jzg",
       "addedAt": 1781103605776
+    },
+    {
+      "id": "yt-VOFm2oB8t98",
+      "title": "Sham",
+      "artist": "Amit Trivedi, Nikhil D'Souza, Neuman Pinto",
+      "album": "Single",
+      "duration": 285,
+      "coverArtUrl": "https://yt3.googleusercontent.com/M-8w6UiPfVxdRI0mbrDrh-tnMBGVDg49E14ZXduB8YaIQAUdfWXmh9GZo4k5Nc5Wt-4ZrpKbNoSCeQ4B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/VOFm2oB8t98",
+      "videoId": "VOFm2oB8t98",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-VOaZTJDRTLI",
+      "title": "Shugal Laga Le (From \"Chef\")",
+      "artist": "Raghu Dixit",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Wuvb-nOCcjgFS5hJTyf-JBWPLytGPJ3YN_r-0OFVQ0hsejISeRHZVk2U2tbFtMo-ZRZtLW8PQ4bninsW=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/VOaZTJDRTLI",
+      "videoId": "VOaZTJDRTLI",
+      "addedAt": 1784639158680
     },
     {
       "id": "yt-VU233kzU9Wg",
@@ -4434,6 +5686,18 @@
       "totalListenDuration": 12
     },
     {
+      "id": "yt-WKv07mnKVEE",
+      "title": "Kaise Hua (From \"Kabir Singh\")",
+      "artist": "Vishal Mishra",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_qw4wNEITr8WhH6Q6M575GPfNuXbpcl_Kfzhfsin63k_rSdu907M9LO4Eq2M2n_7uPEoptYuwEs3oT4O=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/WKv07mnKVEE",
+      "videoId": "WKv07mnKVEE",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-WSy0sjZiO8I",
       "title": "Haseen",
       "artist": "Talwiinder, NDS, Rippy Grewal",
@@ -4444,6 +5708,18 @@
       "streamUrl": "/api/yt/stream/WSy0sjZiO8I",
       "videoId": "WSy0sjZiO8I",
       "addedAt": 1781077766586
+    },
+    {
+      "id": "yt-WTbIigoG0cA",
+      "title": "Phir Kabhi",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ulsTrEb2Fj0rLOgo3GqOgujICYCqlMyClefqQHlxM6IUqSbR8Cv3FFQF6ye57R8mlHwt8XMnafBPquL9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/WTbIigoG0cA",
+      "videoId": "WTbIigoG0cA",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-WTkPvHL187s",
@@ -4499,6 +5775,18 @@
       "addedAt": 1780992468282
     },
     {
+      "id": "yt-Wq1zDZ81YhU",
+      "title": "Tum Tak (From \"Raanjhanaa\")",
+      "artist": "Javed Ali, Pooja Vaidyanath, Keerthi Sagathia",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/l4sYZWeiQjV2VPK83q2Qym0E-4gk8U3kLKCFHHeqO1aT23nupu9nojSXO5gRk7MIiICT0TiBep-YWaPO=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Wq1zDZ81YhU",
+      "videoId": "Wq1zDZ81YhU",
+      "addedAt": 1784704157088
+    },
+    {
       "id": "yt-Wq93RbyRFIo",
       "title": "NERAM",
       "artist": "Nazeeb Billu, Laika Jamal",
@@ -4545,6 +5833,18 @@
       "streamUrl": "/api/yt/stream/Wv5Ac3su5r4",
       "videoId": "Wv5Ac3su5r4",
       "addedAt": 1784277200968
+    },
+    {
+      "id": "yt-WwvVUbllNkM",
+      "title": "Naina Da Kya Kasoor",
+      "artist": "Amit Trivedi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ry2psr0826XFpfuyphY1xwjp6vjcV6PQQmPCy1Hh44DVOmfUR3u_DYwOKz6UT5JItx6mWmlFOokBL1meww=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/WwvVUbllNkM",
+      "videoId": "WwvVUbllNkM",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-XBo7jtXAmNI",
@@ -4643,6 +5943,18 @@
       "addedAt": 1781077753616
     },
     {
+      "id": "yt-XnCtG7eyQfk",
+      "title": "Bekhayali (Arijit Singh Version)",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/loAKTa9XpvZzV-TORspRPC978Kk_u2l6tYlHTHm-sYfwjmKsJdShoxbmLoPKoq9eZgq-uzpoRPtqEWX09w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/XnCtG7eyQfk",
+      "videoId": "XnCtG7eyQfk",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-XqJosdWocto",
       "title": "Moonlight",
       "artist": "Kali Uchis",
@@ -4693,6 +6005,18 @@
       "streamUrl": "/api/yt/stream/YXuXrx0yWKw",
       "videoId": "YXuXrx0yWKw",
       "addedAt": 1781010995854
+    },
+    {
+      "id": "yt-Y_gwjtaLsOM",
+      "title": "Gimme Love",
+      "artist": "Joji",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6r6K9xQsg5XVqxLxz9G_dvA8ioESCbnMAzErtp-etThfC27H1yPfqSrfYXvb0562TUSGGDCBF4u-ahYb=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Y_gwjtaLsOM",
+      "videoId": "Y_gwjtaLsOM",
+      "addedAt": 1784640015935
     },
     {
       "id": "yt-YfGJn0Pd0aM",
@@ -4759,6 +6083,18 @@
       "addedAt": 1780991151810
     },
     {
+      "id": "yt-Ymn6F6CYMYw",
+      "title": "Order More (feat. Starrah)",
+      "artist": "G-Eazy",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cmPajj2OarrNoyGY24SMWDn2ipntWO1LXUY6MQ44vMAySj-vb62V-PIpYdT2Dyf36VGsHX_LEoGWv4w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Ymn6F6CYMYw",
+      "videoId": "Ymn6F6CYMYw",
+      "addedAt": 1784641609951
+    },
+    {
       "id": "yt-Ymos_jRWEEk",
       "title": "PBT",
       "artist": "",
@@ -4819,6 +6155,18 @@
       "addedAt": 1784277200968
     },
     {
+      "id": "yt-Z4rVto63ZBc",
+      "title": "Too Young",
+      "artist": "Post Malone",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zynDFbA-mfOMc_aepq3p4vAqV_0d71BLJRVF5rblgqkIkIh8LOrZgOy54Pmm--3Wa54c8VwGV6zzVGuE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Z4rVto63ZBc",
+      "videoId": "Z4rVto63ZBc",
+      "addedAt": 1784641609951
+    },
+    {
       "id": "yt-Z5gUq1uFUa0",
       "title": "Rimjhim E Dharatey",
       "artist": "Shaan, Shreya Ghoshal, Jeet Gannguli",
@@ -4829,6 +6177,42 @@
       "streamUrl": "/api/yt/stream/Z5gUq1uFUa0",
       "videoId": "Z5gUq1uFUa0",
       "addedAt": 1784268546991
+    },
+    {
+      "id": "yt-Z8ipB-qqbUI",
+      "title": "Hopeless Romantic (feat. Swae Lee)",
+      "artist": "Wiz Khalifa",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/g5UXNcqop6JhqdGCSAzujq5y2_RkDrx-j61ueFN2IphbYvr21kjiqwqwHb_I9avxLEPRjMk_tiaEaBCw2g=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/Z8ipB-qqbUI",
+      "videoId": "Z8ipB-qqbUI",
+      "addedAt": 1784641609951
+    },
+    {
+      "id": "yt-ZKbxmsaZjxs",
+      "title": "Heer Ranjha",
+      "artist": "Rito Riba, Rajat Nagpal, Rana Sotal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/VCrZXz7zB73z4F6eTq4RVVWq4LTovwyhzWO4dUTXogFs4zURmgBjvdxnppRLEaQCZldKdeaLhPHqXK8=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ZKbxmsaZjxs",
+      "videoId": "ZKbxmsaZjxs",
+      "addedAt": 1784639278018
+    },
+    {
+      "id": "yt-ZOfOS2VykRc",
+      "title": "Anjaana Anjaani",
+      "artist": "Vishal Dadlani, Shilpa Rao, Vishal-Shekhar, Kausar Munir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cwOkgYhp7e82Wnsi37elBYvbsB_xDQaD6C1bxyclP5QnJGjnp_p8x68G_prl0rthtlnACcqlUeWIN64B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ZOfOS2VykRc",
+      "videoId": "ZOfOS2VykRc",
+      "addedAt": 1784413859142
     },
     {
       "id": "yt-ZUDBd-md0VE",
@@ -4931,6 +6315,18 @@
       "addedAt": 1784272596764
     },
     {
+      "id": "yt-ZqXoSU5_bNc",
+      "title": "Tu Bin Bataye",
+      "artist": "A.R. Rahman",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/yHEQOZJAIi7wZ4vgBF6VFMRhIiwqCGrnapNPa2SyG7htt_FiXU7QbMrWyZ3USDliDRaovbUVe1YlG6v5qQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ZqXoSU5_bNc",
+      "videoId": "ZqXoSU5_bNc",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-Ztdc7TcPdAA",
       "title": "There's Nothing Holdin' Me Back",
       "artist": "Shawn Mendes",
@@ -4955,6 +6351,30 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-ZzVyBV9cAXY",
+      "title": "Kahani",
+      "artist": "Pritam, Mohan Kannan, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6psE4R9ku1si7Dr-cmSjOTOKp4EeLBePqMfYkk_RwUywLQfGC19icPaLQN-saz9hQ3YQFWHGhSqhfhETUQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ZzVyBV9cAXY",
+      "videoId": "ZzVyBV9cAXY",
+      "addedAt": 1784704157523
+    },
+    {
+      "id": "yt-_4NV6OYxA8w",
+      "title": "Go Flex",
+      "artist": "Post Malone",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zynDFbA-mfOMc_aepq3p4vAqV_0d71BLJRVF5rblgqkIkIh8LOrZgOy54Pmm--3Wa54c8VwGV6zzVGuE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_4NV6OYxA8w",
+      "videoId": "_4NV6OYxA8w",
+      "addedAt": 1784641609951
+    },
+    {
       "id": "yt-_4gSLcAVHWs",
       "title": "Paapam",
       "artist": "Aksomaniac, Fatboi Raccoon, Shreyas",
@@ -4965,6 +6385,18 @@
       "streamUrl": "/api/yt/stream/_4gSLcAVHWs",
       "videoId": "_4gSLcAVHWs",
       "addedAt": 1780997170000
+    },
+    {
+      "id": "yt-_5ZrfYHyaf0",
+      "title": "Nahin Saamne Tu",
+      "artist": "Hariharan, Sukhwinder Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/y1wxiY1Ema82n2tMDSYWTEhl10rkoSVpQtqRhyN0u-kK5rDxAA7GkOC9hBrXyeuTm2h3TWqe2FF1w2EC=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_5ZrfYHyaf0",
+      "videoId": "_5ZrfYHyaf0",
+      "addedAt": 1784414173699
     },
     {
       "id": "yt-_65_c-0ubCw",
@@ -4995,6 +6427,18 @@
       "totalListenDuration": 89
     },
     {
+      "id": "yt-_A31x5lu2kA",
+      "title": "Raabta (Title Track)",
+      "artist": "Arijit Singh, Nikhita Gandhi",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/shi0J2ijLMZhfS9imBqPJDgQgF4BUbsGshxU-eFj8BWoz3bmNgesIMZbXWQAPOnrgPEVOMFyF72UAlXl=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_A31x5lu2kA",
+      "videoId": "_A31x5lu2kA",
+      "addedAt": 1784412408922
+    },
+    {
       "id": "yt-_L8lJMmuMV0",
       "title": "KALYANI | Telugu (Remix) | Deep House | ft. Rajesh C",
       "artist": "Unknown Artist",
@@ -5005,6 +6449,18 @@
       "streamUrl": "/api/yt/stream/_L8lJMmuMV0",
       "videoId": "_L8lJMmuMV0",
       "addedAt": 1780997170000
+    },
+    {
+      "id": "yt-_P2g7D_1f0s",
+      "title": "PEHLI BAAR",
+      "artist": "SUKRITI KAKKAR, SIDDHARTH MAHADEVAN, SHANKAR EHSAAN LOY, and JAVED AKHTAR",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/EDCFWwTURug_VwDY2varfb4r9rOfSdv-m78QhTGWoon0S3et60ZtHVYBeqMf0PRGsSPWpZg6EEAUI_JQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_P2g7D_1f0s",
+      "videoId": "_P2g7D_1f0s",
+      "addedAt": 1784413859142
     },
     {
       "id": "yt-_PazqK2AOUM",
@@ -5043,6 +6499,18 @@
       "addedAt": 1781076423554
     },
     {
+      "id": "yt-_Yk3KHmB5qU",
+      "title": "BEKARAR",
+      "artist": "LUCKY ALI, HANIF SHAIKH",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/JZisr5skmVyqfVCSxkBtj2YRrBchxEJ3U8VfjlmFPejEB5fBYLV-RdpgkrAFOfEvOiNiXUWV7nt0XL8=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_Yk3KHmB5qU",
+      "videoId": "_Yk3KHmB5qU",
+      "addedAt": 1784639158680
+    },
+    {
       "id": "yt-_deqdZmKzyg",
       "title": "Husn",
       "artist": "Anuv Jain",
@@ -5077,6 +6545,18 @@
       "streamUrl": "/api/yt/stream/_eoHFJZPC4M",
       "videoId": "_eoHFJZPC4M",
       "addedAt": 1781006190518
+    },
+    {
+      "id": "yt-_fmA1RoHbzA",
+      "title": "Kun Faya Kun",
+      "artist": "A.R. Rahman, Javed Ali, Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KYw74XSQwtKPbZTrHMNEBAnEMg1P1gNGwymnZwBSjstbqSE-MpigGlTIy6IZvC-ERlRkeP0c7VTiZObS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/_fmA1RoHbzA",
+      "videoId": "_fmA1RoHbzA",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-_hik41Fm2PQ",
@@ -5291,6 +6771,18 @@
       "addedAt": 1781078346507
     },
     {
+      "id": "yt-amWKXh9_EQE",
+      "title": "Ranjha (From \"Shershaah\")",
+      "artist": "Jasleen Royal, B Praak, Romy",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/Wh-opjL2EvC8mSnKqfz_AnKCs1Dt-lwfvgaL7qvuy9ozIxOAlkAD83csgnWRr255ves-K0WkPPCdCp4=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/amWKXh9_EQE",
+      "videoId": "amWKXh9_EQE",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-aq3fuGxB-tU",
       "title": "BANGO",
       "artist": "Nazeeb Billu, Efy Music, Wraith V, JOKER390P",
@@ -5313,6 +6805,18 @@
       "streamUrl": "/api/yt/stream/aqNM8gV4G3U",
       "videoId": "aqNM8gV4G3U",
       "addedAt": 1780990069082
+    },
+    {
+      "id": "yt-asIpemC_RKo",
+      "title": "Teri Hogaiyaan",
+      "artist": "Vishal Mishra",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/sPzUSBD_i5LwDzcVSZAWKmVZtrp2VhUbc8xiFbRS_pWww5ECwkAlM9WZKaFSIp41EgeoZWzGvkTYaQLV=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/asIpemC_RKo",
+      "videoId": "asIpemC_RKo",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-azt3dP3bhTw",
@@ -5361,6 +6865,30 @@
       "streamUrl": "/api/yt/stream/bMM7_BWaXmY",
       "videoId": "bMM7_BWaXmY",
       "addedAt": 1781011346570
+    },
+    {
+      "id": "yt-bOhnrdVLUnM",
+      "title": "Maula Mere Maula - Instrumental",
+      "artist": "Sonu Worldwide",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_myHZODISuqyJ4sBnjHGFxivUJqNwZXuJmewiKr9ICFfU3c8sk3HcyWWm4GYStZlT65inqyn5A3_NEic=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/bOhnrdVLUnM",
+      "videoId": "bOhnrdVLUnM",
+      "addedAt": 1784639598665
+    },
+    {
+      "id": "yt-bSbmY4NJ4iw",
+      "title": "Your Eyes (feat. Taqiya Zaman)",
+      "artist": "Barney Sku",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/OBWJ7E-kp2ErNdbkqD1jHm7IuttyVXrpUszgeZpcQttCvxcNG17ljVMQ_fzOyj17waz_aofs1wbDtNUX=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/bSbmY4NJ4iw",
+      "videoId": "bSbmY4NJ4iw",
+      "addedAt": 1784639598664
     },
     {
       "id": "yt-bVAS72LBItw",
@@ -5475,6 +7003,30 @@
       "addedAt": 1784269660756
     },
     {
+      "id": "yt-cB1jxbgf-Qs",
+      "title": "Ik Junoon (Paint It Red)",
+      "artist": "Vishal Dadlani (Add. Vocals : Shankar Mahadevan | Ehsaan Noorani | Gulraj Singh | Alyssa Mendonca",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FgYMxJ3LGubtPl2bnTZo1QycILXaw19rXO8-QsP26vvQJN6MTHz--1FoM6t7FdkKvRvMv6ZMI2DYWfT5Gw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/cB1jxbgf-Qs",
+      "videoId": "cB1jxbgf-Qs",
+      "addedAt": 1784408214704
+    },
+    {
+      "id": "yt-cBLNAFozsBg",
+      "title": "Dil Na Jaaneya (Unplugged)",
+      "artist": "Arijit Singh, Rochak Kohli",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/QJnx-BKjuEofu7dVKfCCBqGG5CmAT9RVMOE01pptPCw6FLEGYj_1CutYS9LZxoICtQlPCjeFQmh_j1M=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/cBLNAFozsBg",
+      "videoId": "cBLNAFozsBg",
+      "addedAt": 1784639274615
+    },
+    {
       "id": "yt-cDKq-T56lAc",
       "title": "The Walls",
       "artist": "Chase Atlantic",
@@ -5523,6 +7075,18 @@
       "addedAt": 1780997170000
     },
     {
+      "id": "yt-cZ4FmYISBtE",
+      "title": "Meet",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/mr-SjNxLV62ddhnMzNzlR1oiuNSQYnbKlL8Csry5MAB7MOrd7ljILi5ndsvxri8V445uTusy5hcFVwQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/cZ4FmYISBtE",
+      "videoId": "cZ4FmYISBtE",
+      "addedAt": 1784639278018
+    },
+    {
       "id": "yt-cZCm_i6YvAk",
       "title": "For the First Time",
       "artist": "Mac DeMarco",
@@ -5547,6 +7111,30 @@
       "addedAt": 1780989041685
     },
     {
+      "id": "yt-cr4Tz4JEP40",
+      "title": "Jashn-E-Bahaaraa",
+      "artist": "A.R. Rahman, Javed Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/VyImaqN5k45zum-bIZpoGibHP_ck6-orFQy1b-sLGgjgnE5hx2ErFWnx0b0TbSkTZZAgFUxMRB8rbb1H=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/cr4Tz4JEP40",
+      "videoId": "cr4Tz4JEP40",
+      "addedAt": 1784704157088
+    },
+    {
+      "id": "yt-crDBuh4WZMg",
+      "title": "Small Worlds",
+      "artist": "Mac Miller",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/YxyJh9VYIKgPAulnGiK6OMmBm2r_3eSTsm1myZu1qSKXlb77sSKlGl8VOgxU0tS1LJreNMntkktrp2Y=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/crDBuh4WZMg",
+      "videoId": "crDBuh4WZMg",
+      "addedAt": 1784639785449
+    },
+    {
       "id": "yt-cwttvBpOD4U",
       "title": "Nanavekathe (From \"Athi Bheekara Kaamukan\")",
       "artist": "Bibin Ashok, Crishna, & Haritha Haribabu",
@@ -5569,6 +7157,18 @@
       "streamUrl": "/api/yt/stream/d7jMmhYXWGE",
       "videoId": "d7jMmhYXWGE",
       "addedAt": 1780989041685
+    },
+    {
+      "id": "yt-dA-cFGg2VA0",
+      "title": "Aadha Ishq",
+      "artist": "Shreya Ghoshal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/SrEJsMoRiECaletBZ4THEB5zrUUrHlnh6zkoTzEV1cUNMCvjBhOfRrcfPQ9wrYveBaiHZH7RZ3JX06ny=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/dA-cFGg2VA0",
+      "videoId": "dA-cFGg2VA0",
+      "addedAt": 1784438210527
     },
     {
       "id": "yt-dKcBr2ubSaw",
@@ -5611,6 +7211,30 @@
       "addedAt": 1781077198513
     },
     {
+      "id": "yt-dcqgHvFxOZ8",
+      "title": "Alizeh",
+      "artist": "Arijit Singh, Ash King, Shashwat Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KVST91jwxPj9LXUmgyoRrqy6xd_TEolu6nFxXGLfZtkv2niCxUuGmEYalouUY7TL-vhNap3MvJmibJ3b=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/dcqgHvFxOZ8",
+      "videoId": "dcqgHvFxOZ8",
+      "addedAt": 1784704152982
+    },
+    {
+      "id": "yt-ddWkP5I1JRc",
+      "title": "Ajj Din Chadheya",
+      "artist": "Pritam, Rahat Fateh Ali Khan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/bI7fR_s3N9aO5HJ5O4B4rZdrJ-6ZUx7nWjvzC3u8c0-J3EFS8kFwmIoNjfoHSD9YO0L-wic4F2olS5so=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ddWkP5I1JRc",
+      "videoId": "ddWkP5I1JRc",
+      "addedAt": 1784704454634
+    },
+    {
       "id": "yt-dfW4TexiWL0",
       "title": "Travis Scott - HIGHEST IN THE ROOM [Extended Outro]",
       "artist": "Unknown Artist",
@@ -5645,6 +7269,18 @@
       "streamUrl": "/api/yt/stream/dlLdnd3VF-0",
       "videoId": "dlLdnd3VF-0",
       "addedAt": 1780990731154
+    },
+    {
+      "id": "yt-dpgx-P7QygM",
+      "title": "Radha (From \"Jab Harry Met Sejal\")",
+      "artist": "Pritam, Shahid Mallya, Sunidhi Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/DTGDwatlHMUadA-L2MeizN64-9-rE8Fokt7wY4eVEKddK7MNuiVK-JmWq0X1i2OSG9xLgaT7v0GxA8k1Ew=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/dpgx-P7QygM",
+      "videoId": "dpgx-P7QygM",
+      "addedAt": 1784412408922
     },
     {
       "id": "yt-duOH5cKyS2A",
@@ -5707,6 +7343,18 @@
       "addedAt": 1780990731154
     },
     {
+      "id": "yt-eCK772REqw0",
+      "title": "Bank Account",
+      "artist": "21 Savage",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/l5sXPeR5g7YWV1s6_44yIFBqHF8yniWWB0AcsEKH8Iw20zCP7_wxffUg0q4I1eNLJa7d-MTGWQuyD1NwbQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/eCK772REqw0",
+      "videoId": "eCK772REqw0",
+      "addedAt": 1784639394987
+    },
+    {
       "id": "yt-eLpLWNHkofY",
       "title": "Jodi Abar",
       "artist": "Angel Noor",
@@ -5741,6 +7389,18 @@
       "streamUrl": "/api/yt/stream/eUwS1KJhQAc",
       "videoId": "eUwS1KJhQAc",
       "addedAt": 1784277200968
+    },
+    {
+      "id": "yt-eXkHvT--DBU",
+      "title": "Zaalima",
+      "artist": "Arijit Singh, Harshdeep Kaur",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/4JskAQe7v1sy1L9lm8MLtKgQanhm4Y87hPhl32Ayxr0by8L2uYf6mc5XIQ2wgGpTSCBrYJrOXX19I21p=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/eXkHvT--DBU",
+      "videoId": "eXkHvT--DBU",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-eZZ5L6UQ6aU",
@@ -6095,6 +7755,54 @@
       "addedAt": 1780992468282
     },
     {
+      "id": "yt-ghiSpmZu6tk",
+      "title": "ZEZE (feat. Offset & Travis Scott)",
+      "artist": "Kodak Black",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6PJu7wYm_LSgkc4rPJSoW1ua-ueza0fZy1J8-XRWv0DZUYQ9RbTKHgpXf256BDyONzLP86RvK4lPlojr=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ghiSpmZu6tk",
+      "videoId": "ghiSpmZu6tk",
+      "addedAt": 1784640239979
+    },
+    {
+      "id": "yt-gjEl0_-OFW4",
+      "title": "Senorita",
+      "artist": "Farhan Akhtar | Hrithik Roshan | Abhay Deol | Maria Del Mar Fernandez",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/FgYMxJ3LGubtPl2bnTZo1QycILXaw19rXO8-QsP26vvQJN6MTHz--1FoM6t7FdkKvRvMv6ZMI2DYWfT5Gw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/gjEl0_-OFW4",
+      "videoId": "gjEl0_-OFW4",
+      "addedAt": 1784408214704
+    },
+    {
+      "id": "yt-gk0nB9vvYfU",
+      "title": "I Fall Apart",
+      "artist": "Post Malone",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zynDFbA-mfOMc_aepq3p4vAqV_0d71BLJRVF5rblgqkIkIh8LOrZgOy54Pmm--3Wa54c8VwGV6zzVGuE=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/gk0nB9vvYfU",
+      "videoId": "gk0nB9vvYfU",
+      "addedAt": 1784641609951
+    },
+    {
+      "id": "yt-gmoucRvDfIk",
+      "title": "KABIRA",
+      "artist": "TOCHI RAINA, REKHA BHARDWAJ, PRITAM, AMITABH BHATTACHARYA",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/8WRsPwoMoabdu5ISlf9f7tGGPzd2I7CTaWxc8qd6GYjaEBreC2Yw0KWMId6Y2vUTqSkt7GdlUi4NAXyf=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/gmoucRvDfIk",
+      "videoId": "gmoucRvDfIk",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-gyIBikUNDFQ",
       "title": "Gravity",
       "artist": "Chase Atlantic",
@@ -6311,6 +8019,42 @@
       "addedAt": 1780992468282
     },
     {
+      "id": "yt-iY4x5QZcGZA",
+      "title": "Pehla Pyaar",
+      "artist": "Armaan Malik",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/loAKTa9XpvZzV-TORspRPC978Kk_u2l6tYlHTHm-sYfwjmKsJdShoxbmLoPKoq9eZgq-uzpoRPtqEWX09w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/iY4x5QZcGZA",
+      "videoId": "iY4x5QZcGZA",
+      "addedAt": 1784639278018
+    },
+    {
+      "id": "yt-if7X8G9c3t0",
+      "title": "Kalank (Title Track)",
+      "artist": "Pritam, Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/kDdBQgKT7W_t68GeJvFmuKV9Rsrr8ZpDGPs4EnFnYOlKB8_zPvDrrl7C4nzN4x5IPWjXSbARqpe5kF5e=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/if7X8G9c3t0",
+      "videoId": "if7X8G9c3t0",
+      "addedAt": 1784704157523
+    },
+    {
+      "id": "yt-ig1qW8pqK9E",
+      "title": "Taarefon Se",
+      "artist": "Amit Trivedi, Arijit Singh, & Kausar Munir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/LRTBoUiqS2-CIxrcHouvY4iBi3fjl_6qNG1X14nAUbXWn3R3vpYCH6F7KEg7qhy6LTyQd3_eKPSSKD4tNg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/ig1qW8pqK9E",
+      "videoId": "ig1qW8pqK9E",
+      "addedAt": 1784413859142
+    },
+    {
       "id": "yt-igWPsrb_T4I",
       "title": "Bojhena Shey Bojhena",
       "artist": "Arijit Singh, Indraadip Dasgupta",
@@ -6347,6 +8091,18 @@
       "addedAt": 1784267975801
     },
     {
+      "id": "yt-itc-rHSsDj4",
+      "title": "PEHLI BAAR MOHABBAT",
+      "artist": "MOHIT CHAUHAN, VISHAL BHARDWAJ, GULZAR",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ZKLZ_4LKxGI0AsggKhm3RE6Yc9N5__SYtFAa3PfTzMt710BECxtTwsiA8KgMsbQSlFIRq9JYjGhutXei=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/itc-rHSsDj4",
+      "videoId": "itc-rHSsDj4",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-ixCoHEZS5KU",
       "title": "Dooron Dooron Wekh Zalima",
       "artist": "Naseem Begum, Bakhshi Wazir, Tanveer Naqvi",
@@ -6357,6 +8113,18 @@
       "streamUrl": "/api/yt/stream/ixCoHEZS5KU",
       "videoId": "ixCoHEZS5KU",
       "addedAt": 1781015620564
+    },
+    {
+      "id": "yt-iyGe8a07Qf4",
+      "title": "Tout donner (Guitar Version - Extended)",
+      "artist": "AntonioVivald",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/GsIgvJdbUnTFYmTMLEEbn3r_YxMc0uwflBclmcTjdkiQS-k9qD7CsSz0DczMSj6ofd1juvBRL0soFPxjvg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/iyGe8a07Qf4",
+      "videoId": "iyGe8a07Qf4",
+      "addedAt": 1784639598664
     },
     {
       "id": "yt-jAnWrlSuE4c",
@@ -6395,6 +8163,42 @@
       "addedAt": 1781030922569
     },
     {
+      "id": "yt-jJ6rcWlr1x8",
+      "title": "Dil Tu Jaan Tu (lofi)",
+      "artist": "Gurnazar Chattha",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/7p--k02CzLYiAAd5xESEyCHlKvG0W5-6GxSKHImf4nXYlwH-6f41EEvh5KDcjj1I0wG1sokYkgG3Kb-w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jJ6rcWlr1x8",
+      "videoId": "jJ6rcWlr1x8",
+      "addedAt": 1784639278018
+    },
+    {
+      "id": "yt-jSufmjim1yM",
+      "title": "Teri Hogaiyaan 2",
+      "artist": "Vishal Mishra",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/s3nPPx0WvypHIxOSddiI-9mtIgLHu4Trk8SLCtQ6Cj0Gy64XXANJYAG7irbar0tfc46xhmPnI5qV290=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jSufmjim1yM",
+      "videoId": "jSufmjim1yM",
+      "addedAt": 1784639278018
+    },
+    {
+      "id": "yt-jZGyxQOQcd0",
+      "title": "Dekha Hazaro Dafaa",
+      "artist": "Arijit Singh, Palak Muchhal, Jeet Gannguli, Manoj Muntashir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cbjcRvrjwi20qFPhS3nIAfQrl1I0QqGDBzJ90KXcJkZstvH4e2R7RMMDdBSGTESJkFa7PsDBAlaZuzMA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jZGyxQOQcd0",
+      "videoId": "jZGyxQOQcd0",
+      "addedAt": 1784704454634
+    },
+    {
       "id": "yt-j_sG_Juncn8",
       "title": "Lovers Rock",
       "artist": "TV Girl",
@@ -6405,6 +8209,18 @@
       "streamUrl": "/api/yt/stream/j_sG_Juncn8",
       "videoId": "j_sG_Juncn8",
       "addedAt": 1781077198513
+    },
+    {
+      "id": "yt-jbtF5YR6hNU",
+      "title": "TERE NAINA",
+      "artist": "SHANKAR MAHADEVAN, SHREYA GHOSHAL, SHANKAR-EHSAAN-LOY, and RAJAT ARORA",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/I8KeKRq6MeeABeze6ljBCClbMkQN1EoO3wa-_sSuftkbtqgFbNjYCpkjoTpJVY3znP8b8UQjI_CPGjRz=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jbtF5YR6hNU",
+      "videoId": "jbtF5YR6hNU",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-jecxLuxdU8w",
@@ -6429,6 +8245,18 @@
       "streamUrl": "/api/yt/stream/jgi8Y4BGwSU",
       "videoId": "jgi8Y4BGwSU",
       "addedAt": 1784272596764
+    },
+    {
+      "id": "yt-jnqzrHuyezQ",
+      "title": "Channa Mereya (Unplugged)",
+      "artist": "Pritam, Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KVST91jwxPj9LXUmgyoRrqy6xd_TEolu6nFxXGLfZtkv2niCxUuGmEYalouUY7TL-vhNap3MvJmibJ3b=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/jnqzrHuyezQ",
+      "videoId": "jnqzrHuyezQ",
+      "addedAt": 1784704152982
     },
     {
       "id": "yt-jyF0ZVs6J5Y",
@@ -6507,6 +8335,18 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-kBP3QFMUTnY",
+      "title": "Hoor (From \"Hindi Medium\")",
+      "artist": "Atif Aslam",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/iAKRtZSG-jHYSX2D-Q8R1uMI5X66dDQIlDoYhEzkcbgeSTAi4AYZVEqV7wzzflFcNAV55mV3EFy7iT92eA=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/kBP3QFMUTnY",
+      "videoId": "kBP3QFMUTnY",
+      "addedAt": 1784413859142
+    },
+    {
       "id": "yt-kHq1zNTnPSY",
       "title": "Maine Khud Ko",
       "artist": "Mustafa Zahid",
@@ -6577,6 +8417,18 @@
       "streamUrl": "/api/yt/stream/kc-eSOUNtbk",
       "videoId": "kc-eSOUNtbk",
       "addedAt": 1780991151810
+    },
+    {
+      "id": "yt-khSULzn9W-s",
+      "title": "Piya Re",
+      "artist": "Darshan Raval",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/hkbjFFj8xv74AqBJv1-DnMHUqftS1ss9ea1tV_6QlbALCNZ4Zpg9lZW1mNYJdJd6YbtjW-JKVJN_mkSw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/khSULzn9W-s",
+      "videoId": "khSULzn9W-s",
+      "addedAt": 1784639278018
     },
     {
       "id": "yt-khwAS13YnO4",
@@ -6655,6 +8507,18 @@
       "addedAt": 1784268643136
     },
     {
+      "id": "yt-lF8v-TU3Jqo",
+      "title": "Chori Chori",
+      "artist": "Amit Trivedi, Varun Grover, Abhijeet Srivastava, Rupali Moghe",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/1q6I1zhWE8txnfRcSYzrBfb55bGQuXR_7eI7SyzNd_YteX9AE0YyqvyMbEchsC9CZ9bIykOlwQhTsAAM=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/lF8v-TU3Jqo",
+      "videoId": "lF8v-TU3Jqo",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-lG3RpIqP3CU",
       "title": "Sawaal",
       "artist": "Abhijeet Srivastava, Siddhant Bhosle, Shayra Apoorva",
@@ -6665,6 +8529,18 @@
       "streamUrl": "/api/yt/stream/lG3RpIqP3CU",
       "videoId": "lG3RpIqP3CU",
       "addedAt": 1781018010758
+    },
+    {
+      "id": "yt-lSPNH_rYKIg",
+      "title": "ILAHI",
+      "artist": "ARIJIT SINGH, PRITAM, AMITABH BHATTACHARYA",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/8WRsPwoMoabdu5ISlf9f7tGGPzd2I7CTaWxc8qd6GYjaEBreC2Yw0KWMId6Y2vUTqSkt7GdlUi4NAXyf=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/lSPNH_rYKIg",
+      "videoId": "lSPNH_rYKIg",
+      "addedAt": 1784639274615
     },
     {
       "id": "yt-lnY-RsN1Hr0",
@@ -6713,6 +8589,18 @@
       "streamUrl": "/api/yt/stream/m87B0ulgN64",
       "videoId": "m87B0ulgN64",
       "addedAt": 1780989041684
+    },
+    {
+      "id": "yt-mC-rgMX5sO0",
+      "title": "Wake Up Sid!",
+      "artist": "Shankar Ehsaan Loy, Shankar Mahadevan, Loy Mendonsa",
+      "album": "Single",
+      "duration": 231,
+      "coverArtUrl": "https://yt3.googleusercontent.com/PZdEJ5f26bbNwJnbeir--VznsQ332Hewj8SoAB9jgXRpC2ZJ5pEM-DQUulnXnx0vlcgurSIHNWgm9Pfv=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/mC-rgMX5sO0",
+      "videoId": "mC-rgMX5sO0",
+      "addedAt": 1784413859142
     },
     {
       "id": "yt-mGUjVbsYG6E",
@@ -6779,6 +8667,18 @@
       "addedAt": 1784269660756
     },
     {
+      "id": "yt-mb7-qmKLoe0",
+      "title": "Phir Se Ud Chala",
+      "artist": "Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KYw74XSQwtKPbZTrHMNEBAnEMg1P1gNGwymnZwBSjstbqSE-MpigGlTIy6IZvC-ERlRkeP0c7VTiZObS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/mb7-qmKLoe0",
+      "videoId": "mb7-qmKLoe0",
+      "addedAt": 1784639274615
+    },
+    {
       "id": "yt-mcowDEWP8pQ",
       "title": "Kaamaatchi (Johnny Rico's)",
       "artist": "Sunder Chandran",
@@ -6827,6 +8727,18 @@
       "addedAt": 1781077198513
     },
     {
+      "id": "yt-nBcKS3dhe5U",
+      "title": "Love You Zindagi (From \"Dear Zindagi\")",
+      "artist": "Amit Trivedi, Jasleen Royal, & Kausar Munir",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6VE0KG3tfQFrsPnmUABFT1EJstAZze1t6vo24W_AUsr5zMaGnh5f8uwAUTqEovo62Mv3iHzuV_mFIpQ=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/nBcKS3dhe5U",
+      "videoId": "nBcKS3dhe5U",
+      "addedAt": 1784639274615
+    },
+    {
       "id": "yt-nCsHbSlg2Oo",
       "title": "KALYANI♡ (ILLEGAL MASHUP REMIX 🔥)| NITRIXX | ARJN  KDS",
       "artist": "Unknown Artist",
@@ -6848,7 +8760,11 @@
       "source": "youtube",
       "streamUrl": "/api/yt/stream/nHWkyrhuQY8",
       "videoId": "nHWkyrhuQY8",
-      "addedAt": 1784277200968
+      "addedAt": 1784277200968,
+      "playCount": 0,
+      "skipCount": 0,
+      "lastPlayedAt": 1784704487012,
+      "totalListenDuration": 26
     },
     {
       "id": "yt-nJqSvLRpvA0",
@@ -6885,6 +8801,18 @@
       "streamUrl": "/api/yt/stream/nYi5HS_fGAs",
       "videoId": "nYi5HS_fGAs",
       "addedAt": 1781077767463
+    },
+    {
+      "id": "yt-nYpYzeW8Ci4",
+      "title": "Jaane Kyun",
+      "artist": "Vishal & Shekhar, Vishal Dadlani",
+      "album": "Single",
+      "duration": 278,
+      "coverArtUrl": "https://yt3.googleusercontent.com/G9wDAwfjYzx1lWbsvZwFX9fAeggHYo640Htmpz42XKu5XHFTV-aSQiqutW99zU0sYcjqGNCh_Mkkc1In=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/nYpYzeW8Ci4",
+      "videoId": "nYpYzeW8Ci4",
+      "addedAt": 1784408214704
     },
     {
       "id": "yt-nbtTb8huxWA",
@@ -6983,6 +8911,18 @@
       "addedAt": 1784272596764
     },
     {
+      "id": "yt-o4nSweHjHQ8",
+      "title": "Mushkil Hai",
+      "artist": "Vishal Mishra, Hansika Pareek, Sachin-Jigar",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/nalXtD97saMznyQzcxl8bHgOEzUvIO5-gYbFJ6OAgysX0M5tM-YjzOg0cYSGyupNv878ZJowbo3Wwwg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/o4nSweHjHQ8",
+      "videoId": "o4nSweHjHQ8",
+      "addedAt": 1784639278018
+    },
+    {
       "id": "yt-o7fgFaXKVa0",
       "title": "Duvet",
       "artist": "bôa",
@@ -6993,6 +8933,18 @@
       "streamUrl": "/api/yt/stream/o7fgFaXKVa0",
       "videoId": "o7fgFaXKVa0",
       "addedAt": 1781077198513
+    },
+    {
+      "id": "yt-oCm0NxjSOUU",
+      "title": "AJAB LEHER",
+      "artist": "VISHAL-SHEKHAR, NEERAJ SHRIDHAR",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/oAJRuvubWFcs-jb1rCnlcl9aP9PGWAr_FlV7tOhpV88ZuyzF1ot-3iKO5cABqzNyw8tJnAWeK6Vrqmb9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/oCm0NxjSOUU",
+      "videoId": "oCm0NxjSOUU",
+      "addedAt": 1784412408922
     },
     {
       "id": "yt-oGU5U1Y7MO8",
@@ -7115,6 +9067,30 @@
       "addedAt": 1780990069082
     },
     {
+      "id": "yt-p1WdGmMiWCc",
+      "title": "Parano (feat. DDB)",
+      "artist": "Frozy",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/aQA0LkHJ8y2OsDCFmfQX9xEdiYNV4D2FDUeTVD7jS7RXOUwzZsf9YpMI7yfZ0s0qFJ2FcSPFBxHb05qI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/p1WdGmMiWCc",
+      "videoId": "p1WdGmMiWCc",
+      "addedAt": 1784639598664
+    },
+    {
+      "id": "yt-p4664nVBMxg",
+      "title": "Saathiya",
+      "artist": "Sonu Nigam",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/y_n8e8SfL7qkjbg6vLHdEZKllDHdHeg9QPjCfa62lwoKvoyAy9NzZeQZPjMaP2Ss97s07jLSsIfnlBwq=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/p4664nVBMxg",
+      "videoId": "p4664nVBMxg",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-p8VWSLG3PgI",
       "title": "Aziyat 2.0 (Reprise Version)",
       "artist": "Pratsofficial",
@@ -7125,6 +9101,18 @@
       "streamUrl": "/api/yt/stream/p8VWSLG3PgI",
       "videoId": "p8VWSLG3PgI",
       "addedAt": 1781076423554
+    },
+    {
+      "id": "yt-pBzadnf1Z4M",
+      "title": "Hai Junoon",
+      "artist": "KK",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/ZRQ5rZjQI2VgwMZjoA5Y7CB_IWSr3GEpz2ztCo5INFBdxdYeHO1ElyDACxOHPSXZ4e3iLiVLn-uuWEjbSw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/pBzadnf1Z4M",
+      "videoId": "pBzadnf1Z4M",
+      "addedAt": 1784414173396
     },
     {
       "id": "yt-pCx5RU4nnKI",
@@ -7191,6 +9179,18 @@
       "addedAt": 1781103605776
     },
     {
+      "id": "yt-pRKQPvM6lv8",
+      "title": "O GUJARIYA",
+      "artist": "SHEFALI ALVARES, NIKHIL D'SOUZA, AMIT TRIVEDI, and ANVITA DUTT GUPTAN",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/u_CSD9QK1aLce-y2NCuX8g8wP_9pUmIGyz6Pzt3a7GUQckq-Zq5xqv365XEdGsx36Dn6ztadpZoTHO0=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/pRKQPvM6lv8",
+      "videoId": "pRKQPvM6lv8",
+      "addedAt": 1784454185276
+    },
+    {
       "id": "yt-pRzS9QLvgZk",
       "title": "Dhurandhar - Title Track (From \"Dhurandhar\")",
       "artist": "Shashwat Sachdev, Hanumankind, Jasmine Sandlas, Sudhir Yaduvanshi",
@@ -7249,6 +9249,18 @@
       "streamUrl": "/api/yt/stream/phDmHdQAPyo",
       "videoId": "phDmHdQAPyo",
       "addedAt": 1781007495750
+    },
+    {
+      "id": "yt-piUHBTXsoiY",
+      "title": "Raabta",
+      "artist": "Pritam, Arijit Singh, Amitabh Bhattacharya",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/6LxvTuAggHEs4fkqMwtTsspSf58-T7-ThAnw4aRWn1XV5XA63QNOHxnVxhcGbiAgF66eAG8LVv9yBZU=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/piUHBTXsoiY",
+      "videoId": "piUHBTXsoiY",
+      "addedAt": 1784639274615
     },
     {
       "id": "yt-pmc93sA80HI",
@@ -7427,6 +9439,18 @@
       "addedAt": 1781008998695
     },
     {
+      "id": "yt-r2CkpjFJGY4",
+      "title": "Chammak Challo (Muthada Chammak Challo)",
+      "artist": "Vishal-Shekhar, Akon, Vishal Dadlani, and Hamsika Iyer",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/m8x8kdLgd6JYru3NemQP9tVk4O1pR6obmKKU9yPAqbpqN5hPLcnljX6CSe9uvx0SnUFSqIQY-QnK3aT9=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/r2CkpjFJGY4",
+      "videoId": "r2CkpjFJGY4",
+      "addedAt": 1784639598665
+    },
+    {
       "id": "yt-rFp_d1qXO5g",
       "title": "Chaand Sa Tu",
       "artist": "Tune Host",
@@ -7450,9 +9474,9 @@
       "videoId": "rIajA0B_w8Y",
       "addedAt": 1780991151810,
       "playCount": 4,
-      "skipCount": 1,
-      "lastPlayedAt": 1781045327019,
-      "totalListenDuration": 579
+      "skipCount": 2,
+      "lastPlayedAt": 1784641042575,
+      "totalListenDuration": 594
     },
     {
       "id": "yt-rNsAsFXYgPM",
@@ -7507,6 +9531,18 @@
       "totalListenDuration": 3
     },
     {
+      "id": "yt-rig5Et6jVLc",
+      "title": "Jiya Lage Na",
+      "artist": "Sona Mohapatra | Ravindra Upadhyay",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/OakQjQuNPlvrXn7l-EO2y7I-4SjB1JB0nuI17oSPjHZJvCpKSRofmzOWZBStgWVSPqFtF6s8_MvYit_g=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/rig5Et6jVLc",
+      "videoId": "rig5Et6jVLc",
+      "addedAt": 1784414173699
+    },
+    {
       "id": "yt-rqEyZqHflU0",
       "title": "Ureche Mon (original motion picture soundtrack)",
       "artist": "Arijit Singh",
@@ -7529,6 +9565,30 @@
       "streamUrl": "/api/yt/stream/rsKo7UzBV2k",
       "videoId": "rsKo7UzBV2k",
       "addedAt": 1780992468282
+    },
+    {
+      "id": "yt-rselze4jvXQ",
+      "title": "Daaru Desi",
+      "artist": "Pritam, Benny Dayal, Shalmali Kholgade",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/2cuj2GTdP4KcRRD43SsV3bc0zKp7j4XocaVOhfjH3hqvoRbo4eXu897M8BMG_kqnuhiuiIyjuIhUrOm4lw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/rselze4jvXQ",
+      "videoId": "rselze4jvXQ",
+      "addedAt": 1784413859142
+    },
+    {
+      "id": "yt-rvnyVvSRAxs",
+      "title": "Piyu Bole",
+      "artist": "Sonu Nigam, Shreya Ghoshal",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/9feOe0okJckOSC_HC6gkbFnvFIWWbF8UOktOSJ2Fbsa4A8hwL0VvChej0h6v5xJxRHianbm6KXcRuQWN=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/rvnyVvSRAxs",
+      "videoId": "rvnyVvSRAxs",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-rymYToIEL9o",
@@ -7577,6 +9637,18 @@
       "streamUrl": "/api/yt/stream/sCbmlD-_s4E",
       "videoId": "sCbmlD-_s4E",
       "addedAt": 1780989041685
+    },
+    {
+      "id": "yt-sFBiQQpCkW4",
+      "title": "Cutiepie",
+      "artist": "Pritam, Pardeep Singh Sran, Nakash Aziz",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KVST91jwxPj9LXUmgyoRrqy6xd_TEolu6nFxXGLfZtkv2niCxUuGmEYalouUY7TL-vhNap3MvJmibJ3b=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/sFBiQQpCkW4",
+      "videoId": "sFBiQQpCkW4",
+      "addedAt": 1784455846486
     },
     {
       "id": "yt-sJ2cDsopCV4",
@@ -7639,6 +9711,18 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-sxSxOBQgs5Q",
+      "title": "I Feel Good",
+      "artist": "Vishal Dadlani, Shilpa Rao, Vishal-Shekhar",
+      "album": "Single",
+      "duration": 318,
+      "coverArtUrl": "https://yt3.googleusercontent.com/cwOkgYhp7e82Wnsi37elBYvbsB_xDQaD6C1bxyclP5QnJGjnp_p8x68G_prl0rthtlnACcqlUeWIN64B=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/sxSxOBQgs5Q",
+      "videoId": "sxSxOBQgs5Q",
+      "addedAt": 1784408214704
+    },
+    {
       "id": "yt-szRmAJYn07o",
       "title": "Safar",
       "artist": "Gravero, WhySoAryan",
@@ -7649,6 +9733,30 @@
       "streamUrl": "/api/yt/stream/szRmAJYn07o",
       "videoId": "szRmAJYn07o",
       "addedAt": 1781076423554
+    },
+    {
+      "id": "yt-t-E2gm0a_N0",
+      "title": "EARFQUAKE",
+      "artist": "Tyler, The Creator",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/_c4JMCiDeaC2RRfShXddOuIV_A7oCL4m1R6-YK-3TDlsYgNQTXwxV0f-TTJrsO1StMt07qW3O6XNPSNt=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/t-E2gm0a_N0",
+      "videoId": "t-E2gm0a_N0",
+      "addedAt": 1784639267950
+    },
+    {
+      "id": "yt-tCi7566EwE4",
+      "title": "Chota Sa Fasana",
+      "artist": "Arijit Singh, Anurag Saikia",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/dHHaJd70RfVybzdBR9gO7PyCIbt25RGIebCFFk6UG3KeGfKod4UCt1dRehaHITZYWzrDPZ9TA141lJ4S=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/tCi7566EwE4",
+      "videoId": "tCi7566EwE4",
+      "addedAt": 1784414173396
     },
     {
       "id": "yt-tDolwm2f9g0",
@@ -7815,6 +9923,18 @@
       "addedAt": 1781202866596
     },
     {
+      "id": "yt-uA-9JmTcav8",
+      "title": "Phir Kabhi",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/GfeUn2pfOL4GJUjcG36SrQYb74jM9seH_gQx_mxWxpkAlvbxYL7yngol-NAHvNKEWihvTNy1HgUsD_s4=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/uA-9JmTcav8",
+      "videoId": "uA-9JmTcav8",
+      "addedAt": 1784704454634
+    },
+    {
       "id": "yt-uT_HXrrmHX8",
       "title": "Sitaare (From \"Ikkis\")",
       "artist": "Arijit Singh, White Noise Collectives, Amitabh Bhattacharya",
@@ -7879,6 +9999,42 @@
       "addedAt": 1781016588585
     },
     {
+      "id": "yt-uwCpa4h3S3U",
+      "title": "Ikk Kudi - Reprised Version",
+      "artist": "Diljit Dosanjh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/QeDhRqbS03XX-y3j9XWLXu6MY01jJyRZHyXO49RzbzhBylYb_G01REZ0K6-Ot7gMMjgizRztfMeqwrR-9w=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/uwCpa4h3S3U",
+      "videoId": "uwCpa4h3S3U",
+      "addedAt": 1784639274615
+    },
+    {
+      "id": "yt-vGDZaifyWHg",
+      "title": "Tout donner (Guitar Version)",
+      "artist": "AntonioVivald",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/GsIgvJdbUnTFYmTMLEEbn3r_YxMc0uwflBclmcTjdkiQS-k9qD7CsSz0DczMSj6ofd1juvBRL0soFPxjvg=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/vGDZaifyWHg",
+      "videoId": "vGDZaifyWHg",
+      "addedAt": 1784639598665
+    },
+    {
+      "id": "yt-vL14wk2cj6U",
+      "title": "Ik Vaari Aa (From \"Raabta\")",
+      "artist": "Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/dnMA___8pamFIWq2DbTLFGkgeChz0phQBf-5TRverJ1ud7S1D3DdSphnd10iAnzl_kfttN1w4Z9IZQ80=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/vL14wk2cj6U",
+      "videoId": "vL14wk2cj6U",
+      "addedAt": 1784704157523
+    },
+    {
       "id": "yt-vNPwjl-TzQ0",
       "title": "Dil Nu",
       "artist": "Shinda Kahlon, AP Dhillon",
@@ -7915,6 +10071,30 @@
       "addedAt": 1780991151810
     },
     {
+      "id": "yt-vetkYdJ31HU",
+      "title": "Ghar",
+      "artist": "Pritam, Nikhita Gandhi, Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/W3LLZ83E_mu6NUef37ZmsWoCRgQkVIvyWhx1TBKCNn8xXakh1COKjEOf4tW7kWwI1FSIM04QwTqGflI=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/vetkYdJ31HU",
+      "videoId": "vetkYdJ31HU",
+      "addedAt": 1784414173699
+    },
+    {
+      "id": "yt-vjtNRCUYMG0",
+      "title": "Khabar Nahi",
+      "artist": "Vishal & Shekhar, Shreya Ghoshal, Amanat Ali, Vishal Dadlani",
+      "album": "Single",
+      "duration": 259,
+      "coverArtUrl": "https://yt3.googleusercontent.com/G9wDAwfjYzx1lWbsvZwFX9fAeggHYo640Htmpz42XKu5XHFTV-aSQiqutW99zU0sYcjqGNCh_Mkkc1In=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/vjtNRCUYMG0",
+      "videoId": "vjtNRCUYMG0",
+      "addedAt": 1784408214704
+    },
+    {
       "id": "yt-vl8YTnx3gso",
       "title": "TU CHAHIYEW-IN",
       "artist": "ATIF ASLAM, PRITAM, AMITABH BHATTACHARYA",
@@ -7925,6 +10105,18 @@
       "streamUrl": "/api/yt/stream/vl8YTnx3gso",
       "videoId": "vl8YTnx3gso",
       "addedAt": 1781078346507
+    },
+    {
+      "id": "yt-vyJTAnlRHVc",
+      "title": "Nazm Nazm",
+      "artist": "Arko",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/g2AGjwYvDCbuW90ulLrFEJCQlR9XWPGVTeJA3YFWKOrEQ4b1lar35ST22tRvrZUBe11viZpRWP3vLWPk=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/vyJTAnlRHVc",
+      "videoId": "vyJTAnlRHVc",
+      "addedAt": 1784704454634
     },
     {
       "id": "yt-w3LGyvzv7yg",
@@ -7971,6 +10163,18 @@
       "totalListenDuration": 29
     },
     {
+      "id": "yt-wR3r0NX1PJE",
+      "title": "O Sanam",
+      "artist": "Lucky Ali",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/zEunVG7jVy46pr5ROzzra0wg5X5nuBz9eJtaI2ceEHp4S5_tiJJ-6NRxLEsxq_8qRaAhlfHPvJUc51OD=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/wR3r0NX1PJE",
+      "videoId": "wR3r0NX1PJE",
+      "addedAt": 1784639274615
+    },
+    {
       "id": "yt-wSbhQBfcaKI",
       "title": "WHERE WAS YOU",
       "artist": "Travis Scott, Playboi Carti, Future",
@@ -7981,6 +10185,18 @@
       "streamUrl": "/api/yt/stream/wSbhQBfcaKI",
       "videoId": "wSbhQBfcaKI",
       "addedAt": 1780990731154
+    },
+    {
+      "id": "yt-waHJsPu_fmU",
+      "title": "Nadaan Parinde",
+      "artist": "A.R. Rahman, Mohit Chauhan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/KYw74XSQwtKPbZTrHMNEBAnEMg1P1gNGwymnZwBSjstbqSE-MpigGlTIy6IZvC-ERlRkeP0c7VTiZObS=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/waHJsPu_fmU",
+      "videoId": "waHJsPu_fmU",
+      "addedAt": 1784704157088
     },
     {
       "id": "yt-wbt_E7LNDaA",
@@ -8005,6 +10221,18 @@
       "streamUrl": "/api/yt/stream/whMjhE-cWNE",
       "videoId": "whMjhE-cWNE",
       "addedAt": 1781206230338
+    },
+    {
+      "id": "yt-wjX57G5qATE",
+      "title": "Yaariyaan (Male)",
+      "artist": "Pritam, Mohan Kannan",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/2cuj2GTdP4KcRRD43SsV3bc0zKp7j4XocaVOhfjH3hqvoRbo4eXu897M8BMG_kqnuhiuiIyjuIhUrOm4lw=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/wjX57G5qATE",
+      "videoId": "wjX57G5qATE",
+      "addedAt": 1784412138812
     },
     {
       "id": "yt-wkVFYwbrL6Y",
@@ -8041,6 +10269,18 @@
       "streamUrl": "/api/yt/stream/wwOk_UPqcZk",
       "videoId": "wwOk_UPqcZk",
       "addedAt": 1780990731154
+    },
+    {
+      "id": "yt-wx89ZdkwtS8",
+      "title": "Ae Dil Hai Mushkil Title Track (From \"Ae Dil Hai Mushkil\")",
+      "artist": "Pritam, Arijit Singh",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/WP7l4p-2WhWzLM6lXJ0n2gXLK6u07eCejpybWzb-yhEyt9Y0aOkxMlLhpayO7PdXYOYy2NgkWu9hGBPy=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/wx89ZdkwtS8",
+      "videoId": "wx89ZdkwtS8",
+      "addedAt": 1784704157523
     },
     {
       "id": "yt-wy_tG9D6mrs",
@@ -8153,6 +10393,18 @@
       "skipCount": 0,
       "lastPlayedAt": 1780989289408,
       "totalListenDuration": 11
+    },
+    {
+      "id": "yt-xv5RhPdwDwE",
+      "title": "Khulke Jeene Ka",
+      "artist": "A.R. Rahman, Arijit Singh, Shashaa Tirupati",
+      "album": "Single",
+      "duration": 0,
+      "coverArtUrl": "https://yt3.googleusercontent.com/LL-arRXDABtgBDrxK5IXEt-5uDpf1ALSY_QDhxzUDMh1rAClHfOfCG4_RnXsHUfHteaLslwAsfPyxVVO=w120-h120-l90-rj",
+      "source": "youtube",
+      "streamUrl": "/api/yt/stream/xv5RhPdwDwE",
+      "videoId": "xv5RhPdwDwE",
+      "addedAt": 1784704157523
     },
     {
       "id": "yt-y6g8eSP0MB0",
@@ -8362,6 +10614,22 @@
   "playlists": [],
   "favorites": [
     {
+      "trackId": "yt--XI2_610F0s",
+      "addedAt": 1784412429608
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "addedAt": 1784640271533
+    },
+    {
+      "trackId": "yt-L_EL5KnwHyY",
+      "addedAt": 1784412426659
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "addedAt": 1784413157305
+    },
+    {
       "trackId": "yt-dgUHE8wWhiE",
       "addedAt": 1781077256089
     },
@@ -8371,621 +10639,6 @@
     }
   ],
   "history": [
-    {
-      "trackId": "yt--kOteJfOG7Q",
-      "playedAt": 1781027382049,
-      "id": 262
-    },
-    {
-      "trackId": "yt-9cbPM9MYJgI",
-      "playedAt": 1781027385998,
-      "id": 263
-    },
-    {
-      "trackId": "yt-b2TEuMX7VY8",
-      "playedAt": 1781027543660,
-      "id": 264
-    },
-    {
-      "trackId": "yt-2xUQO-qj3pc",
-      "playedAt": 1781027545942,
-      "id": 265
-    },
-    {
-      "trackId": "yt-JNgerQMBXP4",
-      "playedAt": 1781027547962,
-      "id": 266
-    },
-    {
-      "trackId": "yt-k-aRE7q705o",
-      "playedAt": 1781027549971,
-      "id": 267
-    },
-    {
-      "trackId": "yt-SqA67lp0n5s",
-      "playedAt": 1781027599867,
-      "id": 268
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781027727311,
-      "id": 269
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781030283701,
-      "id": 270
-    },
-    {
-      "trackId": "yt-w3LGyvzv7yg",
-      "playedAt": 1781030885947,
-      "id": 271
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781030912601,
-      "id": 272
-    },
-    {
-      "trackId": "yt-w3LGyvzv7yg",
-      "playedAt": 1781030922855,
-      "id": 273
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781030925682,
-      "id": 274
-    },
-    {
-      "trackId": "yt-fa-pqJFP_-0",
-      "playedAt": 1781030926419,
-      "id": 275
-    },
-    {
-      "trackId": "yt-pQ4YSaKXrTM",
-      "playedAt": 1781030926886,
-      "id": 276
-    },
-    {
-      "trackId": "yt-4bfbz3EP_Tw",
-      "playedAt": 1781030937827,
-      "id": 277
-    },
-    {
-      "trackId": "yt-KYOgQTOhYOY",
-      "playedAt": 1781030958727,
-      "id": 278
-    },
-    {
-      "trackId": "yt-1qgjd8hQlL0",
-      "playedAt": 1781030960167,
-      "id": 279
-    },
-    {
-      "trackId": "yt-uXpjTRF9piY",
-      "playedAt": 1781030964413,
-      "id": 280
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781031026450,
-      "id": 281
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781031209410,
-      "id": 282
-    },
-    {
-      "trackId": "yt-a24EUd0zeqI",
-      "playedAt": 1781031252966,
-      "id": 283
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781043277260,
-      "id": 284
-    },
-    {
-      "trackId": "yt-Lk3UlEyIW84",
-      "playedAt": 1781043310957,
-      "id": 285
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781043761996,
-      "id": 286
-    },
-    {
-      "trackId": "yt-a24EUd0zeqI",
-      "playedAt": 1781043768510,
-      "id": 287
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781043987038,
-      "id": 288
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781044165134,
-      "id": 289
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781044243429,
-      "id": 290
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781044285779,
-      "id": 291
-    },
-    {
-      "trackId": "yt-rIajA0B_w8Y",
-      "playedAt": 1781044387040,
-      "id": 292
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781044629011,
-      "id": 293
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781044730816,
-      "id": 294
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781044930436,
-      "id": 295
-    },
-    {
-      "trackId": "yt-rIajA0B_w8Y",
-      "playedAt": 1781044931339,
-      "id": 296
-    },
-    {
-      "trackId": "yt-9cHbvRUALrc",
-      "playedAt": 1781045159806,
-      "id": 297
-    },
-    {
-      "trackId": "yt-rIajA0B_w8Y",
-      "playedAt": 1781045214977,
-      "id": 298
-    },
-    {
-      "trackId": "yt-Gb76TgCUqAY",
-      "playedAt": 1781045325846,
-      "id": 299
-    },
-    {
-      "trackId": "yt-rVqcPUQ2YXI",
-      "playedAt": 1781065903181,
-      "id": 300
-    },
-    {
-      "trackId": "yt-nZiJTYiujUs",
-      "playedAt": 1781065907291,
-      "id": 301
-    },
-    {
-      "trackId": "yt-rVqcPUQ2YXI",
-      "playedAt": 1781066133989,
-      "id": 302
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781066139315,
-      "id": 303
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781066323614,
-      "id": 304
-    },
-    {
-      "trackId": "yt-ToO4VFCoR7U",
-      "playedAt": 1781066516508,
-      "id": 305
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781066773014,
-      "id": 306
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781066953913,
-      "id": 307
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781075396292,
-      "id": 308
-    },
-    {
-      "trackId": "yt-Gb76TgCUqAY",
-      "playedAt": 1781075438963,
-      "id": 309
-    },
-    {
-      "trackId": "yt-Gb76TgCUqAY",
-      "playedAt": 1781075439644,
-      "id": 310
-    },
-    {
-      "trackId": "yt-ToO4VFCoR7U",
-      "playedAt": 1781075448139,
-      "id": 311
-    },
-    {
-      "trackId": "yt-sIa40F9_CDI",
-      "playedAt": 1781075906147,
-      "id": 312
-    },
-    {
-      "trackId": "yt-G1MsSCnvVE8",
-      "playedAt": 1781076269226,
-      "id": 313
-    },
-    {
-      "trackId": "yt-qVbG2S3Av_w",
-      "playedAt": 1781076422779,
-      "id": 314
-    },
-    {
-      "trackId": "yt-_927Er2ZQMI",
-      "playedAt": 1781076430610,
-      "id": 315
-    },
-    {
-      "trackId": "yt-wN0xLHYYgvc",
-      "playedAt": 1781076589297,
-      "id": 316
-    },
-    {
-      "trackId": "yt-NZm-iXho1Ww",
-      "playedAt": 1781076748876,
-      "id": 317
-    },
-    {
-      "trackId": "yt-SLhpVVuY7D0",
-      "playedAt": 1781076780779,
-      "id": 318
-    },
-    {
-      "trackId": "yt-dgUHE8wWhiE",
-      "playedAt": 1781076868451,
-      "id": 319
-    },
-    {
-      "trackId": "yt-dgUHE8wWhiE",
-      "playedAt": 1781077197551,
-      "id": 320
-    },
-    {
-      "trackId": "yt-dgUHE8wWhiE",
-      "playedAt": 1781077208891,
-      "id": 321
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781077488754,
-      "id": 322
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781077571001,
-      "id": 323
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781077579890,
-      "id": 324
-    },
-    {
-      "trackId": "yt-f58tJLncpck",
-      "playedAt": 1781077746830,
-      "id": 325
-    },
-    {
-      "trackId": "yt-1veMBRgO3rM",
-      "playedAt": 1781077748887,
-      "id": 326
-    },
-    {
-      "trackId": "yt-kyqJ_FId-_w",
-      "playedAt": 1781077752698,
-      "id": 327
-    },
-    {
-      "trackId": "yt-U_nAFr9tLYg",
-      "playedAt": 1781077757895,
-      "id": 328
-    },
-    {
-      "trackId": "yt-0_9TCak--cw",
-      "playedAt": 1781077760728,
-      "id": 329
-    },
-    {
-      "trackId": "yt-MBkPNHCaMO8",
-      "playedAt": 1781077762432,
-      "id": 330
-    },
-    {
-      "trackId": "yt-gZ0vHQKfNH8",
-      "playedAt": 1781077764545,
-      "id": 331
-    },
-    {
-      "trackId": "yt-YfqJktv2nuA",
-      "playedAt": 1781077765828,
-      "id": 332
-    },
-    {
-      "trackId": "yt-CLbret6z8l8",
-      "playedAt": 1781077766935,
-      "id": 333
-    },
-    {
-      "trackId": "yt-_927Er2ZQMI",
-      "playedAt": 1781077797698,
-      "id": 334
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781077810449,
-      "id": 335
-    },
-    {
-      "trackId": "yt-stWst7ShxZU",
-      "playedAt": 1781077822090,
-      "id": 336
-    },
-    {
-      "trackId": "yt-_927Er2ZQMI",
-      "playedAt": 1781078345540,
-      "id": 337
-    },
-    {
-      "trackId": "yt-M7NupdR1vuc",
-      "playedAt": 1781078386382,
-      "id": 338
-    },
-    {
-      "trackId": "yt-TijBIPD4Jbw",
-      "playedAt": 1781084541609,
-      "id": 339
-    },
-    {
-      "trackId": "yt-L_EL5KnwHyY",
-      "playedAt": 1781085830222,
-      "id": 340
-    },
-    {
-      "trackId": "yt--WE_iBqLmMI",
-      "playedAt": 1781086003130,
-      "id": 341
-    },
-    {
-      "trackId": "yt-_927Er2ZQMI",
-      "playedAt": 1781086281543,
-      "id": 342
-    },
-    {
-      "trackId": "yt-a-HEb1vJhQ0",
-      "playedAt": 1781086555202,
-      "id": 343
-    },
-    {
-      "trackId": "yt-CLbret6z8l8",
-      "playedAt": 1781086754835,
-      "id": 344
-    },
-    {
-      "trackId": "yt-EZE62LpaqHg",
-      "playedAt": 1781086925620,
-      "id": 345
-    },
-    {
-      "trackId": "yt-UY7dDx1pbA8",
-      "playedAt": 1781087106377,
-      "id": 346
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781087345513,
-      "id": 347
-    },
-    {
-      "trackId": "yt-_927Er2ZQMI",
-      "playedAt": 1781087521536,
-      "id": 348
-    },
-    {
-      "trackId": "yt-2U_bbri5w08",
-      "playedAt": 1781087795247,
-      "id": 349
-    },
-    {
-      "trackId": "yt-YfqJktv2nuA",
-      "playedAt": 1781087982248,
-      "id": 350
-    },
-    {
-      "trackId": "yt-0_9TCak--cw",
-      "playedAt": 1781087990567,
-      "id": 351
-    },
-    {
-      "trackId": "yt-PZtSnQBsBW0",
-      "playedAt": 1781088138429,
-      "id": 352
-    },
-    {
-      "trackId": "yt-aaYtQCmn_HQ",
-      "playedAt": 1781088346963,
-      "id": 353
-    },
-    {
-      "trackId": "yt--3KT1f7WZIo",
-      "playedAt": 1781088520817,
-      "id": 354
-    },
-    {
-      "trackId": "yt-8gq3S53aH3Y",
-      "playedAt": 1781088714058,
-      "id": 355
-    },
-    {
-      "trackId": "yt-Y5m3FAxatX4",
-      "playedAt": 1781088948560,
-      "id": 356
-    },
-    {
-      "trackId": "yt-ipvpoJZT6uY",
-      "playedAt": 1781089213152,
-      "id": 357
-    },
-    {
-      "trackId": "yt-mOB1S1qXcPQ",
-      "playedAt": 1781089220153,
-      "id": 358
-    },
-    {
-      "trackId": "yt-tNc2coVC2aw",
-      "playedAt": 1781089417776,
-      "id": 359
-    },
-    {
-      "trackId": "yt--3KT1f7WZIo",
-      "playedAt": 1781095610818,
-      "id": 360
-    },
-    {
-      "trackId": "yt--BJt4fCAtZE",
-      "playedAt": 1781095623041,
-      "id": 361
-    },
-    {
-      "trackId": "yt--3KT1f7WZIo",
-      "playedAt": 1781095923886,
-      "id": 362
-    },
-    {
-      "trackId": "yt-zP9n2ZAS28Q",
-      "playedAt": 1781095932945,
-      "id": 363
-    },
-    {
-      "trackId": "yt-4-WkUn6DhXQ",
-      "playedAt": 1781095934829,
-      "id": 364
-    },
-    {
-      "trackId": "yt--WE_iBqLmMI",
-      "playedAt": 1781095936767,
-      "id": 365
-    },
-    {
-      "trackId": "yt-Gs5WlUzk_Ec",
-      "playedAt": 1781096069499,
-      "id": 366
-    },
-    {
-      "trackId": "yt-0_9TCak--cw",
-      "playedAt": 1781096215047,
-      "id": 367
-    },
-    {
-      "trackId": "yt-tYqZK7bq5Bs",
-      "playedAt": 1781096256089,
-      "id": 368
-    },
-    {
-      "trackId": "yt-KrJ5c-Egz-U",
-      "playedAt": 1781096362805,
-      "id": 369
-    },
-    {
-      "trackId": "yt-KrJ5c-Egz-U",
-      "playedAt": 1781096525574,
-      "id": 370
-    },
-    {
-      "trackId": "yt-U_nAFr9tLYg",
-      "playedAt": 1781096680047,
-      "id": 371
-    },
-    {
-      "trackId": "yt-KrJ5c-Egz-U",
-      "playedAt": 1781096884174,
-      "id": 372
-    },
-    {
-      "trackId": "yt-qSay_8xzijg",
-      "playedAt": 1781103603934,
-      "id": 373
-    },
-    {
-      "trackId": "yt-QzYfeAWAROQ",
-      "playedAt": 1781103616561,
-      "id": 374
-    },
-    {
-      "trackId": "yt-4-WkUn6DhXQ",
-      "playedAt": 1781202865843,
-      "id": 375
-    },
-    {
-      "trackId": "yt-QzYfeAWAROQ",
-      "playedAt": 1781202879448,
-      "id": 376
-    },
-    {
-      "trackId": "yt-DqO1lLavWGo",
-      "playedAt": 1781202894827,
-      "id": 377
-    },
-    {
-      "trackId": "yt-DqO1lLavWGo",
-      "playedAt": 1781205763200,
-      "id": 378
-    },
-    {
-      "trackId": "yt--4Gnv7rdWAk",
-      "playedAt": 1781206229714,
-      "id": 379
-    },
-    {
-      "trackId": "yt-Hdrf2M6QV5Y",
-      "playedAt": 1781206502259,
-      "id": 380
-    },
-    {
-      "trackId": "yt--gztlYsjRUg",
-      "playedAt": 1781206508389,
-      "id": 381
-    },
-    {
-      "trackId": "yt-MhoK1VijKgI",
-      "playedAt": 1781206511314,
-      "id": 382
-    },
-    {
-      "trackId": "yt-WGG5yllqgo4",
-      "playedAt": 1781206512931,
-      "id": 383
-    },
-    {
-      "trackId": "yt-qRsPt81VLNs",
-      "playedAt": 1781206531811,
-      "id": 384
-    },
     {
       "trackId": "yt-ChlLOXkRJtg",
       "playedAt": 1781206533214,
@@ -9370,6 +11023,621 @@
       "trackId": "yt-N7jDUBRVQVA",
       "playedAt": 1784277202319,
       "id": 461
+    },
+    {
+      "trackId": "yt-U_nAFr9tLYg",
+      "playedAt": 1784277521003,
+      "id": 462
+    },
+    {
+      "trackId": "yt-aaYtQCmn_HQ",
+      "playedAt": 1784286561953,
+      "id": 463
+    },
+    {
+      "trackId": "yt-R38Er0St2as",
+      "playedAt": 1784290752072,
+      "id": 464
+    },
+    {
+      "trackId": "yt-N7jDUBRVQVA",
+      "playedAt": 1784406786709,
+      "id": 465
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784408213818,
+      "id": 466
+    },
+    {
+      "trackId": "yt--BJt4fCAtZE",
+      "playedAt": 1784412138294,
+      "id": 467
+    },
+    {
+      "trackId": "yt-TijBIPD4Jbw",
+      "playedAt": 1784412140087,
+      "id": 468
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "playedAt": 1784412141115,
+      "id": 469
+    },
+    {
+      "trackId": "yt-3n8IMQbicBA",
+      "playedAt": 1784412167151,
+      "id": 470
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "playedAt": 1784412293517,
+      "id": 471
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784412408278,
+      "id": 472
+    },
+    {
+      "trackId": "yt-GIgWTkqFd-Y",
+      "playedAt": 1784412410240,
+      "id": 473
+    },
+    {
+      "trackId": "yt-EeSLhZEVmxE",
+      "playedAt": 1784412412102,
+      "id": 474
+    },
+    {
+      "trackId": "yt-N7jDUBRVQVA",
+      "playedAt": 1784412417066,
+      "id": 475
+    },
+    {
+      "trackId": "yt-L_EL5KnwHyY",
+      "playedAt": 1784412420269,
+      "id": 476
+    },
+    {
+      "trackId": "yt-TijBIPD4Jbw",
+      "playedAt": 1784412825009,
+      "id": 477
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784412846532,
+      "id": 478
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784412881026,
+      "id": 479
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784412917296,
+      "id": 480
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784413098021,
+      "id": 481
+    },
+    {
+      "trackId": "itunes-1074829394",
+      "playedAt": 1784413144695,
+      "id": 482
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784413147987,
+      "id": 483
+    },
+    {
+      "trackId": "yt-BnYokCSJDfw",
+      "playedAt": 1784413341208,
+      "id": 484
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "playedAt": 1784413605590,
+      "id": 485
+    },
+    {
+      "trackId": "yt-sxSxOBQgs5Q",
+      "playedAt": 1784413857923,
+      "id": 486
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "playedAt": 1784413891861,
+      "id": 487
+    },
+    {
+      "trackId": "itunes-1074829394",
+      "playedAt": 1784414140889,
+      "id": 488
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784414163206,
+      "id": 489
+    },
+    {
+      "trackId": "yt-BnYokCSJDfw",
+      "playedAt": 1784414164911,
+      "id": 490
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "playedAt": 1784414166056,
+      "id": 491
+    },
+    {
+      "trackId": "yt-sxSxOBQgs5Q",
+      "playedAt": 1784414167731,
+      "id": 492
+    },
+    {
+      "trackId": "yt-nYpYzeW8Ci4",
+      "playedAt": 1784414168117,
+      "id": 493
+    },
+    {
+      "trackId": "yt-vjtNRCUYMG0",
+      "playedAt": 1784414168616,
+      "id": 494
+    },
+    {
+      "trackId": "yt-DSMneXn238o",
+      "playedAt": 1784414169143,
+      "id": 495
+    },
+    {
+      "trackId": "yt-rselze4jvXQ",
+      "playedAt": 1784414169706,
+      "id": 496
+    },
+    {
+      "trackId": "yt-5JOApjIhofw",
+      "playedAt": 1784414170207,
+      "id": 497
+    },
+    {
+      "trackId": "yt-Bvyqm72k4pQ",
+      "playedAt": 1784414171374,
+      "id": 498
+    },
+    {
+      "trackId": "yt-mC-rgMX5sO0",
+      "playedAt": 1784414172459,
+      "id": 499
+    },
+    {
+      "trackId": "yt-DGTlOQLQApw",
+      "playedAt": 1784414176224,
+      "id": 500
+    },
+    {
+      "trackId": "yt-BDTee709trU",
+      "playedAt": 1784414195426,
+      "id": 501
+    },
+    {
+      "trackId": "yt-AGsOTkX7ssM",
+      "playedAt": 1784414197304,
+      "id": 502
+    },
+    {
+      "trackId": "yt-VOFm2oB8t98",
+      "playedAt": 1784414198471,
+      "id": 503
+    },
+    {
+      "trackId": "yt-FCRUrHJW468",
+      "playedAt": 1784414199637,
+      "id": 504
+    },
+    {
+      "trackId": "yt-1ZkN7Hkda4c",
+      "playedAt": 1784414201248,
+      "id": 505
+    },
+    {
+      "trackId": "yt-9_F2IdnVFMs",
+      "playedAt": 1784414445410,
+      "id": 506
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784438208120,
+      "id": 507
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "playedAt": 1784438299075,
+      "id": 508
+    },
+    {
+      "trackId": "yt-sxSxOBQgs5Q",
+      "playedAt": 1784438324250,
+      "id": 509
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784438326585,
+      "id": 510
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784438903900,
+      "id": 512
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784439399141,
+      "id": 513
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784454121559,
+      "id": 514
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784454183235,
+      "id": 515
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784454242570,
+      "id": 516
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784454246992,
+      "id": 517
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784455749707,
+      "id": 518
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784455844806,
+      "id": 519
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639123969,
+      "id": 521
+    },
+    {
+      "trackId": "yt-sxSxOBQgs5Q",
+      "playedAt": 1784639158015,
+      "id": 522
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784639267382,
+      "id": 523
+    },
+    {
+      "trackId": "yt-FCRUrHJW468",
+      "playedAt": 1784639273598,
+      "id": 524
+    },
+    {
+      "trackId": "yt-1ZkN7Hkda4c",
+      "playedAt": 1784639277440,
+      "id": 525
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639282625,
+      "id": 526
+    },
+    {
+      "trackId": "yt-Gs5WlUzk_Ec",
+      "playedAt": 1784639393726,
+      "id": 527
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784639403433,
+      "id": 528
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "playedAt": 1784639408004,
+      "id": 529
+    },
+    {
+      "trackId": "yt-w3LGyvzv7yg",
+      "playedAt": 1784639435426,
+      "id": 530
+    },
+    {
+      "trackId": "yt-KKRcxEq-O5k",
+      "playedAt": 1784639436398,
+      "id": 531
+    },
+    {
+      "trackId": "yt-KKRcxEq-O5k",
+      "playedAt": 1784639597648,
+      "id": 532
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784639605970,
+      "id": 533
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639617788,
+      "id": 534
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639739627,
+      "id": 536
+    },
+    {
+      "trackId": "yt-KKRcxEq-O5k",
+      "playedAt": 1784639754038,
+      "id": 537
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784639784790,
+      "id": 538
+    },
+    {
+      "trackId": "yt-w3LGyvzv7yg",
+      "playedAt": 1784639794295,
+      "id": 539
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639807834,
+      "id": 540
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639882453,
+      "id": 541
+    },
+    {
+      "trackId": "yt-KKRcxEq-O5k",
+      "playedAt": 1784639885556,
+      "id": 542
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784639887098,
+      "id": 543
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784639919763,
+      "id": 544
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "playedAt": 1784639936109,
+      "id": 545
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784640014317,
+      "id": 546
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784640033824,
+      "id": 547
+    },
+    {
+      "trackId": "yt-Gs5WlUzk_Ec",
+      "playedAt": 1784640239071,
+      "id": 548
+    },
+    {
+      "trackId": "yt-rIajA0B_w8Y",
+      "playedAt": 1784640242264,
+      "id": 549
+    },
+    {
+      "trackId": "yt-UY7dDx1pbA8",
+      "playedAt": 1784640244008,
+      "id": 550
+    },
+    {
+      "trackId": "yt--XI2_610F0s",
+      "playedAt": 1784640248938,
+      "id": 551
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "playedAt": 1784640254336,
+      "id": 552
+    },
+    {
+      "trackId": "yt--XI2_610F0s",
+      "playedAt": 1784640435239,
+      "id": 553
+    },
+    {
+      "trackId": "yt-UY7dDx1pbA8",
+      "playedAt": 1784640563486,
+      "id": 554
+    },
+    {
+      "trackId": "yt-rIajA0B_w8Y",
+      "playedAt": 1784640812153,
+      "id": 555
+    },
+    {
+      "trackId": "yt-Gs5WlUzk_Ec",
+      "playedAt": 1784641042459,
+      "id": 556
+    },
+    {
+      "trackId": "yt-k2pwvr8p4vM",
+      "playedAt": 1784641218616,
+      "id": 557
+    },
+    {
+      "trackId": "yt-FrsOnNxIrg8",
+      "playedAt": 1784641409605,
+      "id": 558
+    },
+    {
+      "trackId": "yt-9KvCJi7t2DE",
+      "playedAt": 1784641609009,
+      "id": 559
+    },
+    {
+      "trackId": "yt-4Iuo_edrgC0",
+      "playedAt": 1784641866056,
+      "id": 560
+    },
+    {
+      "trackId": "yt-NQbkGDoD7B0",
+      "playedAt": 1784642098463,
+      "id": 561
+    },
+    {
+      "trackId": "yt-gk0nB9vvYfU",
+      "playedAt": 1784642411757,
+      "id": 562
+    },
+    {
+      "trackId": "yt-26ahkIGlBO0",
+      "playedAt": 1784642635553,
+      "id": 563
+    },
+    {
+      "trackId": "demo-song-2",
+      "playedAt": 1784642886151,
+      "id": 564
+    },
+    {
+      "trackId": "yt-_4NV6OYxA8w",
+      "playedAt": 1784642895973,
+      "id": 565
+    },
+    {
+      "trackId": "yt-7E17EioNkCI",
+      "playedAt": 1784643076018,
+      "id": 566
+    },
+    {
+      "trackId": "yt-dgUHE8wWhiE",
+      "playedAt": 1784643271634,
+      "id": 567
+    },
+    {
+      "trackId": "yt-0fN749JqDTA",
+      "playedAt": 1784643550257,
+      "id": 568
+    },
+    {
+      "trackId": "yt-_4NV6OYxA8w",
+      "playedAt": 1784643639254,
+      "id": 569
+    },
+    {
+      "trackId": "yt-dgUHE8wWhiE",
+      "playedAt": 1784703473119,
+      "id": 570
+    },
+    {
+      "trackId": "yt-utU4laPPKls",
+      "playedAt": 1784704070662,
+      "id": 571
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "playedAt": 1784704082348,
+      "id": 572
+    },
+    {
+      "trackId": "yt-utU4laPPKls",
+      "playedAt": 1784704130285,
+      "id": 573
+    },
+    {
+      "trackId": "yt-lenGTVI1r_Q",
+      "playedAt": 1784704131720,
+      "id": 574
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "playedAt": 1784704142175,
+      "id": 575
+    },
+    {
+      "trackId": "yt-WwvVUbllNkM",
+      "playedAt": 1784704148643,
+      "id": 576
+    },
+    {
+      "trackId": "yt-JWsgL5Tmo6g",
+      "playedAt": 1784704150536,
+      "id": 577
+    },
+    {
+      "trackId": "yt-UFIV8ELiQvU",
+      "playedAt": 1784704152163,
+      "id": 578
+    },
+    {
+      "trackId": "yt-_A31x5lu2kA",
+      "playedAt": 1784704153483,
+      "id": 579
+    },
+    {
+      "trackId": "yt-BCscH3WHHew",
+      "playedAt": 1784704154383,
+      "id": 580
+    },
+    {
+      "trackId": "yt-D395bK70m3w",
+      "playedAt": 1784704155068,
+      "id": 581
+    },
+    {
+      "trackId": "yt-63Lz4gZ6Jkw",
+      "playedAt": 1784704155485,
+      "id": 582
+    },
+    {
+      "trackId": "yt-AsieVqOTRs0",
+      "playedAt": 1784704156180,
+      "id": 583
+    },
+    {
+      "trackId": "yt-jnqzrHuyezQ",
+      "playedAt": 1784704156716,
+      "id": 584
+    },
+    {
+      "trackId": "yt-dgUHE8wWhiE",
+      "playedAt": 1784704167273,
+      "id": 585
+    },
+    {
+      "trackId": "yt-nHWkyrhuQY8",
+      "playedAt": 1784704452959,
+      "id": 586
+    },
+    {
+      "trackId": "yt-nHWkyrhuQY8",
+      "playedAt": 1784704517002,
+      "id": 587
     }
   ],
   "playSessions": [
@@ -10956,69 +13224,209 @@
       "completed": false,
       "skipped": true,
       "id": 198
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "startTime": 1784412141074,
+      "duration": 22,
+      "completed": true,
+      "skipped": false,
+      "id": 199
+    },
+    {
+      "trackId": "yt-3n8IMQbicBA",
+      "startTime": 1784412167145,
+      "duration": 62,
+      "completed": true,
+      "skipped": false,
+      "id": 200
+    },
+    {
+      "trackId": "yt-EeSLhZEVmxE",
+      "startTime": 1784412412093,
+      "duration": 5,
+      "completed": true,
+      "skipped": false,
+      "id": 201
+    },
+    {
+      "trackId": "yt-N7jDUBRVQVA",
+      "startTime": 1784412417024,
+      "duration": 3,
+      "completed": true,
+      "skipped": false,
+      "id": 202
+    },
+    {
+      "trackId": "yt-L_EL5KnwHyY",
+      "startTime": 1784412420230,
+      "duration": 23,
+      "completed": false,
+      "skipped": false,
+      "id": 203
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "startTime": 1784413098016,
+      "duration": 14,
+      "completed": false,
+      "skipped": false,
+      "id": 204
+    },
+    {
+      "trackId": "itunes-1074829394",
+      "startTime": 1784413144689,
+      "duration": 3,
+      "completed": true,
+      "skipped": false,
+      "id": 205
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "startTime": 1784413147981,
+      "duration": 33,
+      "completed": false,
+      "skipped": true,
+      "id": 206
+    },
+    {
+      "trackId": "yt-BnYokCSJDfw",
+      "startTime": 1784413341202,
+      "duration": 2,
+      "completed": false,
+      "skipped": true,
+      "id": 207
+    },
+    {
+      "trackId": "yt-5nyvC8-YUTg",
+      "startTime": 1784413605581,
+      "duration": 10,
+      "completed": false,
+      "skipped": true,
+      "id": 208
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "startTime": 1784413891818,
+      "duration": 73,
+      "completed": true,
+      "skipped": false,
+      "id": 209
+    },
+    {
+      "trackId": "itunes-1074829394",
+      "startTime": 1784414140876,
+      "duration": 3,
+      "completed": false,
+      "skipped": true,
+      "id": 210
+    },
+    {
+      "trackId": "yt-DGTlOQLQApw",
+      "startTime": 1784414176212,
+      "duration": 17,
+      "completed": false,
+      "skipped": true,
+      "id": 211
+    },
+    {
+      "trackId": "yt-1ZkN7Hkda4c",
+      "startTime": 1784414201237,
+      "duration": 21,
+      "completed": false,
+      "skipped": true,
+      "id": 212
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "startTime": 1784640014265,
+      "duration": 19,
+      "completed": true,
+      "skipped": false,
+      "id": 213
+    },
+    {
+      "trackId": "yt-Gs5WlUzk_Ec",
+      "startTime": 1784640239025,
+      "duration": 2,
+      "completed": true,
+      "skipped": false,
+      "id": 214
+    },
+    {
+      "trackId": "yt-UY7dDx1pbA8",
+      "startTime": 1784640243961,
+      "duration": 4,
+      "completed": true,
+      "skipped": false,
+      "id": 215
+    },
+    {
+      "trackId": "yt--XI2_610F0s",
+      "startTime": 1784640248888,
+      "duration": 5,
+      "completed": true,
+      "skipped": false,
+      "id": 216
+    },
+    {
+      "trackId": "yt-EZE62LpaqHg",
+      "startTime": 1784640254288,
+      "duration": 18,
+      "completed": true,
+      "skipped": false,
+      "id": 217
+    },
+    {
+      "trackId": "yt-rIajA0B_w8Y",
+      "startTime": 1784640812086,
+      "duration": 15,
+      "completed": false,
+      "skipped": true,
+      "id": 218
+    },
+    {
+      "trackId": "yt-NQbkGDoD7B0",
+      "startTime": 1784642098396,
+      "duration": 11,
+      "completed": false,
+      "skipped": true,
+      "id": 219
+    },
+    {
+      "trackId": "yt-utU4laPPKls",
+      "startTime": 1784704070619,
+      "duration": 3,
+      "completed": true,
+      "skipped": false,
+      "id": 220
+    },
+    {
+      "trackId": "yt-ToO4VFCoR7U",
+      "startTime": 1784704082306,
+      "duration": 43,
+      "completed": true,
+      "skipped": false,
+      "id": 221
+    },
+    {
+      "trackId": "yt-PXrY9ohnAVM",
+      "startTime": 1784704142122,
+      "duration": 6,
+      "completed": true,
+      "skipped": false,
+      "id": 222
+    },
+    {
+      "trackId": "yt-nHWkyrhuQY8",
+      "startTime": 1784704452915,
+      "duration": 26,
+      "completed": false,
+      "skipped": false,
+      "id": 223
     }
   ],
   "searchHistory": [
-    {
-      "query": "Beauty and a Beat",
-      "timestamp": 1781010341427,
-      "id": 96
-    },
-    {
-      "query": "pic",
-      "timestamp": 1781010986363,
-      "id": 97
-    },
-    {
-      "query": "th",
-      "timestamp": 1781010988739,
-      "id": 98
-    },
-    {
-      "query": "thinking of you",
-      "timestamp": 1781010991885,
-      "id": 99
-    },
-    {
-      "query": "Baira",
-      "timestamp": 1781011332958,
-      "id": 100
-    },
-    {
-      "query": "Bairab",
-      "timestamp": 1781011333937,
-      "id": 101
-    },
-    {
-      "query": "Bairan",
-      "timestamp": 1781011334442,
-      "id": 102
-    },
-    {
-      "query": "kalyani",
-      "timestamp": 1781026119919,
-      "id": 103
-    },
-    {
-      "query": "kalyani",
-      "timestamp": 1781026122114,
-      "id": 104
-    },
-    {
-      "query": "blue",
-      "timestamp": 1781030984697,
-      "id": 105
-    },
-    {
-      "query": "blue +",
-      "timestamp": 1781030991022,
-      "id": 106
-    },
-    {
-      "query": "blue + pink",
-      "timestamp": 1781030994132,
-      "id": 107
-    },
     {
       "query": "blue + pinkpink",
       "timestamp": 1781031021105,
@@ -11208,6 +13616,66 @@
       "query": "ivy",
       "timestamp": 1784269621572,
       "id": 145
+    },
+    {
+      "query": "mrignna",
+      "timestamp": 1784406808490,
+      "id": 146
+    },
+    {
+      "query": "mrignani",
+      "timestamp": 1784406809547,
+      "id": 147
+    },
+    {
+      "query": "mrignani",
+      "timestamp": 1784406811481,
+      "id": 148
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784406842219,
+      "id": 149
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784408208158,
+      "id": 150
+    },
+    {
+      "query": "mrignani",
+      "timestamp": 1784412159110,
+      "id": 151
+    },
+    {
+      "query": "mrignani",
+      "timestamp": 1784412161540,
+      "id": 152
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784412178581,
+      "id": 153
+    },
+    {
+      "query": "o",
+      "timestamp": 1784412189723,
+      "id": 154
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784412190907,
+      "id": 155
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784412190968,
+      "id": 156
+    },
+    {
+      "query": "offo",
+      "timestamp": 1784412844601,
+      "id": 157
     }
   ],
   "settings": [
@@ -11249,7 +13717,7 @@
   "settingsStore": {
     "theme": "dark",
     "accentColor": "#f59e0b",
-    "compactMode": false,
+    "compactMode": true,
     "volume": 0.7,
     "shuffle": false,
     "repeat": "off",
@@ -11280,10 +13748,10 @@
     "autoFetchLyrics": true,
     "lyricsFontSize": 16,
     "enableRecommendations": true,
-    "autoSync": true,
-    "lastSyncTimestamp": 1784277313614
+    "autoSync": false,
+    "lastSyncTimestamp": 1784703829453
   },
   "version": "2.0.0",
-  "exportedAt": 1784277493900,
-  "syncedAt": 1784277493913
+  "exportedAt": 1784704566139,
+  "syncedAt": 1784704566153
 }

@@ -36,7 +36,7 @@ const ListeningInsightsPage = lazy(() => import('./components/analytics/Listenin
 const ArtistPage = lazy(() => import('./components/discovery/ArtistPage').then(m => ({ default: m.ArtistPage })));
 const AlbumPage = lazy(() => import('./components/discovery/AlbumPage').then(m => ({ default: m.AlbumPage })));
 const BatchDownloadsPage = lazy(() => import('./components/downloads/BatchDownloadsPage').then(m => ({ default: m.BatchDownloadsPage })));
-const OnboardingPage = lazy(() => import('./components/onboarding/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
+const SpotifyImportModal = lazy(() => import('./components/library/SpotifyImportModal').then(m => ({ default: m.SpotifyImportModal })));
 
 // Page transition variants
 const pageVariants = {
@@ -97,16 +97,9 @@ export const App: React.FC = () => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [showEqualizer, setShowEqualizer] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [showSpotifyImport, setShowSpotifyImport] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    const onboardingDone = localStorage.getItem('singularity_onboarding_completed');
-    if (!onboardingDone && location.pathname !== '/onboarding') {
-      navigate('/onboarding', { replace: true });
-    }
-  }, [location.pathname, navigate]);
 
   // Multi-select state for library
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -400,6 +393,10 @@ export const App: React.FC = () => {
               setShowUpload(true);
               setMobileSidebarOpen(false);
             }}
+            onOpenSpotifyImport={() => {
+              setShowSpotifyImport(true);
+              setMobileSidebarOpen(false);
+            }}
           />
         </div>
 
@@ -410,6 +407,7 @@ export const App: React.FC = () => {
             searchQuery={searchQuery}
             onUploadClick={() => setShowUpload(true)}
             onMenuClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            onOpenSpotifyImport={() => setShowSpotifyImport(true)}
           />
 
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 pb-36 sm:pb-28 relative">
@@ -424,6 +422,7 @@ export const App: React.FC = () => {
                         onUploadClick={() => setShowUpload(true)}
                         onShowEqualizer={() => setShowEqualizer(true)}
                         onSearch={handleSearchSubmit}
+                        onOpenSpotifyImport={() => setShowSpotifyImport(true)}
                       />
                     </PageWrapper>
                   } />
@@ -441,6 +440,7 @@ export const App: React.FC = () => {
                         setIsMultiSelectMode={setIsMultiSelectMode}
                         selectedTrackIds={selectedTrackIds}
                         setSelectedTrackIds={setSelectedTrackIds}
+                        onOpenSpotifyImport={() => setShowSpotifyImport(true)}
                       />
                     </PageWrapper>
                   } />
@@ -485,9 +485,6 @@ export const App: React.FC = () => {
                   <Route path="/album/:name" element={
                     <PageWrapper><AlbumPage /></PageWrapper>
                   } />
-                  <Route path="/onboarding" element={
-                    <OnboardingPage />
-                  } />
                   {/* Fallback to home */}
                   <Route path="*" element={
                     <PageWrapper>
@@ -497,6 +494,7 @@ export const App: React.FC = () => {
                         onUploadClick={() => setShowUpload(true)}
                         onShowEqualizer={() => setShowEqualizer(true)}
                         onSearch={handleSearchSubmit}
+                        onOpenSpotifyImport={() => setShowSpotifyImport(true)}
                       />
                     </PageWrapper>
                   } />
@@ -552,6 +550,17 @@ export const App: React.FC = () => {
           <UploadZone
             onClose={() => setShowUpload(false)}
             triggerRefresh={triggerRefresh}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Spotify Import Modal */}
+      <AnimatePresence>
+        {showSpotifyImport && (
+          <SpotifyImportModal
+            isOpen={showSpotifyImport}
+            onClose={() => setShowSpotifyImport(false)}
+            onSuccess={triggerRefresh}
           />
         )}
       </AnimatePresence>

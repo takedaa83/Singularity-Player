@@ -15,6 +15,7 @@ interface LibraryViewProps {
   setIsMultiSelectMode: (mode: boolean) => void;
   selectedTrackIds: Set<string>;
   setSelectedTrackIds: (ids: Set<string>) => void;
+  onOpenSpotifyImport?: () => void;
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
@@ -23,7 +24,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   isMultiSelectMode,
   setIsMultiSelectMode,
   selectedTrackIds,
-  setSelectedTrackIds
+  setSelectedTrackIds,
+  onOpenSpotifyImport
 }) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,45 +110,55 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </p>
         </div>
 
-        {tracks.length > 0 && (
-          <div className="flex items-center gap-3">
-            {/* Multi-select toggle button */}
+        <div className="flex items-center gap-3">
+          {onOpenSpotifyImport && (
             <button
-              onClick={() => {
-                setIsMultiSelectMode(!isMultiSelectMode);
-                setSelectedTrackIds(new Set());
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                isMultiSelectMode
-                  ? 'bg-white text-black border-white'
-                  : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
-              }`}
+              onClick={onOpenSpotifyImport}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all active:scale-95"
             >
-              {isMultiSelectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-              <span>{isMultiSelectMode ? 'Cancel Selection' : 'Multi-Select'}</span>
+              <span>Import Spotify Playlist</span>
             </button>
+          )}
 
-            {/* Batch actions (if select mode active) */}
-            {isMultiSelectMode && selectedTrackIds.size > 0 && (
-              <>
-                <button
-                  onClick={handleBatchAddToPackager}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition-all"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Add to Batch Packager ({selectedTrackIds.size})</span>
-                </button>
-                <button
-                  onClick={handleDeleteSelected}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-all text-red-400"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete ({selectedTrackIds.size})</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
+          {tracks.length > 0 && (
+            <>
+              <button
+                onClick={() => {
+                  setIsMultiSelectMode(!isMultiSelectMode);
+                  setSelectedTrackIds(new Set());
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                  isMultiSelectMode
+                    ? 'bg-white text-black border-white'
+                    : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                }`}
+              >
+                {isMultiSelectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                <span>{isMultiSelectMode ? 'Cancel Selection' : 'Multi-Select'}</span>
+              </button>
+
+              {/* Batch actions (if select mode active) */}
+              {isMultiSelectMode && selectedTrackIds.size > 0 && (
+                <>
+                  <button
+                    onClick={handleBatchAddToPackager}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-black hover:bg-neutral-200 text-xs font-semibold transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Add to Batch Packager ({selectedTrackIds.size})</span>
+                  </button>
+                  <button
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-xs font-semibold transition-all text-red-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete ({selectedTrackIds.size})</span>
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Select All Toggle in Multi-select Mode */}

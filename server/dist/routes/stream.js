@@ -72,7 +72,7 @@ router.get('/:filename', (req, res) => {
         const parts = range.replace(/bytes=/, '').split('-');
         const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-        if (start >= fileSize) {
+        if (isNaN(start) || isNaN(end) || start >= fileSize || start < 0) {
             res.status(416).set({
                 'Content-Range': `bytes */${fileSize}`
             }).send();

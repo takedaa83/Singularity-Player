@@ -570,30 +570,24 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 </div>
               </>
             )}
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={handlePlayPause}
               disabled={!currentTrack}
-              className="p-1.5 rounded-full bg-white text-black active:scale-90 transition-all disabled:opacity-40"
+              className="w-11 h-11 flex items-center justify-center rounded-full bg-white text-black active:scale-90 transition-all disabled:opacity-40 shadow-sm"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
-              {isPlaying ? (
-                <Pause className="w-3.5 h-3.5 fill-black text-black" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-black text-black ml-0.5" />
-              )}
+              {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
             </button>
             <button
               onClick={() => nextTrack(true)}
               disabled={!currentTrack}
-              className="p-1.5 rounded-full text-white/80 active:text-white active:scale-90 transition-all disabled:opacity-30"
+              className="w-11 h-11 flex items-center justify-center rounded-full text-neutral-300 hover:text-white active:scale-90 transition-all disabled:opacity-30"
               aria-label="Next track"
             >
-              <SkipForward className="w-4 h-4" />
+              <SkipForward className="w-5 h-5" />
             </button>
-          </div>
+          </div>  </div>
         </div>
       </motion.div>
 

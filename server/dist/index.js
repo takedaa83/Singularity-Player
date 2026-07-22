@@ -56,6 +56,7 @@ const yt_1 = __importDefault(require("./routes/yt"));
 const lyrics_1 = __importDefault(require("./routes/lyrics"));
 const downloads_1 = __importDefault(require("./routes/downloads"));
 const sync_1 = __importDefault(require("./routes/sync"));
+const spotify_1 = __importDefault(require("./routes/spotify"));
 const youtubeService_1 = require("./services/youtubeService");
 const customInnertube_1 = require("./services/customInnertube");
 const processPool_1 = require("./services/processPool");
@@ -142,11 +143,12 @@ const downloadsLimiter = (req, res, next) => {
 };
 app.use('/api/downloads', downloadsLimiter, downloads_1.default);
 app.use('/api/sync', generalLimiter, sync_1.default);
+app.use('/api/spotify', generalLimiter, spotify_1.default);
 // Image Proxy Endpoint to bypass CORS blocks for canvas-based color extraction
 app.get('/api/proxy-image', (req, res) => {
     const imageUrl = req.query.url;
-    if (!imageUrl) {
-        res.status(400).json({ error: 'url parameter is required' });
+    if (typeof imageUrl !== 'string' || !imageUrl.trim()) {
+        res.status(400).json({ error: 'url parameter is required and must be a string' });
         return;
     }
     // If local server cover art, serve directly or redirect

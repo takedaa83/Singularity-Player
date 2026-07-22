@@ -21,6 +21,7 @@ interface SidebarProps {
   refreshTrigger: number;
   triggerRefresh: () => void;
   onUploadClick: () => void;
+  onOpenSpotifyImport?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -32,7 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setShowEqualizer,
   refreshTrigger,
   triggerRefresh,
-  onUploadClick
+  onUploadClick,
+  onOpenSpotifyImport
 }) => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const { getAllPlaylists, savePlaylist, deletePlaylist, getAllTracks, saveTrack, getAllFavorites, toggleFavorite } = useLibraryDB();
@@ -255,14 +257,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </IconButton>
         </div>
 
-        {/* Upload Music Button */}
-        <Box sx={{ px: sidebarCollapsed ? 0 : 1, mt: 1, mb: 0.5, display: 'flex', justifyContent: 'center' }}>
+        {/* Upload & Spotify Buttons */}
+        <Box sx={{ px: sidebarCollapsed ? 0 : 1, mt: 1, mb: 0.5, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
           {sidebarCollapsed ? (
-            <Tooltip title="Upload Music" placement="right" arrow>
+            <>
+              <Tooltip title="Upload Music" placement="right" arrow>
+                <button
+                  onClick={onUploadClick}
+                  aria-label="Upload music"
+                  className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg"
+                  style={{
+                    background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
+                    color: '#fff',
+                    boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Upload className="w-[18px] h-[18px]" />
+                </button>
+              </Tooltip>
+              {onOpenSpotifyImport && (
+                <Tooltip title="Import Spotify Playlist" placement="right" arrow>
+                  <button
+                    onClick={onOpenSpotifyImport}
+                    aria-label="Import Spotify Playlist"
+                    className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg bg-emerald-500 hover:bg-emerald-400 text-black"
+                  >
+                    <ListMusic className="w-[18px] h-[18px]" />
+                  </button>
+                </Tooltip>
+              )}
+            </>
+          ) : (
+            <>
               <button
                 onClick={onUploadClick}
                 aria-label="Upload music"
-                className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
                 style={{
                   background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
                   color: '#fff',
@@ -271,25 +303,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   cursor: 'pointer'
                 }}
               >
-                <Upload className="w-[18px] h-[18px]" />
+                <Upload className="w-4 h-4" />
+                <span>Upload Music</span>
               </button>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={onUploadClick}
-              aria-label="Upload music"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
-              style={{
-                background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-                color: '#fff',
-                boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Music</span>
-            </button>
+
+              {onOpenSpotifyImport && (
+                <button
+                  onClick={onOpenSpotifyImport}
+                  aria-label="Import Spotify Playlist"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs active:scale-95 transition-all shadow-md hover:shadow-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30"
+                >
+                  <ListMusic className="w-4 h-4" />
+                  <span>Import Spotify Link</span>
+                </button>
+              )}
+            </>
           )}
         </Box>
 

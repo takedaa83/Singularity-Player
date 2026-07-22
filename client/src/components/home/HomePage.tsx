@@ -66,6 +66,7 @@ interface HomePageProps {
   onUploadClick: () => void;
   onShowEqualizer: () => void;
   onSearch?: (query: string) => void;
+  onOpenSpotifyImport?: () => void;
 }
 
 // ─── Animation Variants ───────────────────────────────────────────────

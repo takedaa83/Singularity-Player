@@ -44,10 +44,48 @@
   --border-subtle: rgba(255, 255, 255, 0.07);
   --border-strong: rgba(255, 255, 255, 0.15);
 
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
   --primary: var(--primary-color, #f59e0b);
   --primary-light: var(--primary-light-color, #fbbf24);
   --primary-dark: var(--primary-dark-color, #d97706);
   --primary-rgb: 245, 158, 11;
+}
+
+/* Mobile Safe Area & Touch Ergonomics Utilities */
+html, body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+}
+
+button, a, input, select, [role="button"] {
+  touch-action: manipulation;
+}
+
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+/* GPU Hardware Acceleration for Ultra-Smooth UI Rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.smooth-transition {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root.light {

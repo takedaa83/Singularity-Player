@@ -20,6 +20,7 @@ import ytRouter from './routes/yt';
 import lyricsRouter from './routes/lyrics';
 import downloadsRouter from './routes/downloads';
 import syncRouter from './routes/sync';
+import spotifyRouter from './routes/spotify';
 import { preWarmClient, ensureYtDlpBinary } from './services/youtubeService';
 import { checkCookieHealth } from './services/customInnertube';
 import { ytdlpPool } from './services/processPool';
@@ -126,12 +127,13 @@ const downloadsLimiter = (req: express.Request, res: express.Response, next: exp
 };
 app.use('/api/downloads', downloadsLimiter, downloadsRouter);
 app.use('/api/sync', generalLimiter, syncRouter);
+app.use('/api/spotify', generalLimiter, spotifyRouter);
 
 // Image Proxy Endpoint to bypass CORS blocks for canvas-based color extraction
 app.get('/api/proxy-image', (req, res) => {
-  const imageUrl = req.query.url as string;
-  if (!imageUrl) {
-    res.status(400).json({ error: 'url parameter is required' });
+  const imageUrl = req.query.url;
+  if (typeof imageUrl !== 'string' || !imageUrl.trim()) {
+    res.status(400).json({ error: 'url parameter is required and must be a string' });
     return;
   }
   

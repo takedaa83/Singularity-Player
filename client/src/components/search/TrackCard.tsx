@@ -30,14 +30,15 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   onDeleteSuccess,
   refreshTrigger
 }) => {
-  const currentTrack = usePlayerStore(state => state.currentTrack);
-  const isPlaying = usePlayerStore(state => state.isPlaying);
+  const isCurrent = usePlayerStore(state => state.currentTrack?.id === track.id);
+  const isPlaying = usePlayerStore(state => state.isPlaying && state.currentTrack?.id === track.id);
+  const isBuffering = usePlayerStore(state => state.isBuffering && state.currentTrack?.id === track.id);
+  const liked = usePlayerStore(state => state.favorites?.includes(track.id) || false);
+
   const playTrack = usePlayerStore(state => state.playTrack);
   const addToQueue = usePlayerStore(state => state.addToQueue);
   const playNext = usePlayerStore(state => state.playNext);
-  const favorites = usePlayerStore(state => state.favorites);
   const setQueue = usePlayerStore(state => state.setQueue);
-  const isBuffering = usePlayerStore(state => state.isBuffering);
   const { toggleFavorite, deleteTrack, getAllTracks } = useLibraryDB();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -45,9 +46,6 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   const cardRef = useGsapHover<HTMLDivElement>(1.015, -1);
   const [downloading, setDownloading] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState<{ top: number; left: number } | null>(null);
-
-  const isCurrent = currentTrack?.id === track.id;
-  const liked = favorites?.includes(track.id) || false;
 
   const prefetchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
