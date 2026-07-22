@@ -55,41 +55,59 @@ router.get('/similar-artists', async (req, res) => {
     const name = req.query.name;
     const limit = parseInt(req.query.limit || '3', 10);
     if (!name) {
-        res.json({ artists: [] });
+        res.json({ artists: [], debug: { source: 'none', reason: 'empty_query' } });
         return;
     }
+    console.log(`[Similar Artists] Querying similar artists for "${name}" (limit: ${limit})`);
+    // 1. Try Last.fm API with 5s timeout
     try {
-        const lastfmKey = process.env.LASTFM_API_KEY;
+        const lastfmKey = process.env.LASTFM_API_KEY || 'b25b959554ed76058ac220b7b2e0a026';
+        console.log(`[Similar Artists] Last.fm API Key present: ${Boolean(process.env.LASTFM_API_KEY)} (using ${lastfmKey ? 'active' : 'none'})`);
         if (lastfmKey) {
             const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${encodeURIComponent(name)}&api_key=${lastfmKey}&format=json&autocorrect=1&limit=${limit}`;
-            const r = await fetch(url);
+            const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            console.log(`[Similar Artists] Last.fm HTTP response status: ${r.status}`);
             if (r.ok) {
                 const data = await r.json();
-                const artists = (data?.similarartists?.artist ?? []).map((a) => a.name).filter(Boolean);
+                const artists = (data?.similarartists?.artist ?? [])
+                    .map((a) => a.name)
+                    .filter((n) => n && n.toLowerCase() !== name.toLowerCase());
                 if (artists.length > 0) {
-                    res.json({ artists: artists.slice(0, limit) });
+                    const result = artists.slice(0, limit);
+                    console.log(`[Similar Artists] Last.fm returned ${result.length} artists:`, result);
+                    res.json({ artists: result, debug: { source: 'lastfm', count: result.length } });
                     return;
                 }
             }
         }
-        const deezerUrl = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`;
-        const r = await fetch(deezerUrl);
+    }
+    catch (error) {
+        console.warn(`[Similar Artists] Last.fm lookup failed/timed out for "${name}":`, error?.message || error);
+    }
+    // 2. Fallback to Deezer with 5s timeout
+    try {
+        console.log(`[Similar Artists] Falling back to Deezer artist search for "${name}"...`);
+        const deezerUrl = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=6`;
+        const r = await fetch(deezerUrl, { signal: AbortSignal.timeout(5000) });
+        console.log(`[Similar Artists] Deezer HTTP response status: ${r.status}`);
         if (r.ok) {
             const data = await r.json();
             const artists = (data?.data ?? [])
                 .map((a) => a.name)
-                .filter((n) => n.toLowerCase() !== name.toLowerCase());
+                .filter((n) => n && n.toLowerCase() !== name.toLowerCase());
             if (artists.length > 0) {
-                res.json({ artists: artists.slice(0, limit) });
+                const result = artists.slice(0, limit);
+                console.log(`[Similar Artists] Deezer fallback returned ${result.length} artists:`, result);
+                res.json({ artists: result, debug: { source: 'deezer', count: result.length } });
                 return;
             }
         }
-        res.json({ artists: [] });
     }
     catch (error) {
-        console.error('[Search Route] Error fetching similar artists:', error);
-        res.json({ artists: [] });
+        console.warn(`[Similar Artists] Deezer fallback failed/timed out for "${name}":`, error?.message || error);
     }
+    console.log(`[Similar Artists] No similar artists found for "${name}" across all sources.`);
+    res.json({ artists: [], debug: { source: 'none', count: 0 } });
 });
 // POST /api/search/recognize
 router.post('/recognize', async (req, res) => {
