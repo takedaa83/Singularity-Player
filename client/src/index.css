@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..900&family=Inter:wght@400..800&family=Outfit:wght@500;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -20,10 +21,13 @@
 }
 
 :root {
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #141414;
-  --bg-surface: #1a1a1a;
+  --font-display: 'Fraunces', 'Outfit', serif;
+  --font-body: 'Inter', sans-serif;
+
+  --bg-primary: #070707;
+  --bg-secondary: #0d0d0f;
+  --bg-tertiary: #161619;
+  --bg-surface: #1d1d21;
   
   --text-primary: #ffffff;
   --text-secondary: #a3a3a3;
@@ -33,16 +37,27 @@
   --accent: #ffffff;
   --border-primary: #262626;
 
+  --surface-glass: rgba(22, 22, 25, 0.72);
+  --surface-glass-strong: rgba(18, 18, 21, 0.9);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.15);
+
   --primary: var(--primary-color, #f59e0b);
   --primary-light: var(--primary-light-color, #fbbf24);
   --primary-dark: var(--primary-dark-color, #d97706);
+  --primary-rgb: 245, 158, 11;
 }
 
 :root.light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #f5f5f5;
-  --bg-surface: #eeeeee;
+  --font-display: 'Fraunces', 'Outfit', serif;
+  --font-body: 'Inter', sans-serif;
+
+  --bg-primary: #f8f8f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f1ef;
+  --bg-surface: #e7e7e4;
   
   --text-primary: #0a0a0a;
   --text-secondary: #525252;
@@ -52,9 +67,41 @@
   --accent: #000000;
   --border-primary: #e5e5e5;
 
+  --surface-glass: rgba(255, 255, 255, 0.76);
+  --surface-glass-strong: rgba(255, 255, 255, 0.93);
+  --surface-hover: rgba(0, 0, 0, 0.05);
+
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
   --primary: var(--primary-color, #f59e0b);
   --primary-light: var(--primary-light-color, #fbbf24);
   --primary-dark: var(--primary-dark-color, #d97706);
+  --primary-rgb: 245, 158, 11;
+}
+
+/* ── Grain Texture Overlay for Depth ── */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Prefers Reduced Motion Guard ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Global Reset ── */

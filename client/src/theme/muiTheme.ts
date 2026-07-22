@@ -68,8 +68,9 @@ export const tokens = {
     '2xl': 32,
     '3xl': 48,
   },
-  // Typography scale (replacing ad-hoc text-[9px]..text-[15px])
-  fontFamily: "'Inter', 'Inter Display', system-ui, -apple-system, sans-serif",
+  // Typography scale
+  fontFamily: "var(--font-body, 'Inter', system-ui, sans-serif)",
+  fontFamilyDisplay: "var(--font-display, 'Fraunces', 'Outfit', serif)",
   typography: {
     caption: { size: 11, lineHeight: 1.4, weight: 400 },
     body2: { size: 13, lineHeight: 1.5, weight: 400 },

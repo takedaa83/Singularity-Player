@@ -9,11 +9,25 @@ export const MobileNav: React.FC = () => {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsKeyboardOpen(window.innerHeight < 500);
+    const viewport = window.visualViewport;
+    const updateKeyboardState = () => {
+      if (viewport) {
+        const keyboardHeight = window.innerHeight - viewport.height;
+        setIsKeyboardOpen(keyboardHeight > 150);
+      } else {
+        setIsKeyboardOpen(window.innerHeight < 500);
+      }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    viewport?.addEventListener('resize', updateKeyboardState);
+    viewport?.addEventListener('scroll', updateKeyboardState);
+    window.addEventListener('resize', updateKeyboardState);
+
+    return () => {
+      viewport?.removeEventListener('resize', updateKeyboardState);
+      viewport?.removeEventListener('scroll', updateKeyboardState);
+      window.removeEventListener('resize', updateKeyboardState);
+    };
   }, []);
 
   if (isKeyboardOpen) return null;
@@ -33,7 +47,7 @@ export const MobileNav: React.FC = () => {
   };
 
   return (
-    <nav className="block md:hidden fixed bottom-2 left-3 right-3 z-40">
+    <nav className="block md:hidden fixed bottom-2 left-3 right-3 z-40 pb-[max(0rem,env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-around h-14 px-1 rounded-2xl border border-white/10 shadow-[0_10px_35px_rgba(0,0,0,0.75)] backdrop-blur-2xl bg-neutral-950/85">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;

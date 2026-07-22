@@ -1160,8 +1160,10 @@ export const HomePage: React.FC<HomePageProps> = ({
         }
       });
 
-      // 5. 3D Parallax Tilt Effect on hover
-      const tiltCards = document.querySelectorAll('.gsap-tilt');
+      // 5. 3D Parallax Tilt Effect — scoped exclusively to Hero card with proper listener teardown
+      const listeners: Array<{ el: HTMLElement; move: (e: MouseEvent) => void; leave: () => void }> = [];
+      const tiltCards = containerRef.current ? containerRef.current.querySelectorAll('.gsap-hero') : [];
+      
       tiltCards.forEach((card) => {
         const el = card as HTMLElement;
         
@@ -1174,14 +1176,14 @@ export const HomePage: React.FC<HomePageProps> = ({
           const width = rect.width;
           const height = rect.height;
           
-          const rotateY = ((x - width / 2) / (width / 2)) * 12; // max 12 deg
-          const rotateX = -((y - height / 2) / (height / 2)) * 12; // max 12 deg
+          const rotateY = ((x - width / 2) / (width / 2)) * 6; // max 6 deg
+          const rotateX = -((y - height / 2) / (height / 2)) * 6; // max 6 deg
           
           gsap.to(el, {
             rotateX: rotateX,
             rotateY: rotateY,
             transformPerspective: 800,
-            scale: 1.03,
+            scale: 1.01,
             ease: "power2.out",
             duration: 0.35,
             overwrite: "auto"
@@ -1201,7 +1203,15 @@ export const HomePage: React.FC<HomePageProps> = ({
         
         el.addEventListener('mousemove', handleMouseMove);
         el.addEventListener('mouseleave', handleMouseLeave);
+        listeners.push({ el, move: handleMouseMove, leave: handleMouseLeave });
       });
+
+      return () => {
+        listeners.forEach(({ el, move, leave }) => {
+          el.removeEventListener('mousemove', move);
+          el.removeEventListener('mouseleave', leave);
+        });
+      };
     }, containerRef);
 
     return () => ctx.revert();
@@ -1518,7 +1528,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 sx={{
                   fontWeight: 800,
                   color: '#fff',
-                  fontFamily: tokens.fontFamily,
+                  fontFamily: tokens.fontFamilyDisplay,
                   letterSpacing: '-0.02em',
                   fontSize: { xs: 32, sm: 42, md: 56 },
                   lineHeight: 1.08,
