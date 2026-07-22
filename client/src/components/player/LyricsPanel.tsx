@@ -1491,7 +1491,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 320, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="w-80 h-full glass-heavy flex flex-col py-6 px-4 text-white shrink-0 z-40 border-l border-white/10"
+          className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 bg-neutral-950 sm:bg-neutral-900/90 sm:backdrop-blur-2xl flex flex-col py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10 shadow-2xl overflow-hidden"
         >
           <div className="flex flex-col gap-5 h-full overflow-hidden">
             {/* Header */}

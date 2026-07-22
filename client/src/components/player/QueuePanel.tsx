@@ -69,8 +69,8 @@ const SortableQueueItem: React.FC<SortableQueueItemProps> = ({
       style={style}
       className={`group flex items-center justify-between p-2.5 rounded-lg transition-all border text-xs ${
         isActive
-          ? 'bg-white/10 border-neutral-700 now-playing-glow'
-          : 'bg-transparent border-neutral-800 hover:bg-neutral-800/50 hover:border-neutral-700'
+          ? 'bg-primary/20 border-primary/50 text-white shadow-md'
+          : 'bg-neutral-900/90 border-white/5 hover:bg-neutral-800 hover:border-white/10'
       }`}
     >
       {/* Drag handle */}
@@ -200,13 +200,23 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
 
 
   return (
-    <motion.div
-      initial={{ x: '100%', opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: '100%', opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 glass-heavy flex flex-col justify-between py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10"
-    >
+    <>
+      {/* Mobile Dimmed Backdrop Overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="block sm:hidden fixed inset-0 bg-black/75 backdrop-blur-md z-40"
+      />
+
+      <motion.div
+        initial={{ x: '100%', opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: '100%', opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 bg-neutral-950 sm:bg-neutral-900/90 sm:backdrop-blur-2xl flex flex-col justify-between py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10 shadow-2xl overflow-hidden"
+      >
       <div className="flex flex-col gap-6 h-full overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center px-2 shrink-0">
@@ -354,6 +364,7 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
         </div>
       </div>
     </motion.div>
+    </>
   );
 };
 
