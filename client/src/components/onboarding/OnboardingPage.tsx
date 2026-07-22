@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
-  Sparkles, Check, ArrowRight, Music, Heart, Disc, Search, Globe, X,
+  Sparkles, Check, ArrowRight, Music, Disc, Search, X,
   Radio, Headphones, Volume2, Mic2, Flame, RefreshCw, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ interface ArtistItem {
   genre: string;
   related?: string[];
   isCustom?: boolean;
+  isLoadingImage?: boolean;
 }
 
 const LANGUAGES = [
@@ -46,95 +47,48 @@ const GENRES = [
   { id: 'classical', name: 'Classical', color: 'from-amber-700 via-amber-800 to-neutral-900', icon: Disc },
 ];
 
-// Curated high-res artist portrait database with accurate related mappings
 const INITIAL_ARTISTS: ArtistItem[] = [
-  {
-    id: 'the-weeknd',
-    name: 'The Weeknd',
-    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
-    genre: 'R&B / Pop',
-    related: ['Frank Ocean', 'SZA', 'Giveon']
-  },
-  {
-    id: 'drake',
-    name: 'Drake',
-    image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=500&auto=format&fit=crop&q=80',
-    genre: 'Hip-Hop',
-    related: ['21 Savage', 'Future', 'Lil Baby']
-  },
-  {
-    id: 'taylor-swift',
-    name: 'Taylor Swift',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
-    genre: 'Pop',
-    related: ['Sabrina Carpenter', 'Olivia Rodrigo', 'Gracie Abrams']
-  },
-  {
-    id: 'arijit-singh',
-    name: 'Arijit Singh',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
-    genre: 'Bollywood',
-    related: ['Pritam', 'Atif Aslam', 'Shreya Ghoshal']
-  },
-  {
-    id: 'billie-eilish',
-    name: 'Billie Eilish',
-    image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=80',
-    genre: 'Indie Pop',
-    related: ['Lorde', 'Lana Del Rey', 'FINNEAS']
-  },
-  {
-    id: 'travis-scott',
-    name: 'Travis Scott',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80',
-    genre: 'Hip-Hop / Trap',
-    related: ['Don Toliver', 'Playboi Carti', 'Metro Boomin']
-  },
-  {
-    id: 'badshah',
-    name: 'Badshah',
-    image: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=500&auto=format&fit=crop&q=80',
-    genre: 'Punjabi / Rap',
-    related: ['Yo Yo Honey Singh', 'Divine', 'King']
-  },
-  {
-    id: 'bts',
-    name: 'BTS',
-    image: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=500&auto=format&fit=crop&q=80',
-    genre: 'K-Pop',
-    related: ['BLACKPINK', 'Stray Kids', 'TWICE']
-  },
-  {
-    id: 'bruno-mars',
-    name: 'Bruno Mars',
-    image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=500&auto=format&fit=crop&q=80',
-    genre: 'Pop / R&B',
-    related: ['Anderson .Paak', 'Silk Sonic', 'Post Malone']
-  },
-  {
-    id: 'diljit-dosanjh',
-    name: 'Diljit Dosanjh',
-    image: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=500&auto=format&fit=crop&q=80',
-    genre: 'Punjabi',
-    related: ['Karan Aujla', 'AP Dhillon', 'Sidhu Moose Wala']
-  },
-  {
-    id: 'kendrick-lamar',
-    name: 'Kendrick Lamar',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80',
-    genre: 'Hip-Hop',
-    related: ['J. Cole', 'Baby Keem', 'Tyler, The Creator']
-  },
-  {
-    id: 'dua-lipa',
-    name: 'Dua Lipa',
-    image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop&q=80',
-    genre: 'Dance Pop',
-    related: ['Charli xcx', 'Calvin Harris', 'Bebe Rexha']
-  }
+  { id: 'the-weeknd', name: 'The Weeknd', image: '', genre: 'R&B / Pop', related: ['Frank Ocean', 'SZA', 'Giveon'] },
+  { id: 'drake', name: 'Drake', image: '', genre: 'Hip-Hop', related: ['21 Savage', 'Future', 'Lil Baby'] },
+  { id: 'taylor-swift', name: 'Taylor Swift', image: '', genre: 'Pop', related: ['Sabrina Carpenter', 'Olivia Rodrigo', 'Gracie Abrams'] },
+  { id: 'arijit-singh', name: 'Arijit Singh', image: '', genre: 'Bollywood', related: ['Pritam', 'Atif Aslam', 'Shreya Ghoshal'] },
+  { id: 'billie-eilish', name: 'Billie Eilish', image: '', genre: 'Indie Pop', related: ['Lorde', 'Lana Del Rey', 'FINNEAS'] },
+  { id: 'travis-scott', name: 'Travis Scott', image: '', genre: 'Hip-Hop / Trap', related: ['Don Toliver', 'Playboi Carti', 'Metro Boomin'] },
+  { id: 'badshah', name: 'Badshah', image: '', genre: 'Punjabi / Rap', related: ['Yo Yo Honey Singh', 'Divine', 'King'] },
+  { id: 'bts', name: 'BTS', image: '', genre: 'K-Pop', related: ['BLACKPINK', 'Stray Kids', 'TWICE'] },
+  { id: 'bruno-mars', name: 'Bruno Mars', image: '', genre: 'Pop / R&B', related: ['Anderson .Paak', 'Silk Sonic', 'Post Malone'] },
+  { id: 'diljit-dosanjh', name: 'Diljit Dosanjh', image: '', genre: 'Punjabi', related: ['Karan Aujla', 'AP Dhillon', 'Sidhu Moose Wala'] },
+  { id: 'kendrick-lamar', name: 'Kendrick Lamar', image: '', genre: 'Hip-Hop', related: ['J. Cole', 'Baby Keem', 'Tyler, The Creator'] },
+  { id: 'dua-lipa', name: 'Dua Lipa', image: '', genre: 'Dance Pop', related: ['Charli xcx', 'Calvin Harris', 'Bebe Rexha'] }
 ];
 
-// Fallback Colored Initials Avatar component for artists without high-res photos
+// High-reliability official artist image resolver querying iTunes Search API / Deezer
+const fetchRealArtistImage = async (artistName: string): Promise<string | null> => {
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=1`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.results?.[0]?.artworkUrl100) {
+        return data.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+      }
+    }
+  } catch (e) {
+    // Ignore error and try fallback
+  }
+
+  try {
+    const results = await api.search(`${artistName} official`);
+    if (results && results.length > 0) {
+      return api.coverUrl(results[0].coverArtUrl, results[0].videoId);
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  return null;
+};
+
+// Fallback Colored Initials Avatar component for artists
 const InitialsAvatar: React.FC<{ name: string }> = ({ name }) => {
   const initials = name
     .split(' ')
@@ -144,7 +98,6 @@ const InitialsAvatar: React.FC<{ name: string }> = ({ name }) => {
     .join('')
     .toUpperCase() || '🎵';
 
-  // Generate deterministic gradient background color based on artist name
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -189,7 +142,25 @@ export const OnboardingPage: React.FC = () => {
   const updateSetting = useSettingsStore((s) => s.updateSetting);
   const playTrack = usePlayerStore((s) => s.playTrack);
 
-  // Progressive saving to settingsStore
+  // Fetch real official artist images on load for INITIAL_ARTISTS
+  useEffect(() => {
+    let isMounted = true;
+    const loadImages = async () => {
+      const updated = await Promise.all(
+        artistList.map(async (artist) => {
+          if (artist.image) return artist;
+          const realImg = await fetchRealArtistImage(artist.name);
+          return { ...artist, image: realImg || '' };
+        })
+      );
+      if (isMounted) {
+        setArtistList(updated);
+      }
+    };
+    loadImages();
+    return () => { isMounted = false; };
+  }, []);
+
   const toggleLanguage = (id: string) => {
     const updated = selectedLanguages.includes(id)
       ? selectedLanguages.filter(l => l !== id)
@@ -222,7 +193,7 @@ export const OnboardingPage: React.FC = () => {
           const mapped: ArtistItem[] = results.slice(0, 8).map(t => ({
             id: `api-${t.id}`,
             name: t.artist || t.title,
-            image: api.coverUrl(t.coverArtUrl, t.videoId) || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+            image: api.coverUrl(t.coverArtUrl, t.videoId) || '',
             genre: t.genre || 'Music Artist',
             isCustom: true
           }));
@@ -240,16 +211,16 @@ export const OnboardingPage: React.FC = () => {
     };
   }, [searchQuery]);
 
-  // Recursive Related Artist Spawning
-  const toggleArtist = (artist: ArtistItem) => {
+  // Recursive Related Artist Spawning with REAL image resolution
+  const toggleArtist = async (artist: ArtistItem) => {
     const next = new Set(selectedArtists);
     const isSelecting = !next.has(artist.id);
 
     if (isSelecting) {
       next.add(artist.id);
 
-      // Dynamically spawn 3 related artists next to the clicked artist card
-      const relatedNames = artist.related || [`${artist.name} Radio 1`, `${artist.name} Radio 2`, `${artist.name} Similar`];
+      // Dynamically spawn 3 related artists with REAL artist images
+      const relatedNames = artist.related || [`${artist.name} Radio`, `${artist.name} Station`, `${artist.name} Hits`];
       const existingNames = new Set(artistList.map(a => a.name.toLowerCase()));
       const newSpawned: ArtistItem[] = [];
 
@@ -258,9 +229,9 @@ export const OnboardingPage: React.FC = () => {
           newSpawned.push({
             id: relName.toLowerCase().replace(/\s+/g, '-'),
             name: relName,
-            image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80',
+            image: '',
             genre: artist.genre,
-            related: [`${relName} Station 1`, `${relName} Station 2`]
+            isLoadingImage: true
           });
         }
       }
@@ -270,6 +241,21 @@ export const OnboardingPage: React.FC = () => {
         const updated = [...artistList];
         updated.splice(index !== -1 ? index + 1 : updated.length, 0, ...newSpawned);
         setArtistList(updated);
+
+        // Fetch real artist photos in background for the spawned artists
+        Promise.all(
+          newSpawned.map(async (spawn) => {
+            const realImg = await fetchRealArtistImage(spawn.name);
+            return { id: spawn.id, image: realImg || '' };
+          })
+        ).then((resolved) => {
+          setArtistList((prev) =>
+            prev.map((item) => {
+              const match = resolved.find((r) => r.id === item.id);
+              return match ? { ...item, image: match.image, isLoadingImage: false } : item;
+            })
+          );
+        });
       }
     } else {
       next.delete(artist.id);
@@ -302,7 +288,6 @@ export const OnboardingPage: React.FC = () => {
       console.error('[Onboarding] Error seeding recommendations:', e);
     }
 
-    // Hold payoff animation screen for 2.2 seconds for full Spotify payoff moment
     setTimeout(() => {
       setIsBuilding(false);
       navigate('/', { replace: true });
@@ -497,7 +482,7 @@ export const OnboardingPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* STEP 3: ARTISTS (CLEAN SPOTIFY CIRCULAR LAYOUT + RECURSIVE RELATED SPAWNING) */}
+          {/* STEP 3: ARTISTS */}
           {step === 3 && (
             <motion.div
               key="step3"
@@ -513,7 +498,6 @@ export const OnboardingPage: React.FC = () => {
                   <p className="text-sm text-neutral-400">Tapping any artist smoothly reveals similar artists next to them!</p>
                 </div>
 
-                {/* Debounced Real YouTube Music Search Input */}
                 <div className="relative w-full sm:w-80">
                   <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
                   <input
@@ -534,11 +518,11 @@ export const OnboardingPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* ARTIST GRID WITH SMOOTH LAYOUT TRANSITION */}
+              {/* ARTIST GRID */}
               {isSearching ? (
                 <div className="flex-1 flex items-center justify-center flex-col gap-3 text-neutral-400 py-12">
                   <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-                  <span className="text-xs font-semibold">Searching YouTube Music for artists...</span>
+                  <span className="text-xs font-semibold">Searching YouTube Music for official artists...</span>
                 </div>
               ) : (
                 <motion.div
@@ -558,7 +542,7 @@ export const OnboardingPage: React.FC = () => {
                       >
                         {/* Circular Avatar Container */}
                         <div
-                          className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 transition-all duration-300 transform-gpu ${
+                          className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 transition-all duration-300 transform-gpu bg-neutral-900 ${
                             isSelected
                               ? 'border-primary ring-4 ring-primary/30 scale-105 shadow-[0_0_25px_rgba(var(--primary-rgb),0.4)]'
                               : 'border-white/10 group-hover:border-white/30 group-hover:scale-102'
@@ -570,11 +554,7 @@ export const OnboardingPage: React.FC = () => {
                               alt={artist.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                // Fallback to initials avatar on broken image URL
                                 e.currentTarget.style.display = 'none';
-                                if (e.currentTarget.parentElement) {
-                                  e.currentTarget.parentElement.classList.add('bg-neutral-800');
-                                }
                               }}
                             />
                           ) : (
