@@ -62,10 +62,21 @@ const INITIAL_ARTISTS: ArtistItem[] = [
   { id: 'dua-lipa', name: 'Dua Lipa', image: '', genre: 'Dance Pop', related: ['Charli xcx', 'Calvin Harris', 'Bebe Rexha'] }
 ];
 
+// Fetch REAL related artists from similarity graph. Never invent fake names.
+const fetchSimilarArtists = async (artistName: string, limit = 3): Promise<string[]> => {
+  try {
+    const res = await api.similarArtists(artistName, limit);
+    return res?.artists || [];
+  } catch (e) {
+    console.warn('[Onboarding] Similar-artist lookup failed:', e);
+    return [];
+  }
+};
+
 // High-reliability official artist image resolver querying iTunes Search API / Deezer
 const fetchRealArtistImage = async (artistName: string): Promise<string | null> => {
   try {
-    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=1`);
+    const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=1`);
     if (res.ok) {
       const data = await res.json();
       if (data?.results?.[0]?.artworkUrl100) {
@@ -211,7 +222,7 @@ export const OnboardingPage: React.FC = () => {
     };
   }, [searchQuery]);
 
-  // Recursive Related Artist Spawning with REAL image resolution
+  // Recursive Related Artist Spawning with REAL similarity graph resolution
   const toggleArtist = async (artist: ArtistItem) => {
     const next = new Set(selectedArtists);
     const isSelecting = !next.has(artist.id);
@@ -219,8 +230,11 @@ export const OnboardingPage: React.FC = () => {
     if (isSelecting) {
       next.add(artist.id);
 
-      // Dynamically spawn 3 related artists with REAL artist images
-      const relatedNames = artist.related || [`${artist.name} Radio`, `${artist.name} Station`, `${artist.name} Hits`];
+      // Fetch REAL related artists from similarity graph (never invent fake Radio/Station names!)
+      const relatedNames = artist.related?.length
+        ? artist.related
+        : await fetchSimilarArtists(artist.name, 3);
+
       const existingNames = new Set(artistList.map(a => a.name.toLowerCase()));
       const newSpawned: ArtistItem[] = [];
 
@@ -233,6 +247,7 @@ export const OnboardingPage: React.FC = () => {
             genre: artist.genre,
             isLoadingImage: true
           });
+          existingNames.add(relName.toLowerCase()); // Stops dupes within this same batch!
         }
       }
 

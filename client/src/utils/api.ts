@@ -114,6 +114,11 @@ export const api = {
     return fetchJSON<string[]>(`/api/search/suggestions?q=${encodeURIComponent(query)}`, { signal });
   },
 
+  /** Get similar artists */
+  similarArtists(name: string, limit = 3, signal?: AbortSignal) {
+    return fetchJSON<{ artists: string[] }>(`/api/search/similar-artists?name=${encodeURIComponent(name)}&limit=${limit}`, { signal });
+  },
+
   /** Get lyrics for a track */
   lyrics(track: string, artist: string, album?: string, duration?: number, signal?: AbortSignal) {
     const params = new URLSearchParams({ track, artist });

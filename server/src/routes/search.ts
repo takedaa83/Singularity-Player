@@ -49,6 +49,51 @@ router.get('/trending', (req: Request, res: Response) => {
   }
 });
 
+// GET /api/search/similar-artists?name=...&limit=3
+router.get('/similar-artists', async (req: Request, res: Response) => {
+  const name = req.query.name as string;
+  const limit = parseInt((req.query.limit as string) || '3', 10);
+
+  if (!name) {
+    res.json({ artists: [] });
+    return;
+  }
+
+  try {
+    const lastfmKey = process.env.LASTFM_API_KEY;
+    if (lastfmKey) {
+      const url = `https://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=${encodeURIComponent(name)}&api_key=${lastfmKey}&format=json&autocorrect=1&limit=${limit}`;
+      const r = await fetch(url);
+      if (r.ok) {
+        const data = await r.json() as any;
+        const artists = (data?.similarartists?.artist ?? []).map((a: any) => a.name).filter(Boolean);
+        if (artists.length > 0) {
+          res.json({ artists: artists.slice(0, limit) });
+          return;
+        }
+      }
+    }
+
+    const deezerUrl = `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`;
+    const r = await fetch(deezerUrl);
+    if (r.ok) {
+      const data = await r.json() as any;
+      const artists = (data?.data ?? [])
+        .map((a: any) => a.name)
+        .filter((n: string) => n.toLowerCase() !== name.toLowerCase());
+      if (artists.length > 0) {
+        res.json({ artists: artists.slice(0, limit) });
+        return;
+      }
+    }
+
+    res.json({ artists: [] });
+  } catch (error) {
+    console.error('[Search Route] Error fetching similar artists:', error);
+    res.json({ artists: [] });
+  }
+});
+
 // POST /api/search/recognize
 router.post('/recognize', async (req: Request, res: Response) => {
   const { signature, sampleDurationMs } = req.body;
