@@ -30,5 +30,8 @@
     "@tailwindcss/oxide-linux-x64-gnu": "^4.0.0",
     "lightningcss-android-arm64": "^1.29.0",
     "lightningcss-linux-x64-gnu": "^1.29.0"
+  },
+  "overrides": {
+    "@rolldown/binding-android-arm64": "1.0.3"
   }
 }
