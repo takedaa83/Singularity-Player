@@ -465,66 +465,33 @@ export const TrackScrollRowItem: React.FC<{
 });
 TrackScrollRowItem.displayName = 'TrackScrollRowItem';
 
-export const QuickPlayGridItem: React.FC<{
+interface QuickPlayGridItemProps {
   item: any;
   idx: number;
   featured?: boolean;
   handlePlayQuickItem: (item: any) => void;
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
-}> = React.memo(({ item, idx, featured, handlePlayQuickItem, hoveredId, setHoveredId }) => {
-  const navigate = useNavigate();
-  const addToQueue = usePlayerStore(state => state.addToQueue);
-  const playNext = usePlayerStore(state => state.playNext);
-  const favorites = usePlayerStore(state => state.favorites);
-  const { toggleFavorite } = useLibraryDB();
-  const { toast } = useToast();
-  const [contextMenuPosition, setContextMenuPosition] = React.useState<{ top: number; left: number } | null>(null);
+}
+
+const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
+  item,
+  idx,
+  handlePlayQuickItem,
+}) => {
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isCurrentPlaying = item.type === 'track' && currentTrack?.id === item.track.id;
+  const isCurrentlyActive = isCurrentPlaying && isPlaying;
+
+  const [contextMenu, setContextMenu] = useState<{ mouseX: number; mouseY: number } | null>(null);
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (item.type !== 'track') return; // only tracks get context menu
     e.preventDefault();
-    setContextMenuPosition({ top: e.clientY, left: e.clientX });
-  };
-
-  const handleFavoriteClick = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    if (item.type !== 'track') return;
-    try {
-      const nextState = await toggleFavorite(item.track.id);
-      toast(nextState ? 'Added to favorites' : 'Removed from favorites', 'success');
-    } catch (err) {
-      console.error('Failed to toggle favorite:', err);
+    if (item.type === 'track') {
+      setContextMenu({ mouseX: e.clientX - 2, mouseY: e.clientY - 4 });
     }
   };
-
-  const handleCreateSimilarPlaylist = async (e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    if (item.type !== 'track') return;
-    try {
-      toast(`Generating song radio for "${item.track.title}"...`, 'info');
-      const similarTracks = await PlaylistGenerator.generateSimilarTracks(item.track);
-      
-      if (similarTracks && similarTracks.length > 0) {
-        usePlayerStore.getState().setQueue(similarTracks, 0);
-        toast(`Playing "${item.track.title}" Radio! (${similarTracks.length} tracks)`, 'success');
-      } else {
-        toast('Could not find similar tracks.', 'error');
-      }
-    } catch (err) {
-      console.error('Failed to generate similar queue:', err);
-      toast('Failed to generate similar queue', 'error');
-    }
-  };
-
-  const liked = item.type === 'track' ? favorites?.includes(item.track.id) : false;
-  const isFeatured = featured;
 
   return (
     <motion.div
@@ -533,39 +500,30 @@ export const QuickPlayGridItem: React.FC<{
       variants={trackCardVariants}
       initial="hidden"
       animate="show"
-      style={{
-        gridColumn: isFeatured ? 'span 2' : undefined,
-        gridRow: isFeatured ? 'span 2' : undefined,
-      }}
     >
       <Box
         onClick={() => handlePlayQuickItem(item)}
         onContextMenu={handleContextMenu}
-        onMouseEnter={() => setHoveredId(item.id)}
-        onMouseLeave={() => setHoveredId(null)}
-        className={isFeatured && item.id === 'liked-songs' ? 'mesh-gradient-animated gsap-tilt' : 'gsap-tilt'}
+        className="gsap-tilt group"
         sx={{
           display: 'flex',
-          flexDirection: isFeatured ? 'column' : 'row',
-          alignItems: isFeatured ? 'flex-start' : 'center',
-          justifyContent: 'space-between',
-          height: isFeatured ? { xs: 56, sm: 220 } : 56,
-          background: isFeatured 
-            ? 'none' 
-            : 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '16px',
+          alignItems: 'center',
+          height: 64,
+          bgcolor: 'rgba(255, 255, 255, 0.05)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: '12px',
           overflow: 'hidden',
           cursor: 'pointer',
-          transition: 'all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           position: 'relative',
-          p: isFeatured ? { xs: 1.5, sm: 3 } : 0,
-          pr: isFeatured ? { xs: 3, sm: 3 } : 3,
-          boxShadow: isFeatured ? '0 12px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' : 'none',
-          border: isFeatured ? '1px solid rgba(255,255,255,0.08)' : 'none',
+          border: isCurrentlyActive ? '1px solid rgba(var(--primary-rgb), 0.6)' : '1px solid rgba(255, 255, 255, 0.06)',
+          boxShadow: isCurrentlyActive ? '0 0 20px rgba(var(--primary-rgb), 0.25)' : 'none',
           '&:hover': {
-            bgcolor: isFeatured ? undefined : 'rgba(255, 255, 255, 0.08)',
-            transform: 'translateY(-4px) scale(1.01)',
-            boxShadow: isFeatured ? '0 20px 45px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2)' : '0 4px 12px rgba(0,0,0,0.1)',
+            bgcolor: 'rgba(255, 255, 255, 0.12)',
+            transform: 'scale(1.02) translateY(-2px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             '& .quick-play-btn': {
               opacity: 1,
               transform: 'scale(1)',
@@ -576,258 +534,154 @@ export const QuickPlayGridItem: React.FC<{
           }
         }}
       >
-        {isFeatured ? (
-          <>
-            <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'row', gap: 3, alignItems: 'center', width: '100%', zIndex: 1 }}>
-              <Box
-                sx={{
-                  width: 80,
-                  height: 80,
-                  background: 'rgba(255, 255, 255, 0.12)',
-                  backdropFilter: 'blur(10px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  flexShrink: 0,
-                }}
-              >
-                <FavoriteIcon sx={{ color: '#fff', fontSize: 36 }} />
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1 }}>
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 900,
-                    color: '#fff',
-                    fontSize: 22,
-                    letterSpacing: '-0.02em',
-                    fontFamily: tokens.fontFamily,
-                  }}
-                >
-                  {item.title}
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontFamily: tokens.fontFamily }}>
-                  {item.tracks?.length || 0} songs saved
-                </Typography>
-              </Box>
-            </Box>
-            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1, pl: 1.5 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  background: item.gradient,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '8px',
-                  flexShrink: 0,
-                }}
-              >
-                <FavoriteIcon sx={{ color: '#fff', fontSize: 18 }} />
-              </Box>
-              <Typography
-                variant="body2"
-                noWrap
-                sx={{
-                  fontWeight: 700,
-                  color: tokens.colors.textPrimary,
-                  fontSize: 13,
-                  fontFamily: tokens.fontFamily,
-                }}
-              >
-                {item.title}
-              </Typography>
-            </Box>
+        {/* Left Artwork Thumbnail */}
+        <Box
+          sx={{
+            width: 64,
+            height: 64,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {item.type === 'favorites' ? (
             <Box
-              className="quick-play-btn"
               sx={{
-                position: 'absolute',
-                bottom: 24,
-                right: 24,
-                opacity: 0,
-                transform: 'scale(0.8)',
-                width: 52,
-                height: 52,
-                borderRadius: '50%',
-                bgcolor: '#fff',
-                color: '#000',
-                display: { xs: 'none', sm: 'flex' },
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                zIndex: 2,
-                '&:hover': {
-                  bgcolor: '#ffffff',
-                  transform: 'scale(1.1) !important',
-                }
-              }}
-            >
-              <PlayArrowIcon sx={{ fontSize: 32, ml: 0.35, color: '#000' }} />
-            </Box>
-            <Box
-              className="quick-play-btn"
-              sx={{
-                opacity: 0,
-                transform: 'scale(0.8)',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                bgcolor: tokens.colors.primary,
-                color: '#fff',
-                display: { xs: 'flex', sm: 'none' },
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                zIndex: 2,
-                '&:hover': {
-                  bgcolor: tokens.colors.primaryLight,
-                  transform: 'scale(1.08) !important',
-                }
-              }}
-            >
-              <PlayArrowIcon sx={{ fontSize: 18, ml: 0.2 }} />
-            </Box>
-          </>
-        ) : (
-          <>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1, height: '100%', zIndex: 1, pl: 1.5 }}>
-              {item.type === 'favorites' ? (
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    background: item.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.35)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <FavoriteIcon sx={{ color: '#fff', fontSize: 18 }} />
-                </Box>
-              ) : item.type === 'vibe' ? (
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    background: item.gradient,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px',
-                    flexShrink: 0,
-                  }}
-                >
-                  <MusicNoteIcon sx={{ color: '#fff', fontSize: 18 }} />
-                </Box>
-              ) : item.image ? (
-                <Box
-                  component="img"
-                  src={item.image}
-                  alt=""
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '8px',
-                    objectFit: 'cover',
-                    flexShrink: 0,
-                  }}
-                />
-              ) : (
-                <Box
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '8px',
-                    bgcolor: tokens.colors.surfaceElevated,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <MusicNoteIcon sx={{ fontSize: 18, color: tokens.colors.textTertiary }} />
-                </Box>
-              )}
-              <Typography
-                variant="body2"
-                noWrap
-                sx={{
-                  fontWeight: 700,
-                  color: tokens.colors.textPrimary,
-                  fontSize: 13,
-                  fontFamily: tokens.fontFamily,
-                }}
-              >
-                {item.title}
-              </Typography>
-            </Box>
-            <Box
-              className="quick-play-btn"
-              sx={{
-                opacity: 0,
-                transform: 'scale(0.8)',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                bgcolor: tokens.colors.primary,
-                color: '#fff',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #450af5 0%, #c427fb 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                transition: 'all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                zIndex: 2,
-                mr: 0.5,
-                '&:hover': {
-                  bgcolor: tokens.colors.primaryLight,
-                  transform: 'scale(1.08) !important',
-                }
               }}
             >
-              <PlayArrowIcon sx={{ fontSize: 18, ml: 0.2 }} />
+              <FavoriteIcon sx={{ color: '#fff', fontSize: 26 }} />
             </Box>
-          </>
-        )}
-      </Box>
-      {item.type === 'track' && (
-        <TrackContextMenu
-          track={item.track}
-          anchorPosition={contextMenuPosition}
-          onClose={() => setContextMenuPosition(null)}
-          onPlay={() => handlePlayQuickItem(item)}
-          onAddToQueue={() => { addToQueue(item.track); toast('Added to queue', 'info'); }}
-          onPlayNext={() => { playNext(item.track); toast('Will play next', 'info'); }}
-          onToggleFavorite={handleFavoriteClick}
-          onDownload={async () => {
-            try {
-              useDownloadStore.getState().enqueue(item.track);
-              toast('Added to download queue', 'info');
-            } catch (err) {
-              console.error('Download enqueue failed:', err);
+          ) : item.type === 'vibe' ? (
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                background: item.gradient || 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MusicNoteIcon sx={{ color: '#fff', fontSize: 26 }} />
+            </Box>
+          ) : item.image ? (
+            <Box
+              component="img"
+              src={item.image}
+              alt={item.title}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                bgcolor: 'rgba(255,255,255,0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <MusicNoteIcon sx={{ color: 'rgba(255,255,255,0.4)', fontSize: 24 }} />
+            </Box>
+          )}
+        </Box>
+
+        {/* Title & Subtitle */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, px: 2 }}>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{
+                fontWeight: 800,
+                color: isCurrentlyActive ? tokens.colors.primary : '#fff',
+                fontSize: 13,
+                fontFamily: tokens.fontFamily,
+              }}
+            >
+              {item.title}
+            </Typography>
+            {isCurrentlyActive && (
+              <div className="inline-flex items-center gap-0.5 shrink-0">
+                <span className="w-0.5 h-3 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                <span className="w-0.5 h-4 bg-primary rounded-full animate-bounce [animation-delay:0.3s]" />
+                <span className="w-0.5 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
+              </div>
+            )}
+          </div>
+          {item.subtitle && (
+            <Typography
+              variant="caption"
+              noWrap
+              sx={{
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: 11,
+                fontFamily: tokens.fontFamily,
+                mt: 0.25,
+              }}
+            >
+              {item.subtitle}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Floating Green Spotify-Style Play Button on Hover */}
+        <Box
+          className="quick-play-btn"
+          sx={{
+            opacity: isCurrentlyActive ? 1 : 0,
+            transform: isCurrentlyActive ? 'scale(1)' : 'scale(0.7)',
+            width: 42,
+            height: 42,
+            borderRadius: '50%',
+            bgcolor: tokens.colors.primary,
+            color: '#000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            mr: 1.5,
+            flexShrink: 0,
+            boxShadow: '0 6px 18px rgba(0,0,0,0.5)',
+            transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            zIndex: 2,
+            '&:hover': {
+              transform: 'scale(1.1) !important',
             }
           }}
-          onAddToBatch={() => {
-            useBatchStore.getState().addTrack(item.track);
-            toast('Added to Batch Packager', 'success');
-          }}
-          onGoToArtist={() => navigate(`/artist/${encodeURIComponent(item.track.artist)}`)}
-          onGoToAlbum={() => navigate(`/album/${encodeURIComponent(item.track.album)}?artist=${encodeURIComponent(item.track.artist)}`)}
-          isFavorite={liked}
-          onCreateSimilarPlaylist={handleCreateSimilarPlaylist}
-        />
-      )}
+        >
+          {isCurrentlyActive ? (
+            <PauseIcon sx={{ fontSize: 22, color: '#000' }} />
+          ) : (
+            <PlayArrowIcon sx={{ fontSize: 22, ml: 0.2, color: '#000' }} />
+          )}
+        </Box>
+
+        {/* Context Menu */}
+        {contextMenu && item.type === 'track' && (
+          <TrackContextMenu
+            track={item.track}
+            anchorPosition={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
+            onClose={() => setContextMenu(null)}
+          />
+        )}
+      </Box>
     </motion.div>
   );
-});
-QuickPlayGridItem.displayName = 'QuickPlayGridItem';
+};
 
 const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
   ({ tracks, currentTrack, isPlaying, onPlay }) => {
@@ -1865,7 +1719,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               sx={{
                 display: 'grid',
                 gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
+                  xs: 'repeat(2, 1fr)',
                   sm: 'repeat(2, 1fr)',
                   md: 'repeat(3, 1fr)',
                   lg: 'repeat(4, 1fr)',
@@ -1878,7 +1732,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                   key={item.id}
                   item={item}
                   idx={idx}
-                  featured={idx === 0}
                   handlePlayQuickItem={handlePlayQuickItem}
                   hoveredId={hoveredItemId}
                   setHoveredId={setHoveredItemId}
