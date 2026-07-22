@@ -9,15 +9,60 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+    
+    <!-- Instant Mobile Recovery Script -->
+    <script>
+      (function() {
+        var timer = setTimeout(function() {
+          var rootEl = document.getElementById('root');
+          var splash = document.getElementById('initial-splash');
+          if (splash && rootEl && rootEl.children.length <= 1) {
+            var msg = document.getElementById('splash-status');
+            if (msg) msg.innerHTML = 'Taking longer than expected... <br/><button onclick="clearMobileCache()" style="margin-top:12px;padding:8px 16px;background:#f59e0b;color:#000;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Reset App Cache</button>';
+          }
+        }, 5000);
+
+        window.clearMobileCache = function() {
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              keys.forEach(function(k) { caches.delete(k); });
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
+            });
+          }
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.reload(true);
+        };
+      })();
+    </script>
   </head>
-  <body>
+  <body style="background-color: #070707; margin: 0; padding: 0;">
     <noscript>
       <div style="text-align: center; padding: 2rem; font-family: sans-serif; background: #0a0a0f; color: #fff; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <h2>JavaScript Required</h2>
         <p>This application requires JavaScript to play music, visualize audio, and search tracks.</p>
       </div>
     </noscript>
-    <div id="root"></div>
+    
+    <div id="root">
+      <!-- Instant Mobile Splash Screen -->
+      <div id="initial-splash" style="height: 100vh; width: 100vw; background: #070707; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Inter', system-ui, sans-serif;">
+        <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #f59e0b, #ec4899); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(245,158,11,0.3); margin-bottom: 20px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        </div>
+        <h1 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.02em;">SINGULARITY</h1>
+        <p id="splash-status" style="font-size: 0.8rem; color: #737373; margin: 0; text-align: center;">Loading Player...</p>
+      </div>
+    </div>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
