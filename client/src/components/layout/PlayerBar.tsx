@@ -251,9 +251,18 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 </div>
                 {/* Text details */}
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-sm font-semibold truncate">
-                    {currentTrack.title}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold truncate">
+                      {currentTrack.title}
+                    </span>
+                    {isPlaying && (
+                      <div className="inline-flex items-center gap-0.5 shrink-0">
+                        <span className="w-0.5 h-3 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                        <span className="w-0.5 h-4.5 bg-primary rounded-full animate-bounce [animation-delay:0.3s]" />
+                        <span className="w-0.5 h-2.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
+                      </div>
+                    )}
+                  </div>
                   <span className="text-xs text-neutral-500 truncate mt-0.5">
                     {currentTrack.artist}
                   </span>

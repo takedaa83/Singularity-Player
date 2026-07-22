@@ -109,6 +109,16 @@ export function useAmbientColor() {
   const applyColors = useCallback((colors: AmbientColors) => {
     root.style.setProperty('--ambient-primary', colors.primary);
     root.style.setProperty('--ambient-secondary', colors.secondary);
+    // Parse r, g, b values for raw RGB use
+    const match = colors.primary.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+      const [, r, g, b] = match;
+      root.style.setProperty('--ambient-rgb', `${r}, ${g}, ${b}`);
+      root.style.setProperty('--ambient-primary-solid', `rgb(${r}, ${g}, ${b})`);
+    } else {
+      root.style.setProperty('--ambient-rgb', '120, 80, 200');
+      root.style.setProperty('--ambient-primary-solid', 'rgb(120, 80, 200)');
+    }
   }, [root]);
 
   useEffect(() => {

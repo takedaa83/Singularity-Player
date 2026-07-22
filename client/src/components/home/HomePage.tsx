@@ -348,6 +348,28 @@ export const TrackScrollRowItem: React.FC<{
             </Box>
           )}
           {/* Hover overlay with Spotify-style floating play button */}
+          {isActive && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                bgcolor: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(8px)',
+                px: 1,
+                py: 0.5,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '2px',
+                zIndex: 3,
+              }}
+            >
+              <span className="w-1 h-3 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.1s]" />
+              <span className="w-1 h-4 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.3s]" />
+              <span className="w-1 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+            </Box>
+          )}
           <Box
             className="play-overlay"
             sx={{
