@@ -297,7 +297,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       initial={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                       animate={{ opacity: 0, scale: 0.3, x: p.x, y: p.y }}
                       transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="absolute pointer-events-none text-pink-500 z-50"
+                      className="absolute pointer-events-none text-pink-500 z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                     >
                       <Heart className="w-3.5 h-3.5 fill-current" />
                     </motion.div>
@@ -324,13 +324,13 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               <button
                 onClick={toggleShuffle}
                 disabled={!currentTrack}
-                className={`p-1.5 rounded transition-colors hover:text-white hidden sm:flex items-center gap-0.5 ${
+                className={`relative w-9 h-9 flex items-center justify-center rounded-full transition-colors hover:text-white hidden sm:flex ${
                   shuffle ? 'text-white' : smartShuffle ? 'text-indigo-400 drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' : 'text-neutral-500'
                 } disabled:opacity-30`}
                 title={shuffle ? 'Standard Shuffle' : smartShuffle ? 'Smart Shuffle' : 'Shuffle'}
               >
                 <Shuffle className="w-4 h-4" />
-                {smartShuffle && <Sparkles className="w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
+                {smartShuffle && <Sparkles className="absolute top-0.5 right-0.5 w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
               </button>
 
               {/* Previous */}
@@ -515,7 +515,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
       <motion.div 
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.4}
+        dragElastic={0.15}
+        dragDirectionLock
+        dragSnapToOrigin
         onDragEnd={(_, info) => {
           if (info.offset.x < -60 || info.velocity.x < -300) {
             nextTrack(true);
@@ -523,8 +525,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
             prevTrack();
           }
         }}
+        style={{ touchAction: 'pan-y' }}
         onClick={() => setIsMobilePlayerOpen(true)}
-        className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden touch-pan-x"
+        className="block sm:hidden fixed bottom-[74px] left-3 right-3 z-40 rounded-2xl glass-heavy border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-98 transition-all duration-200 cursor-pointer overflow-hidden"
       >
         <MobileMiniProgressBar />
 
@@ -532,7 +535,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {currentTrack ? (
               <>
-                <div className={`w-9.5 h-9.5 rounded-lg overflow-hidden bg-neutral-900 border border-white/5 shrink-0 ${isPlaying ? 'now-playing-glow animate-pulse-glow' : ''}`}>
+                <div className={`w-10 h-10 rounded-lg overflow-hidden bg-neutral-900 border border-white/5 shrink-0 ${isPlaying ? 'now-playing-glow animate-pulse-glow' : ''}`}>
                   {api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) ? (
                     <img 
                       src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId)!} 
@@ -551,43 +554,46 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col min-w-0 select-none">
-                  <span className="text-[11px] font-bold text-white truncate">
+                <div className="flex flex-col min-w-0 flex-1 select-none">
+                  <span className="text-[12px] font-bold text-white truncate leading-tight">
                     {currentTrack.title}
                   </span>
-                  <span className="text-[9.5px] text-neutral-400 truncate mt-0.5">
+                  <span className="text-[10px] text-neutral-400 truncate mt-0.5 leading-tight">
                     {currentTrack.artist}
                   </span>
                 </div>
               </>
             ) : (
               <>
-                <div className="w-9.5 h-9.5 rounded-lg bg-neutral-900 border border-white/5 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-neutral-900 border border-white/5 flex items-center justify-center shrink-0">
                   <Music className="w-4 h-4 text-neutral-700" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-neutral-500 font-medium">Select a track to play</span>
-                </div>
+                <span className="text-[11px] text-neutral-500 font-medium">Select a track to play</span>
               </>
             )}
-                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          </div>
+
+          <div 
+            className="flex items-center gap-1 shrink-0" 
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              onClick={handlePlayPause}
+              onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
               disabled={!currentTrack}
-              className="w-11 h-11 flex items-center justify-center rounded-full bg-white text-black active:scale-90 transition-all disabled:opacity-40 shadow-sm"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white text-black active:scale-90 transition-all disabled:opacity-40 shadow-sm"
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
-              {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+              {isPlaying ? <Pause className="w-4.5 h-4.5 fill-current" /> : <Play className="w-4.5 h-4.5 fill-current ml-0.5" />}
             </button>
             <button
-              onClick={() => nextTrack(true)}
+              onClick={(e) => { e.stopPropagation(); nextTrack(true); }}
               disabled={!currentTrack}
-              className="w-11 h-11 flex items-center justify-center rounded-full text-neutral-300 hover:text-white active:scale-90 transition-all disabled:opacity-30"
+              className="w-10 h-10 flex items-center justify-center rounded-full text-neutral-300 hover:text-white active:scale-90 transition-all disabled:opacity-30"
               aria-label="Next track"
             >
-              <SkipForward className="w-5 h-5" />
+              <SkipForward className="w-4.5 h-4.5" />
             </button>
-          </div>  </div>
+          </div>
         </div>
       </motion.div>
 

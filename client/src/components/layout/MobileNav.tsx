@@ -48,7 +48,7 @@ export const MobileNav: React.FC = () => {
 
   return (
     <nav className="block md:hidden fixed bottom-1.5 left-2.5 right-2.5 z-40 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
-      <div className="flex items-center justify-around h-15 px-1 rounded-2xl border border-white/12 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-2xl bg-neutral-950/90 gpu-accelerated">
+      <div className="flex items-center justify-around h-16 px-1 rounded-2xl border border-white/12 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-2xl bg-neutral-950/90 gpu-accelerated">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
@@ -60,7 +60,7 @@ export const MobileNav: React.FC = () => {
                 navigate(item.path);
               }}
               aria-label={`Navigate to ${item.label}`}
-              className={`relative flex flex-col items-center justify-center flex-1 h-12 py-1 active:scale-95 transition-all duration-200 ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full py-1 active:scale-95 transition-all duration-200 ${
                 isActive ? 'text-primary font-bold' : 'text-neutral-400 hover:text-neutral-200'
               }`}
             >

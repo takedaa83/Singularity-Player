@@ -325,7 +325,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
             )}
 
             {/* Playback speed toggle */}
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 -mr-2">
               <button
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className={`p-2 rounded-full hover:bg-white/10 active:scale-95 transition-all flex items-center gap-1 text-xs font-semibold font-mono ${
@@ -496,23 +496,23 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
             <MobileProgressSlider seek={seek} />
 
             {/* Main Playback Control Deck */}
-            <div className={`flex items-center justify-between w-full transition-all duration-300 ${viewMode === 'lyrics' ? 'px-4' : 'px-2'}`}>
+            <div className="flex items-center justify-between w-full max-w-sm mx-auto px-2">
               {/* Shuffle */}
               <button
                 onClick={toggleShuffle}
-                className={`p-2 transition-all active:scale-90 flex items-center gap-0.5 ${
+                className={`w-11 h-11 flex items-center justify-center rounded-full transition-all active:scale-90 relative ${
                   shuffle ? 'text-primary' : smartShuffle ? 'text-indigo-400 drop-shadow-[0_0_5px_rgba(99,102,241,0.5)]' : 'text-neutral-400'
                 }`}
                 aria-label="Toggle Shuffle"
               >
                 <Shuffle className="w-5 h-5" />
-                {smartShuffle && <Sparkles className="w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
+                {smartShuffle && <Sparkles className="absolute top-1 right-1 w-2.5 h-2.5 text-indigo-400 fill-indigo-400" />}
               </button>
 
               {/* Skip Back */}
               <button
                 onClick={prevTrack}
-                className="p-2 text-white active:scale-80 transition-all"
+                className="w-12 h-12 flex items-center justify-center text-white active:scale-80 transition-all"
                 aria-label="Previous Track"
               >
                 <SkipBack className="w-7 h-7 fill-white text-white" />
@@ -521,20 +521,20 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
               {/* Big Play/Pause Button */}
               <button
                 onClick={handlePlayPause}
-                className="p-5 rounded-full bg-white text-black active:scale-90 transition-all shadow-[0_4px_20px_rgba(255,255,255,0.2)] flex items-center justify-center hover:bg-neutral-100"
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white text-black active:scale-90 transition-all shadow-[0_4px_20px_rgba(255,255,255,0.2)] hover:bg-neutral-100"
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
                 {isPlaying ? (
-                  <Pause className="w-8 h-8 fill-black text-black" />
+                  <Pause className="w-7 h-7 fill-black text-black" />
                 ) : (
-                  <Play className="w-8 h-8 fill-black text-black ml-1" />
+                  <Play className="w-7 h-7 fill-black text-black ml-0.5" />
                 )}
               </button>
 
               {/* Skip Forward */}
               <button
                 onClick={() => nextTrack(true)}
-                className="p-2 text-white active:scale-80 transition-all"
+                className="w-12 h-12 flex items-center justify-center text-white active:scale-80 transition-all"
                 aria-label="Next Track"
               >
                 <SkipForward className="w-7 h-7 fill-white text-white" />
@@ -543,7 +543,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
               {/* Repeat */}
               <button
                 onClick={handleRepeatCycle}
-                className={`p-2 transition-colors active:scale-90 ${
+                className={`w-11 h-11 flex items-center justify-center rounded-full active:scale-90 transition-colors ${
                   repeat !== 'off' ? 'text-primary' : 'text-neutral-400'
                 }`}
                 aria-label={`Toggle Repeat, currently ${repeat}`}
@@ -557,7 +557,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
                <div className="flex items-center gap-3 px-1 mt-1 w-full">
                  <button
                    onClick={toggleMute}
-                   className="text-neutral-400 active:text-white transition-colors"
+                   className="w-9 h-9 flex items-center justify-center rounded-full text-neutral-400 active:text-white transition-colors shrink-0"
                    aria-label={isMuted ? 'Unmute' : 'Mute'}
                  >
                    {isMuted || volume === 0 ? (
@@ -582,13 +582,13 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
             )}
 
             {/* Footer Auxiliary Buttons (Lyrics, Queue, Equalizer) */}
-            <footer className="flex justify-between items-center px-4 pt-4 pb-2 mt-2 text-neutral-400 border-t border-white/5">
+            <footer className="flex justify-around items-center px-8 pt-4 pb-2 mt-2 text-neutral-400 border-t border-white/5 max-w-xs mx-auto w-full">
               {/* Lyrics Toggle */}
               <button
                 onClick={() => {
                   setViewMode(viewMode === 'lyrics' ? 'artwork' : 'lyrics');
                 }}
-                className={`p-2 active:scale-90 transition-all rounded-lg flex items-center justify-center ${
+                className={`w-11 h-11 flex items-center justify-center active:scale-90 transition-all rounded-full ${
                   viewMode === 'lyrics' ? 'text-primary bg-primary/10 drop-shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]' : 'hover:bg-white/5'
                 }`}
                 title="Toggle Lyrics"
@@ -602,7 +602,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
                   setShowQueue(!showQueue);
                   onClose(); 
                 }}
-                className={`p-2 active:scale-90 transition-all rounded-lg hover:bg-white/5 flex items-center justify-center ${
+                className={`w-11 h-11 flex items-center justify-center active:scale-90 transition-all rounded-full hover:bg-white/5 ${
                   showQueue ? 'text-primary' : ''
                 }`}
                 title="View Queue"
@@ -615,7 +615,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
                 onClick={() => {
                   setShowEqualizer(!showEqualizer);
                 }}
-                className={`p-2 active:scale-90 transition-all rounded-lg hover:bg-white/5 flex items-center justify-center ${
+                className={`w-11 h-11 flex items-center justify-center active:scale-90 transition-all rounded-full hover:bg-white/5 ${
                   showEqualizer ? 'text-primary' : ''
                 }`}
                 title="Equalizer"

@@ -406,6 +406,7 @@ export const TrackScrollRowItem: React.FC<{
             fontWeight: 700, 
             color: isActive ? tokens.colors.primary : tokens.colors.textPrimary,
             fontSize: 12.5,
+            mt: 0.5,
           }}
         >
           {track.title}
@@ -420,7 +421,7 @@ export const TrackScrollRowItem: React.FC<{
           sx={{ 
             color: tokens.colors.textSecondary,
             display: 'block',
-            mt: 0.5,
+            mt: 0.25,
             width: 'fit-content',
             fontSize: 10.5,
             '&:hover': { 
@@ -644,7 +645,7 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
         </Box>
 
         {/* Title & Subtitle */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, px: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, pl: 2, pr: 1 }}>
           <div className="flex items-center gap-1.5 min-w-0">
             <Typography
               variant="body2"
@@ -682,15 +683,15 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
           sx={{
             opacity: isCurrentlyActive ? 1 : 0,
             transform: isCurrentlyActive ? 'scale(1)' : 'scale(0.7)',
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             borderRadius: '50%',
             bgcolor: tokens.colors.primary,
             color: '#000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            mr: 1.5,
+            mr: 2,
             flexShrink: 0,
             boxShadow: '0 6px 18px rgba(0,0,0,0.5)',
             transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -771,6 +772,9 @@ const TrackScrollRow: React.FC<TrackScrollRowProps> = React.memo(
             display: 'flex',
             gap: `${tokens.spacing.md}px`,
             overflowX: 'auto',
+            overflowY: 'hidden',
+            touchAction: 'pan-x',
+            overscrollBehaviorX: 'contain',
             pb: 1,
             mx: -0.5,
             px: 0.5,
@@ -1725,7 +1729,20 @@ export const HomePage: React.FC<HomePageProps> = ({
           <Box sx={{ width: '1px', height: '20px', bgcolor: 'rgba(255,255,255,0.1)', display: { xs: 'none', md: 'block' } }} />
 
           {/* Time-Aware Mood Shortcuts */}
-          <Box sx={{ display: 'flex', gap: 1.2, overflowX: 'auto', py: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              gap: 1.2, 
+              overflowX: 'auto', 
+              overflowY: 'hidden',
+              py: 0.5, 
+              width: { xs: '100%', md: 'auto' },
+              flex: { xs: '1 0 100%', md: '0 1 auto' },
+              touchAction: 'pan-x',
+              overscrollBehaviorX: 'contain',
+              '&::-webkit-scrollbar': { display: 'none' } 
+            }}
+          >
             {moodPills.map((pill, i) => (
               <Box
                 key={i}
@@ -1913,6 +1930,9 @@ export const HomePage: React.FC<HomePageProps> = ({
                 display: 'flex',
                 gap: `${tokens.spacing.md}px`,
                 overflowX: 'auto',
+                overflowY: 'hidden',
+                touchAction: 'pan-x',
+                overscrollBehaviorX: 'contain',
                 pb: 1.5,
                 mx: -0.5,
                 px: 0.5,
@@ -2390,7 +2410,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                   {React.cloneElement(stat.icon, { sx: { fontSize: 24 } })}
                 </Box>
                 {/* Text Content */}
-                <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minHeight: 48,
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
                   <Typography
                     variant="caption"
                     sx={{
