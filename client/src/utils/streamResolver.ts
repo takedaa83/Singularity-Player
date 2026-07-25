@@ -9,36 +9,45 @@ async function validateClientMediaUrl(url: string, timeoutMs: number = 3000): Pr
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(`validation timeout after ${timeoutMs}ms`), timeoutMs);
+    // Simple HEAD request without custom headers (like Range) so browser does not trigger an OPTIONS CORS preflight check
     res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Range': 'bytes=0-1'
-      },
+      method: 'HEAD',
       signal: controller.signal
     });
     clearTimeout(timeout);
-    if (!res.ok && res.status !== 206) {
-      console.warn(`[Client Stream Resolver] Validation failed for URL: ${url.substring(0, 80)}... Status: ${res.status}`);
+    if (res.ok || res.status === 206 || res.status === 302 || res.status === 304) {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('text/html') || contentType.includes('application/json')) {
+        console.warn(`[Client Stream Resolver] Validation failed (invalid content-type ${contentType}) for URL: ${url.substring(0, 80)}...`);
+        return false;
+      }
+      return true;
+    }
+  } catch {
+    // If HEAD is blocked by CDN CORS policy, try a simple GET without custom headers
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      res = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (res.ok || res.status === 206) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('text/html') || contentType.includes('application/json')) return false;
+        return true;
+      }
+    } catch (err: any) {
+      console.warn(`[Client Stream Resolver] Validation request failed for URL: ${url.substring(0, 80)}... Error:`, err?.message || err);
       return false;
     }
-    const contentType = res.headers.get('content-type') || '';
-    if (contentType.includes('text/html') || contentType.includes('application/json')) {
-      console.warn(`[Client Stream Resolver] Validation failed (invalid content-type ${contentType}) for URL: ${url.substring(0, 80)}...`);
-      return false;
-    }
-    return true;
-  } catch (err: any) {
-    console.warn(`[Client Stream Resolver] Validation request failed for URL: ${url.substring(0, 80)}... Error:`, err?.message || err);
-    return false;
   } finally {
-    // We only ever inspect headers/status here — the body is never read. If a server
-    // ignores our Range header and answers with a full 200, an un-cancelled body keeps
-    // that connection open and buffering the whole track in the background just to
-    // validate it. Cancel it explicitly so validation never costs more than a few bytes.
     if (res?.body && !res.bodyUsed) {
       res.body.cancel().catch(() => {});
     }
   }
+  return false;
 }
 
 /**
