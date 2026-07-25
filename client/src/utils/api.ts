@@ -7,25 +7,18 @@
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    const isHttps = window.location.protocol === 'https:';
     const custom = localStorage.getItem('singularity_server_url');
 
     if (custom && custom.trim()) {
       const trimmed = custom.trim().replace(/\/$/, '');
-      // If browsing over HTTPS or custom URL is pointing to old localhost:3001 / render, clear stale setting
-      if (trimmed.includes('localhost:3001') || trimmed.includes('onrender.com')) {
-        console.warn(`[API] Clearing stale server URL from localStorage: ${trimmed}`);
-        localStorage.removeItem('singularity_server_url');
-      } else {
-        return trimmed;
-      }
+      return trimmed;
     }
 
     if (window.location.origin && window.location.origin.startsWith('http') && !window.location.origin.includes(':5173')) {
       return window.location.origin.replace(/\/$/, '');
     }
   }
-  return (import.meta.env.VITE_API_URL || 'https://wild-adore-takeda83-8a8c2611.koyeb.app').replace(/\/$/, '');
+  return (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 }
 
 export function setApiBaseUrl(url: string): void {
@@ -44,40 +37,70 @@ const pendingRequests = new Map<string, Promise<any>>();
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const base = getApiBaseUrl();
   const fullUrl = url.startsWith('http') ? url : `${base}${url}`;
+  const isGet = !options?.method || options.method === 'GET';
   const cacheKey = `${options?.method || 'GET'}:${fullUrl}`;
 
-  // Deduplicate identical concurrent requests (GET only)
-  if (!options?.method || options.method === 'GET') {
-    const pending = pendingRequests.get(cacheKey);
-    if (pending) return pending as Promise<T>;
-  }
+  const callerSignal = options?.signal;
+  const sharedFetchOptions = { ...options };
+  delete sharedFetchOptions.signal;
 
-  const promise = (async () => {
-    try {
-      const res = await fetch(fullUrl, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-      });
+  let sharedPromise: Promise<T>;
 
-      if (!res.ok) {
-        const errorBody = await res.json().catch(() => ({ error: res.statusText }));
-        throw new ApiError(res.status, errorBody.error || res.statusText, errorBody);
+  if (isGet && pendingRequests.has(cacheKey)) {
+    sharedPromise = pendingRequests.get(cacheKey)!;
+  } else {
+    sharedPromise = (async () => {
+      try {
+        const res = await fetch(fullUrl, {
+          ...sharedFetchOptions,
+          headers: {
+            'Content-Type': 'application/json',
+            ...sharedFetchOptions?.headers,
+          },
+        });
+
+        if (!res.ok) {
+          const errorBody = await res.json().catch(() => ({ error: res.statusText }));
+          throw new ApiError(res.status, errorBody.error || res.statusText, errorBody);
+        }
+
+        return (await res.json()) as T;
+      } finally {
+        if (isGet) {
+          pendingRequests.delete(cacheKey);
+        }
       }
+    })();
 
-      return await res.json() as T;
-    } finally {
-      pendingRequests.delete(cacheKey);
+    if (isGet) {
+      pendingRequests.set(cacheKey, sharedPromise);
     }
-  })();
-
-  if (!options?.method || options.method === 'GET') {
-    pendingRequests.set(cacheKey, promise);
   }
 
-  return promise;
+  // Safely race caller's AbortSignal against shared request without cancelling shared fetch for other callers
+  if (callerSignal) {
+    if (callerSignal.aborted) {
+      return Promise.reject(callerSignal.reason || new Error('Request aborted'));
+    }
+    return new Promise<T>((resolve, reject) => {
+      const onAbort = () => {
+        callerSignal.removeEventListener('abort', onAbort);
+        reject(callerSignal.reason || new Error('Request aborted'));
+      };
+      callerSignal.addEventListener('abort', onAbort);
+      sharedPromise
+        .then((res) => {
+          callerSignal.removeEventListener('abort', onAbort);
+          resolve(res);
+        })
+        .catch((err) => {
+          callerSignal.removeEventListener('abort', onAbort);
+          reject(err);
+        });
+    });
+  }
+
+  return sharedPromise;
 }
 
 export class ApiError extends Error {
