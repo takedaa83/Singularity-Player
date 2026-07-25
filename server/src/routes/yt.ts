@@ -345,8 +345,15 @@ async function proxyUrl(
       return;
     }
 
+    const upstreamContentType = response.headers.get('content-type') || '';
+    if (upstreamContentType.includes('text/html') || upstreamContentType.includes('application/json')) {
+      console.warn(`[YT Route] Upstream returned invalid content-type (${upstreamContentType}) for ${url}. Falling back.`);
+      await fallback();
+      return;
+    }
+
     const headers: Record<string, string> = {
-      'Content-Type': contentType || response.headers.get('content-type') || 'audio/mp4',
+      'Content-Type': contentType || upstreamContentType || 'audio/mp4',
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=1800',
       'Access-Control-Allow-Origin': '*',
