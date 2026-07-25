@@ -18,7 +18,7 @@ export function getApiBaseUrl(): string {
       return window.location.origin.replace(/\/$/, '');
     }
   }
-  return (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  return (import.meta.env.VITE_API_URL || 'https://wild-adore-takeda83-8a8c2611.koyeb.app').replace(/\/$/, '');
 }
 
 export function setApiBaseUrl(url: string): void {
