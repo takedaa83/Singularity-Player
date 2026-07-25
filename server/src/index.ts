@@ -26,7 +26,7 @@ import { checkCookieHealth } from './services/customInnertube';
 import { ytdlpPool } from './services/processPool';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8000;
 
 // Trust reverse proxy (Render) for correct rate limiting IP validation
 app.set('trust proxy', 1);
