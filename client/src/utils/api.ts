@@ -12,9 +12,9 @@ export function getApiBaseUrl(): string {
 
     if (custom && custom.trim()) {
       const trimmed = custom.trim().replace(/\/$/, '');
-      // If browsing over HTTPS (Cloudflare Tunnel), clear outdated HTTP or Render URLs
-      if (isHttps && (trimmed.startsWith('http://') || trimmed.includes('onrender.com'))) {
-        console.warn(`[API] Clearing invalid server URL from localStorage: ${trimmed}`);
+      // If browsing over HTTPS or custom URL is pointing to old localhost:3001 / render, clear stale setting
+      if (trimmed.includes('localhost:3001') || trimmed.includes('onrender.com')) {
+        console.warn(`[API] Clearing stale server URL from localStorage: ${trimmed}`);
         localStorage.removeItem('singularity_server_url');
       } else {
         return trimmed;
@@ -25,7 +25,7 @@ export function getApiBaseUrl(): string {
       return window.location.origin.replace(/\/$/, '');
     }
   }
-  return (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  return (import.meta.env.VITE_API_URL || 'https://wild-adore-takeda83-8a8c2611.koyeb.app').replace(/\/$/, '');
 }
 
 export function setApiBaseUrl(url: string): void {
