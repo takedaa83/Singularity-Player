@@ -27,6 +27,25 @@ function parseCookie(cookieStr) {
     const map = {};
     if (!cookieStr)
         return map;
+    // Check if Netscape tab-separated format (e.g. from cookies.txt export)
+    if (cookieStr.includes('\t') || cookieStr.includes('# Netscape')) {
+        const lines = cookieStr.split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#'))
+                continue;
+            const parts = trimmed.split('\t');
+            if (parts.length >= 7) {
+                const name = parts[5].trim();
+                const value = parts[6].trim();
+                if (name && value) {
+                    map[name] = value;
+                }
+            }
+        }
+        return map;
+    }
+    // Standard HTTP header format (name=value; name2=value2)
     cookieStr.split(';').forEach(pair => {
         const parts = pair.split('=');
         if (parts.length >= 2) {
