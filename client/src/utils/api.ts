@@ -5,6 +5,10 @@
  * - AbortController integration for cancellable requests
  */
 
+// Tracks whether the custom localStorage URL has been validated this session.
+// Once validated (or cleared), we don't re-check until the next page load.
+let _customUrlValidated = false;
+
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const custom = localStorage.getItem('singularity_server_url');
@@ -19,6 +23,33 @@ export function getApiBaseUrl(): string {
     }
   }
   return (import.meta.env.VITE_API_URL || 'https://wild-adore-takeda83-8a8c2611.koyeb.app').replace(/\/$/, '');
+}
+
+/**
+ * Probes the current base URL's /api/health endpoint once per session.
+ * If the stored localStorage URL is unreachable, clears it and falls back
+ * to VITE_API_URL so the app self-heals without user intervention.
+ */
+export async function validateAndRepairBaseUrl(): Promise<void> {
+  if (_customUrlValidated) return;
+  _customUrlValidated = true;
+
+  const custom = typeof window !== 'undefined' ? localStorage.getItem('singularity_server_url') : null;
+  if (!custom || !custom.trim()) return; // nothing custom to validate
+
+  const trimmed = custom.trim().replace(/\/$/, '');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(`${trimmed}/api/health`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) return; // healthy, keep using it
+  } catch {
+    // unreachable — fall through to clear
+  }
+
+  console.warn(`[API] Custom server URL unreachable, clearing: ${trimmed}`);
+  localStorage.removeItem('singularity_server_url');
 }
 
 export function setApiBaseUrl(url: string): void {

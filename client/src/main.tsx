@@ -116,6 +116,13 @@ const DynamicThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return <ThemeProvider theme={currentTheme}>{children}</ThemeProvider>;
 };
 
+import { validateAndRepairBaseUrl } from './utils/api'
+
+// Probe the stored custom server URL once on startup. If it's unreachable
+// (e.g. leftover localhost:3001 from a dev session), clear it so the app
+// falls back to VITE_API_URL / the hardcoded Koyeb default automatically.
+validateAndRepairBaseUrl();
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
