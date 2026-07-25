@@ -385,7 +385,7 @@ async function proxyUrl(
 ): Promise<void> {
   const rangeHeader = req.headers.range;
   const fetchHeaders: Record<string, string> = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'com.google.ios.youtube/21.03.1 (iPhone16,2; U; CPU iOS 18_2 like Mac OS X;)',
   };
   if (rangeHeader) {
     fetchHeaders['Range'] = rangeHeader;
@@ -424,8 +424,8 @@ async function proxyUrl(
 
     // Peek at the real bytes before trusting any declared Content-Type. YouTube-sourced
     // URLs occasionally answer with a 200/206 carrying a small JSON/HTML error payload
-    // instead of media (stale signature, client/UA mismatch, throttling) — piping that
-    // straight through labeled as audio/mp4 is exactly what produces the browser's
+    // or plain text error (e.g. "Forbidden", "ip_url_mismatch") — piping that straight
+    // through labeled as audio/mp4 is exactly what produces the browser's
     // "DEMUXER_ERROR_COULD_NOT_OPEN: FFmpegDemuxer: open context failed".
     const { prefix, stream: nodeStream } = await peekWebStream(response.body as any, 12);
 
@@ -445,6 +445,14 @@ async function proxyUrl(
     }
 
     const sniffedType = sniffAudioMimeType(prefix);
+    if (!sniffedType) {
+      const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '');
+      console.warn(`[YT Route] Upstream returned unrecognized non-audio magic bytes for ${url}: "${snippet}". Triggering fallback.`);
+      nodeStream.destroy();
+      await fallback();
+      return;
+    }
+
     const finalContentType = sniffedType || contentType || response.headers.get('content-type') || 'audio/mp4';
 
     const headers: Record<string, string> = {
