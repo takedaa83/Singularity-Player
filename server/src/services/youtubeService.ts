@@ -54,9 +54,9 @@ export function extToMime(ext: string): string {
 
 export function getYtDlpFormatSelector(quality: 'high' | 'medium' | 'low'): string {
   const formatMap: Record<string, string> = {
-    high: '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
+    high: 'bestaudio[acodec=opus]/bestaudio[ext=m4a]/bestaudio/best',
     medium: '140/bestaudio[acodec=aac]/bestaudio',
-    low: '140/249/250/bestaudio',
+    low: '249/250/bestaudio',
   };
   return formatMap[quality] || formatMap.high;
 }
