@@ -67,6 +67,45 @@ class ConcurrencyQueue {
     }
 }
 const cacheDownloadQueue = new ConcurrencyQueue(2);
+/**
+ * Sniffs the real container format from the first few bytes of an audio payload,
+ * independent of whatever Content-Type was declared or expected. YouTube-sourced streams
+ * are unreliable about matching their advertised format to their actual bytes, so this is
+ * used both for on-disk cache files and for live-proxied streams before we trust a
+ * Content-Type header enough to hand it to the browser's media element.
+ */
+function sniffAudioMimeType(buffer) {
+    if (buffer.length < 4)
+        return null;
+    // EBML (WebM/Matroska)
+    if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
+        return 'audio/webm';
+    }
+    // ftyp box (MP4/M4A) — 4-byte box size, then 'ftyp' at offset 4
+    if (buffer.length >= 8 && buffer.toString('ascii', 4, 8) === 'ftyp') {
+        return 'audio/mp4';
+    }
+    // ID3-tagged MP3
+    if (buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
+        return 'audio/mpeg';
+    }
+    // Raw MPEG frame sync
+    if (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) {
+        return 'audio/mpeg';
+    }
+    return null;
+}
+/**
+ * Rough heuristic for "this isn't media at all, it's an error page or JSON blob" — the
+ * first non-whitespace byte of a JSON or HTML error response is almost always '{', '[',
+ * or '<'. None of those can legitimately open a WebM/MP4/MP3 container.
+ */
+function looksLikeNonMediaPayload(buffer) {
+    const firstMeaningfulByte = buffer.find(b => b !== 0x20 && b !== 0x0a && b !== 0x0d && b !== 0x09);
+    return firstMeaningfulByte === 0x7b /* { */ ||
+        firstMeaningfulByte === 0x5b /* [ */ ||
+        firstMeaningfulByte === 0x3c /* < */;
+}
 function detectMimeTypeFromFile(filePath) {
     try {
         if (fs_1.default.existsSync(filePath)) {
@@ -74,21 +113,7 @@ function detectMimeTypeFromFile(filePath) {
             const fd = fs_1.default.openSync(filePath, 'r');
             fs_1.default.readSync(fd, buffer, 0, 8, 0);
             fs_1.default.closeSync(fd);
-            // Check EBML (WebM)
-            if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
-                return 'audio/webm';
-            }
-            // Check ftyp (MP4/M4A)
-            if (buffer.toString('utf-8', 4, 8) === 'ftyp' || buffer.toString('utf-8', 3, 7) === 'typ') {
-                return 'audio/mp4';
-            }
-            // Check ID3 or MP3
-            if (buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
-                return 'audio/mpeg';
-            }
-            if (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) {
-                return 'audio/mpeg';
-            }
+            return sniffAudioMimeType(buffer) || 'audio/mp4';
         }
     }
     catch (e) {
@@ -297,6 +322,51 @@ router.get('/search', async (req, res) => {
     }
 });
 /**
+ * Reads the first `peekBytes` off a Web ReadableStream without discarding the rest — returns
+ * the peeked prefix plus a Node Readable that replays the prefix and then continues from
+ * wherever the reader left off. Lets us sniff real content before committing to piping it
+ * to the client, without buffering the whole response into memory.
+ */
+function peekWebStream(body, peekBytes) {
+    const reader = body.getReader();
+    const chunks = [];
+    let collected = 0;
+    const readPrefix = async () => {
+        while (collected < peekBytes) {
+            const { done, value } = await reader.read();
+            if (done)
+                break;
+            if (value) {
+                const chunk = Buffer.from(value);
+                chunks.push(chunk);
+                collected += chunk.length;
+            }
+        }
+        return Buffer.concat(chunks);
+    };
+    return readPrefix().then((prefix) => {
+        const stream = new stream_1.Readable({ read() { } });
+        if (prefix.length > 0)
+            stream.push(prefix);
+        (async () => {
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done)
+                        break;
+                    if (value)
+                        stream.push(Buffer.from(value));
+                }
+                stream.push(null);
+            }
+            catch (err) {
+                stream.destroy(err instanceof Error ? err : new Error(String(err)));
+            }
+        })();
+        return { prefix, stream };
+    });
+}
+/**
  * GET /api/yt/stream/:videoId
  *
  * Stream audio via yt-dlp. Two strategies:
@@ -306,7 +376,7 @@ router.get('/search', async (req, res) => {
 async function proxyUrl(url, contentType, filesize, req, res, fallback) {
     const rangeHeader = req.headers.range;
     const fetchHeaders = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'com.google.ios.youtube/21.03.1 (iPhone16,2; U; CPU iOS 18_2 like Mac OS X;)',
     };
     if (rangeHeader) {
         fetchHeaders['Range'] = rangeHeader;
@@ -335,8 +405,41 @@ async function proxyUrl(url, contentType, filesize, req, res, fallback) {
             await fallback();
             return;
         }
+        if (!response.body) {
+            console.warn(`[YT Route] Proxy fetch had no body for ${url}`);
+            await fallback();
+            return;
+        }
+        // Peek at the real bytes before trusting any declared Content-Type. YouTube-sourced
+        // URLs occasionally answer with a 200/206 carrying a small JSON/HTML error payload
+        // or plain text error (e.g. "Forbidden", "ip_url_mismatch") — piping that straight
+        // through labeled as audio/mp4 is exactly what produces the browser's
+        // "DEMUXER_ERROR_COULD_NOT_OPEN: FFmpegDemuxer: open context failed".
+        const { prefix, stream: nodeStream } = await peekWebStream(response.body, 12);
+        if (prefix.length === 0) {
+            console.warn(`[YT Route] Upstream returned an empty body for ${url}`);
+            nodeStream.destroy();
+            await fallback();
+            return;
+        }
+        if (looksLikeNonMediaPayload(prefix)) {
+            const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '');
+            console.warn(`[YT Route] Upstream returned a non-media payload for ${url}: ${snippet}`);
+            nodeStream.destroy();
+            await fallback();
+            return;
+        }
+        const sniffedType = sniffAudioMimeType(prefix);
+        if (!sniffedType) {
+            const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '');
+            console.warn(`[YT Route] Upstream returned unrecognized non-audio magic bytes for ${url}: "${snippet}". Triggering fallback.`);
+            nodeStream.destroy();
+            await fallback();
+            return;
+        }
+        const finalContentType = sniffedType || contentType || response.headers.get('content-type') || 'audio/mp4';
         const headers = {
-            'Content-Type': contentType || response.headers.get('content-type') || 'audio/mp4',
+            'Content-Type': finalContentType,
             'Accept-Ranges': 'bytes',
             'Cache-Control': 'public, max-age=1800',
             'Access-Control-Allow-Origin': '*',
@@ -352,19 +455,13 @@ async function proxyUrl(url, contentType, filesize, req, res, fallback) {
         else if (filesize > 0 && !rangeHeader)
             headers['Content-Length'] = filesize.toString();
         res.writeHead(response.status === 206 ? 206 : 200, headers);
-        if (response.body) {
-            const nodeStream = stream_1.Readable.fromWeb(response.body);
-            nodeStream.pipe(res);
-            req.on('close', () => {
-                try {
-                    nodeStream.destroy();
-                }
-                catch { }
-            });
-        }
-        else {
-            res.end();
-        }
+        nodeStream.pipe(res);
+        req.on('close', () => {
+            try {
+                nodeStream.destroy();
+            }
+            catch { }
+        });
     }
     catch (err) {
         console.warn(`[YT Route] Proxy fetch network error: ${err.message}. Falling back.`);
@@ -396,7 +493,26 @@ router.get('/proxy', async (req, res) => {
             res.status(response.status).send(await response.text());
             return;
         }
-        const contentType = response.headers.get('content-type') || 'audio/mp4';
+        if (!response.body) {
+            res.end();
+            return;
+        }
+        const { prefix, stream: nodeStream } = await peekWebStream(response.body, 12);
+        if (prefix.length === 0) {
+            console.warn(`[YT Route] Proxy relay got an empty body from ${targetUrl}`);
+            nodeStream.destroy();
+            res.status(502).json({ error: 'Upstream returned an empty response' });
+            return;
+        }
+        if (looksLikeNonMediaPayload(prefix)) {
+            const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '');
+            console.warn(`[YT Route] Proxy relay got a non-media payload from ${targetUrl}: ${snippet}`);
+            nodeStream.destroy();
+            res.status(502).json({ error: 'Upstream did not return media' });
+            return;
+        }
+        const sniffedType = sniffAudioMimeType(prefix);
+        const contentType = sniffedType || response.headers.get('content-type') || 'audio/mp4';
         const headers = {
             'Content-Type': contentType,
             'Accept-Ranges': 'bytes',
@@ -412,12 +528,7 @@ router.get('/proxy', async (req, res) => {
         if (upstreamContentLength)
             headers['Content-Length'] = upstreamContentLength;
         res.writeHead(response.status === 206 ? 206 : 200, headers);
-        if (response.body) {
-            stream_1.Readable.fromWeb(response.body).pipe(res);
-        }
-        else {
-            res.end();
-        }
+        nodeStream.pipe(res);
     }
     catch (err) {
         console.error('[YT Route] Proxy relay error:', err?.message || err);

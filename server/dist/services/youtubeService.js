@@ -56,9 +56,9 @@ function extToMime(ext) {
 }
 function getYtDlpFormatSelector(quality) {
     const formatMap = {
-        high: '140/bestaudio[acodec=aac]/bestaudio[acodec=opus]/bestaudio/251',
+        high: 'bestaudio[acodec=opus]/bestaudio[ext=m4a]/bestaudio/best',
         medium: '140/bestaudio[acodec=aac]/bestaudio',
-        low: '140/249/250/bestaudio',
+        low: '249/250/bestaudio',
     };
     return formatMap[quality] || formatMap.high;
 }
@@ -194,30 +194,39 @@ async function ensureYtDlpBinary() {
             : 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp');
     const sumsUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA256SUMS';
     try {
-        // 1. Fetch SHA256SUMS manifest
-        console.log(`[youtubeService] Fetching SHA256SUMS from ${sumsUrl}...`);
-        const sumsRes = await fetch(sumsUrl);
-        if (!sumsRes.ok)
-            throw new Error(`Failed to fetch SHA256SUMS: ${sumsRes.status}`);
-        const sumsText = await sumsRes.text();
+        // 1. Attempt to fetch SHA256SUMS manifest (optional checksum check)
+        let sumsText = '';
+        try {
+            console.log(`[youtubeService] Fetching SHA256SUMS from ${sumsUrl}...`);
+            const sumsRes = await fetch(sumsUrl);
+            if (sumsRes.ok) {
+                sumsText = await sumsRes.text();
+            }
+            else {
+                console.warn(`[youtubeService] SHA256SUMS returned status ${sumsRes.status}, skipping checksum verification.`);
+            }
+        }
+        catch (err) {
+            console.warn(`[youtubeService] Could not fetch SHA256SUMS manifest:`, err?.message || err);
+        }
         // 2. Fetch binary
+        console.log(`[youtubeService] Downloading binary from ${downloadUrl}...`);
         const res = await fetch(downloadUrl);
         if (!res.ok)
             throw new Error(`HTTP error ${res.status}`);
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        // 3. Verify SHA-256 hash
-        const calculatedHash = crypto_1.default.createHash('sha256').update(buffer).digest('hex');
-        const expectedHashLine = sumsText.split(/\r?\n/).find(line => line.trim().endsWith(filename));
-        if (expectedHashLine) {
-            const expectedHash = expectedHashLine.split(/\s+/)[0].trim().toLowerCase();
-            if (calculatedHash !== expectedHash) {
-                throw new Error(`SHA256 verification failed for ${filename}. Expected: ${expectedHash}, Got: ${calculatedHash}`);
+        // 3. Verify SHA-256 hash if manifest was retrieved
+        if (sumsText) {
+            const calculatedHash = crypto_1.default.createHash('sha256').update(buffer).digest('hex');
+            const expectedHashLine = sumsText.split(/\r?\n/).find(line => line.trim().endsWith(filename));
+            if (expectedHashLine) {
+                const expectedHash = expectedHashLine.split(/\s+/)[0].trim().toLowerCase();
+                if (calculatedHash !== expectedHash) {
+                    throw new Error(`SHA256 verification failed for ${filename}. Expected: ${expectedHash}, Got: ${calculatedHash}`);
+                }
+                console.log(`[youtubeService] SHA-256 verification passed for ${filename}`);
             }
-            console.log(`[youtubeService] SHA-256 verification passed for ${filename}`);
-        }
-        else {
-            console.warn(`[youtubeService] Expected checksum for ${filename} not found in SHA256SUMS. Proceeding with caution.`);
         }
         fs_1.default.writeFileSync(localPath, buffer);
         if (!isWindows) {

@@ -61,7 +61,7 @@ const youtubeService_1 = require("./services/youtubeService");
 const customInnertube_1 = require("./services/customInnertube");
 const processPool_1 = require("./services/processPool");
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8000;
 // Trust reverse proxy (Render) for correct rate limiting IP validation
 app.set('trust proxy', 1);
 // Ensure uploads folders exist

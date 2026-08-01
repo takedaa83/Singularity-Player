@@ -47,6 +47,18 @@ const runWorkerCalculation = (payload: {
 
     pendingCalculation = { resolve, reject };
 
+    worker.onerror = (err) => {
+      console.error('[Recommendation Engine Worker Error]:', err);
+      if (pendingCalculation) {
+        pendingCalculation.reject(err);
+        pendingCalculation = null;
+      }
+      if (workerInstance) {
+        workerInstance.terminate();
+        workerInstance = null;
+      }
+    };
+
     worker.onmessage = (e: MessageEvent) => {
       const { type, payload: responsePayload } = e.data;
       if (type === 'success') {

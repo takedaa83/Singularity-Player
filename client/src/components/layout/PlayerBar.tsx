@@ -338,7 +338,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 onClick={prevTrack}
                 disabled={!currentTrack}
                 className="p-1.5 rounded text-neutral-400 hover:text-white transition-colors disabled:opacity-30 active:scale-90"
-                title="Previous"
+                title="Previous (Shift + P)"
+                aria-label="Previous track (Shift + P)"
               >
                 <SkipBack className="w-5 h-5" />
               </button>
@@ -348,7 +349,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 onClick={handlePlayPause}
                 disabled={!currentTrack}
                 className="p-3 rounded-full bg-white text-black hover:bg-neutral-200 transition-all active:scale-90 disabled:opacity-30"
-                title={isPlaying ? 'Pause' : 'Play'}
+                title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+                aria-label={isPlaying ? 'Pause playback (Space)' : 'Play playback (Space)'}
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5 fill-black text-black" />
@@ -362,7 +364,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                 onClick={() => nextTrack(true)}
                 disabled={!currentTrack}
                 className="p-1.5 rounded text-neutral-400 hover:text-white transition-colors disabled:opacity-30 active:scale-90"
-                title="Next"
+                title="Next (Shift + N)"
+                aria-label="Next track (Shift + N)"
               >
                 <SkipForward className="w-5 h-5" />
               </button>
@@ -375,6 +378,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                   repeat !== 'off' ? 'text-white' : 'text-neutral-500'
                 } disabled:opacity-30`}
                 title={`Repeat: ${repeat}`}
+                aria-label={`Repeat mode: ${repeat}`}
               >
                 {repeat === 'one' ? (
                   <Repeat1 className="w-4 h-4" />

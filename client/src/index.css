@@ -624,6 +624,201 @@ body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
   50% {
     background-position: 100% 50%;
   }
+50% { opacity: 0.38; }
+}
+
+.animate-rotate-ambient {
+  animation: rotate-ambient 45s linear infinite;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.animate-pulse-ambient {
+  animation: pulse-ambient 12s ease-in-out infinite;
+  will-change: opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.mask-fade-gradient {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+/* ── Dreamy Animated Blobs ── */
+@keyframes float-blob-1 {
+  0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
+  50% { transform: translate(60px, 50px) scale(1.15) rotate(45deg); }
+  100% { transform: translate(-30px, -60px) scale(0.9) rotate(90deg); }
+}
+
+@keyframes float-blob-2 {
+  0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
+  50% { transform: translate(-70px, -40px) scale(0.9) rotate(-90deg); }
+  100% { transform: translate(40px, 60px) scale(1.2) rotate(-180deg); }
+}
+
+@keyframes float-blob-3 {
+  0% { transform: translate(0px, 0px) scale(1.1) rotate(0deg); }
+  50% { transform: translate(50px, -60px) scale(0.85) rotate(120deg); }
+  100% { transform: translate(-50px, 40px) scale(1.05) rotate(240deg); }
+}
+
+/* ── Apple Music-style Progressive Word Highlight ── */
+.karaoke-word {
+  position: relative;
+  display: inline-block;
+  --word-progress: 0%;
+  --word-energy: 0;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.35s ease, color 0.35s ease;
+  transform: scale(1.0);
+  transform-origin: center;
+  /* Margin to separate words naturally (breathing room for scale) */
+  margin-right: 0.05em;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.karaoke-word.active {
+  /* Text gradient wipe with soft feathering (Apple Music style) */
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffffff calc(var(--word-progress, 0%) - 5%),
+    rgba(255, 255, 255, 0.28) calc(var(--word-progress, 0%) + 5%),
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: scale(1.06) !important;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5)) brightness(calc(1 + var(--word-energy, 0) * 0.55)) !important;
+  transition: filter 0.04s linear, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform, filter;
+}
+
+.karaoke-word.completed {
+  color: #ffffff !important;
+  background: none !important;
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  filter: brightness(1) !important;
+}
+
+.light .karaoke-word {
+  color: rgba(10, 10, 10, 0.28);
+}
+
+.light .karaoke-word.active {
+  background: linear-gradient(
+    90deg,
+    #0a0a0a 0%,
+    #0a0a0a calc(var(--word-progress, 0%) - 5%),
+    rgba(10, 10, 10, 0.28) calc(var(--word-progress, 0%) + 5%),
+    rgba(10, 10, 10, 0.28) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.25)) brightness(calc(1 - var(--word-energy, 0) * 0.15)) !important;
+}
+
+.light .karaoke-word.completed {
+  color: #0a0a0a !important;
+  background: none !important;
+  -webkit-text-fill-color: #0a0a0a !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  filter: brightness(1) !important;
+}
+
+
+
+/* ── Floating Blob Animations ── */
+.animate-float-blob-1 {
+  animation: float-blob-1 12s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.animate-float-blob-2 {
+  animation: float-blob-2 15s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.animate-float-blob-3 {
+  animation: float-blob-3 10s infinite alternate ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* ── Hide scrollbars while keeping functionality ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* ── Micro-Equalizer Animations ── */
+@keyframes bounce-bar-1 {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1.0); }
+}
+@keyframes bounce-bar-2 {
+  0%, 100% { transform: scaleY(0.2); }
+  50% { transform: scaleY(0.85); }
+}
+@keyframes bounce-bar-3 {
+  0%, 100% { transform: scaleY(0.40); }
+  50% { transform: scaleY(0.95); }
+}
+.equalizer-bar-1 {
+  animation: bounce-bar-1 1.2s infinite ease-in-out;
+  transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+.equalizer-bar-2 {
+  animation: bounce-bar-2 0.8s infinite ease-in-out;
+  transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+.equalizer-bar-3 {
+  animation: bounce-bar-3 1.0s infinite ease-in-out;
+  transform-origin: bottom;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Hide player bar when fullscreen lyrics are open */
+body.fullscreen-lyrics-active footer,
+body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
+  display: none !important;
+}
+
+/* Animated Mesh Gradient for Liked Songs */
+.mesh-gradient-animated {
+  background: linear-gradient(-45deg, var(--primary), #ec4899, #3b82f6, #10b981);
+  background-size: 400% 400%;
+  animation: mesh-gradient-animation 15s ease infinite;
+}
+
+@keyframes mesh-gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
   100% {
     background-position: 0% 50%;
   }
@@ -632,4 +827,16 @@ body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
 .fade-y-edges {
   mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .equalizer-bar-1, .equalizer-bar-2, .equalizer-bar-3, .mesh-gradient-animated {
+    animation: none !important;
+  }
 }

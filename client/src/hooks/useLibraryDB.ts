@@ -16,9 +16,7 @@ export const useLibraryDB = () => {
     const db = await initDB();
     const tx = db.transaction('tracks', 'readwrite');
     const store = tx.objectStore('tracks');
-    for (const track of tracks) {
-      await store.put(track);
-    }
+    await Promise.all(tracks.map(track => store.put(track)));
     await tx.done;
   };
 

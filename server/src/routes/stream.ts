@@ -49,6 +49,12 @@ router.get('/:filename', (req: Request, res: Response) => {
 
     const chunksize = (end - start) + 1;
     const file = fs.createReadStream(filePath, { start, end });
+    file.on('error', (err) => {
+      console.error('[Stream Route Error]:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to stream audio file' });
+      }
+    });
     
     const head = {
       'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -65,7 +71,14 @@ router.get('/:filename', (req: Request, res: Response) => {
       'Content-Type': contentType,
     };
     res.writeHead(200, head);
-    fs.createReadStream(filePath).pipe(res);
+    const file = fs.createReadStream(filePath);
+    file.on('error', (err) => {
+      console.error('[Stream Route Error]:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to stream audio file' });
+      }
+    });
+    file.pipe(res);
   }
 });
 
