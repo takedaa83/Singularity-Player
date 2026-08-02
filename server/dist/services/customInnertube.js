@@ -535,24 +535,64 @@ async function customGetRelated(videoId) {
         const nextData = await requestInnerTube("next", "WEB_REMIX", {
             videoId
         });
+        const candidates = new Map();
+        // 1. Direct YouTube Music Watch Next Radio Queue Candidates
+        const watchNextTab = nextData.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.[0];
+        const playlistPanelItems = watchNextTab?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer?.contents || [];
+        let rankIndex = 0;
+        for (const item of playlistPanelItems) {
+            try {
+                const renderer = item.playlistPanelVideoRenderer;
+                if (!renderer || !renderer.videoId || renderer.videoId === videoId)
+                    continue;
+                const title = renderer.title?.runs?.[0]?.text || "Unknown";
+                const artist = renderer.shortBylineText?.runs?.[0]?.text || "Unknown Artist";
+                const album = renderer.longBylineText?.runs?.[2]?.text || "Single";
+                const durationStr = renderer.lengthText?.runs?.[0]?.text || "";
+                // Parse duration mm:ss to seconds
+                let duration = 0;
+                if (durationStr) {
+                    const parts = durationStr.split(":").map((p) => parseInt(p, 10));
+                    if (parts.length === 2)
+                        duration = parts[0] * 60 + parts[1];
+                    else if (parts.length === 3)
+                        duration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                }
+                const coverArtUrl = renderer.thumbnail?.thumbnails?.sort((a, b) => b.width - a.width)?.[0]?.url || null;
+                // Popularity score starts high for top YouTube Music Radio queue items (0.95 down to 0.70)
+                const popularity = Math.max(0.60, 0.95 - rankIndex * 0.015);
+                rankIndex++;
+                candidates.set(renderer.videoId, {
+                    id: `yt-${renderer.videoId}`,
+                    title,
+                    artist,
+                    album,
+                    duration,
+                    coverArtUrl,
+                    source: "youtube",
+                    streamUrl: `/api/yt/stream/${renderer.videoId}`,
+                    videoId: renderer.videoId,
+                    popularity: Number(popularity.toFixed(2)),
+                    addedAt: Date.now()
+                });
+            }
+            catch (e) {
+                // Skip malformed queue item
+            }
+        }
+        // 2. Parse "Related" Tab Browse Shelves for Additional Candidates
         const tabs = nextData.contents?.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs;
         const relatedTab = tabs?.find((t) => t.tabRenderer?.title?.toLowerCase() === "related" || t.tabRenderer?.title === "Related");
         const browseId = relatedTab?.tabRenderer?.endpoint?.browseEndpoint?.browseId;
-        if (!browseId) {
-            console.log("[InnerTube Related] No related browseId found.");
-            return [];
-        }
-        const browseData = await requestInnerTube("browse", "WEB_REMIX", {
-            browseId
-        });
-        const tracks = [];
-        const contents = browseData.contents?.sectionListRenderer?.contents;
-        if (contents) {
-            for (const section of contents) {
-                if (section.musicCarouselShelfRenderer) {
-                    const shelf = section.musicCarouselShelfRenderer;
-                    const title = shelf.header?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.[0]?.text;
-                    if (title === "You might also like") {
+        if (browseId) {
+            try {
+                const browseData = await requestInnerTube("browse", "WEB_REMIX", {
+                    browseId
+                });
+                const contents = browseData.contents?.sectionListRenderer?.contents || [];
+                for (const section of contents) {
+                    if (section.musicCarouselShelfRenderer) {
+                        const shelf = section.musicCarouselShelfRenderer;
                         const items = shelf.contents || [];
                         for (const item of items) {
                             try {
@@ -560,8 +600,8 @@ async function customGetRelated(videoId) {
                                 if (!renderer)
                                     continue;
                                 const parsed = parseMusicListItem(renderer);
-                                if (parsed) {
-                                    tracks.push({
+                                if (parsed && parsed.videoId && parsed.videoId !== videoId && !candidates.has(parsed.videoId)) {
+                                    candidates.set(parsed.videoId, {
                                         id: `yt-${parsed.videoId}`,
                                         title: parsed.title,
                                         artist: parsed.artist,
@@ -571,19 +611,25 @@ async function customGetRelated(videoId) {
                                         source: "youtube",
                                         streamUrl: `/api/yt/stream/${parsed.videoId}`,
                                         videoId: parsed.videoId,
+                                        popularity: 0.85,
                                         addedAt: Date.now()
                                     });
                                 }
                             }
                             catch (itemErr) {
-                                console.warn("[InnerTube Related] Failed to parse item in related shelf:", itemErr);
+                                // Skip item
                             }
                         }
                     }
                 }
             }
+            catch (browseErr) {
+                console.warn("[InnerTube Related] Browse tab parse failed:", browseErr);
+            }
         }
-        return tracks;
+        const result = Array.from(candidates.values());
+        console.log(`[InnerTube Related] Extracted ${result.length} high-confidence candidate tracks for videoId: ${videoId}`);
+        return result;
     }
     catch (error) {
         console.error("[InnerTube Related] Error:", error);

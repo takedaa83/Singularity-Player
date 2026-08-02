@@ -211,10 +211,9 @@ function scoreAndRankTracks(
       const skips = skipCounts[t.id] || 0;
 
       score += plays * 4.0;
-      score -= skips * 6.0;
-
-      // Small randomized factor to keep recommendations fresh without overriding score (max 0.5 points)
-      score += Math.random() * 0.5;
+      // First-class popularity signal for deterministic, high-confidence ranking
+      const popularitySignal = t.popularity !== undefined ? t.popularity : 0.75;
+      score += popularitySignal * 5.0;
 
       return { track: t, score };
     })
