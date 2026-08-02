@@ -37,6 +37,11 @@ const ArtistPage = lazy(() => import('./components/discovery/ArtistPage').then(m
 const AlbumPage = lazy(() => import('./components/discovery/AlbumPage').then(m => ({ default: m.AlbumPage })));
 const BatchDownloadsPage = lazy(() => import('./components/downloads/BatchDownloadsPage').then(m => ({ default: m.BatchDownloadsPage })));
 const SpotifyImportModal = lazy(() => import('./components/library/SpotifyImportModal').then(m => ({ default: m.SpotifyImportModal })));
+const TimeCapsuleView = lazy(() => import('./components/stats/TimeCapsuleView').then(m => ({ default: m.TimeCapsuleView })));
+
+import { Visualizer3D } from './components/visualizer/Visualizer3D';
+import { VibeMatrixModal } from './components/discovery/VibeMatrixModal';
+import { LocalFolderScannerModal } from './components/library/LocalFolderScannerModal';
 
 // Page transition variants
 const pageVariants = {
@@ -98,6 +103,8 @@ export const App: React.FC = () => {
   const [showEqualizer, setShowEqualizer] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [showSpotifyImport, setShowSpotifyImport] = useState(false);
+  const [showVibeMatrix, setShowVibeMatrix] = useState(false);
+  const [showFolderScanner, setShowFolderScanner] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -338,6 +345,7 @@ export const App: React.FC = () => {
       downloads: '/downloads',
       settings: '/settings',
       insights: '/insights',
+      capsule: '/capsule',
       'batch-download': '/batch-download',
     };
     navigate(routes[view] || '/');
@@ -479,6 +487,9 @@ export const App: React.FC = () => {
                   <Route path="/insights" element={
                     <PageWrapper><ListeningInsightsPage /></PageWrapper>
                   } />
+                  <Route path="/capsule" element={
+                    <PageWrapper><TimeCapsuleView /></PageWrapper>
+                  } />
                   <Route path="/artist/:name" element={
                     <PageWrapper><ArtistPage /></PageWrapper>
                   } />
@@ -564,6 +575,22 @@ export const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* 3D Audio Visualizer */}
+      <Visualizer3D />
+
+      {/* Vibe Matrix Modal */}
+      <VibeMatrixModal
+        isOpen={showVibeMatrix}
+        onClose={() => setShowVibeMatrix(false)}
+      />
+
+      {/* Local Folder Scanner Modal */}
+      <LocalFolderScannerModal
+        isOpen={showFolderScanner}
+        onClose={() => setShowFolderScanner(false)}
+        onScanComplete={triggerRefresh}
+      />
 
       {/* Toast Notifications */}
       <ToastContainer />

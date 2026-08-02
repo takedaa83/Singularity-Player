@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music, Heart, FolderHeart, ListMusic, Plus, Download, Upload, Trash2,
-  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, ChevronLeft, Package, User
+  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, ChevronLeft, Package, User, Sparkles
 } from 'lucide-react';
 import { Box, Typography, IconButton, Tooltip, Divider } from '@mui/material';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -144,6 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (id === 'downloads') return activeView.includes('downloads');
     if (id === 'settings') return activeView.includes('settings');
     if (id === 'batch-download') return activeView.includes('batch-download');
+    if (id === 'capsule') return activeView.includes('capsule');
     return activeView === id;
   };
 
@@ -156,6 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const toolsNav = [
+    { id: 'capsule', icon: Sparkles, label: 'Time Capsule', color: '#a855f7' }, // Purple
     { id: 'downloads', icon: Download, label: 'Downloads', color: tokens.colors.accent.cyan }, // Cyan
     { id: 'batch-download', icon: Package, label: 'Batch Packager', color: '#ec4899' }, // Fuchsia
     { id: 'settings', icon: Settings, label: 'Settings', color: '#a3a3a3' }, // Gray

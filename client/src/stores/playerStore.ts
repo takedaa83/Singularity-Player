@@ -50,8 +50,16 @@ interface PlayerState {
   autoplay: boolean;
   sleepTimerMinutes: number | null;
   sleepTimerEndTimestamp: number | null;
+  reverbPreset: 'off' | 'cathedral' | 'arena' | 'studio' | 'lofi';
+  karaokeMode: 'off' | 'vocal_cut' | 'vocal_boost';
+  vibeMatrixCoords: { x: number; y: number } | null;
+  activeVisualizer: 'off' | 'bars' | 'wave' | 'circular' | '3d_tunnel' | '3d_blob' | '3d_spectrum';
   
   // Actions
+  setReverbPreset: (preset: 'off' | 'cathedral' | 'arena' | 'studio' | 'lofi') => void;
+  setKaraokeMode: (mode: 'off' | 'vocal_cut' | 'vocal_boost') => void;
+  setVibeMatrixCoords: (coords: { x: number; y: number } | null) => void;
+  setActiveVisualizer: (visualizer: 'off' | 'bars' | 'wave' | 'circular' | '3d_tunnel' | '3d_blob' | '3d_spectrum') => void;
   setSleepTimer: (minutes: number | null) => void;
   setPlaying: (playing: boolean) => void;
   setAutoplay: (autoplay: boolean) => void;
@@ -159,6 +167,15 @@ export const usePlayerStore = create<PlayerState>()(
       autoplay: true,
       sleepTimerMinutes: null,
       sleepTimerEndTimestamp: null,
+      reverbPreset: 'off',
+      karaokeMode: 'off',
+      vibeMatrixCoords: null,
+      activeVisualizer: 'off',
+
+      setReverbPreset: (preset) => set({ reverbPreset: preset }),
+      setKaraokeMode: (mode) => set({ karaokeMode: mode }),
+      setVibeMatrixCoords: (coords) => set({ vibeMatrixCoords: coords }),
+      setActiveVisualizer: (visualizer) => set({ activeVisualizer: visualizer }),
 
       setSleepTimer: (minutes) => {
         if (!minutes || minutes <= 0) {

@@ -57,6 +57,7 @@ const lyrics_1 = __importDefault(require("./routes/lyrics"));
 const downloads_1 = __importDefault(require("./routes/downloads"));
 const sync_1 = __importDefault(require("./routes/sync"));
 const spotify_1 = __importDefault(require("./routes/spotify"));
+const localScanner_1 = __importDefault(require("./routes/localScanner"));
 const youtubeService_1 = require("./services/youtubeService");
 const customInnertube_1 = require("./services/customInnertube");
 const processPool_1 = require("./services/processPool");
@@ -144,6 +145,7 @@ const downloadsLimiter = (req, res, next) => {
 app.use('/api/downloads', downloadsLimiter, downloads_1.default);
 app.use('/api/sync', generalLimiter, sync_1.default);
 app.use('/api/spotify', generalLimiter, spotify_1.default);
+app.use('/api/library', generalLimiter, localScanner_1.default);
 // Image Proxy Endpoint to bypass CORS blocks for canvas-based color extraction
 app.get('/api/proxy-image', (req, res) => {
     const imageUrl = req.query.url;

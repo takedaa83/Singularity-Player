@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { 
   Play, 
   Pause, 
@@ -15,9 +14,12 @@ import {
   Gauge,
   Music,
   Sparkles,
-  Heart
+  Heart,
+  PictureInPicture,
+  Compass
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
+import { togglePictureInPictureMiniPlayer } from '../../utils/miniPlayerPiP';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { motion } from 'framer-motion';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -393,6 +395,29 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
 
           {/* 3. Auxiliary Options Section */}
           <div className="w-1/4 flex items-center justify-end gap-2 sm:gap-3">
+            {/* 3D Visualizer Quick Toggle */}
+            <button
+              onClick={() => {
+                const currentVis = usePlayerStore.getState().activeVisualizer;
+                usePlayerStore.getState().setActiveVisualizer(currentVis === 'off' ? '3d_tunnel' : 'off');
+              }}
+              disabled={!currentTrack}
+              className="p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 text-neutral-500 disabled:opacity-30 hidden sm:block"
+              title="3D Audio Visualizer"
+            >
+              <Sparkles className="w-4 h-4 text-purple-400" />
+            </button>
+
+            {/* Picture-in-Picture Mini Player Toggle */}
+            <button
+              onClick={() => togglePictureInPictureMiniPlayer()}
+              disabled={!currentTrack}
+              className="p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 text-neutral-500 disabled:opacity-30 hidden sm:block"
+              title="Floating Mini-Player (PiP)"
+            >
+              <PictureInPicture className="w-4 h-4" />
+            </button>
+
             {/* Audio Settings Popover (Speed & Equalizer) */}
             <div 
               className="relative hidden md:block"
