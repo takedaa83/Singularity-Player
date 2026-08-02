@@ -892,7 +892,13 @@ async function getAudioStreamUrl(videoId, quality = 'high', bypassCache = false)
                 return result;
             }
             catch (error) {
-                console.error(`[youtubeService] Stream URL extraction failed for ${videoId}:`, error?.message || error);
+                const msg = error?.message || String(error);
+                if (msg.includes('ENOTFOUND') || msg.includes('Errno 11001') || msg.includes('getaddrinfo failed')) {
+                    console.warn(`[youtubeService] Stream URL extraction failed for ${videoId}: Network offline (DNS resolution failed)`);
+                }
+                else {
+                    console.error(`[youtubeService] Stream URL extraction failed for ${videoId}:`, msg);
+                }
                 return null;
             }
             finally {

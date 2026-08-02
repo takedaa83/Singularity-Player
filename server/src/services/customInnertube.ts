@@ -558,8 +558,13 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
         rawData: data
       };
     } catch (err: any) {
-      console.warn(`[customInnertube] Client ${key} failed for video ${videoId}:`, err.message || err);
       lastError = err;
+      const msg = err?.message || String(err);
+      console.warn(`[customInnertube] Client ${key} failed for video ${videoId}:`, msg);
+      if (msg.includes('ENOTFOUND') || msg.includes('getaddrinfo failed')) {
+        console.warn(`[customInnertube] Network offline (DNS resolution failed). Aborting client loop.`);
+        break;
+      }
     }
   }
 
