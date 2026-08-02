@@ -138,7 +138,7 @@ export const SmartQueueService = {
       // Source B: Artist Top Hits (if candidates are sparse or confidence check needs famous tracks)
       if (candidateMap.size < 12 && currentTrack.artist) {
         try {
-          const artistHits = await api.searchYouTube(`${currentTrack.artist} top hits`);
+          const artistHits = await api.search(`${currentTrack.artist} top hits`);
           if (artistHits && artistHits.length > 0) {
             artistHits.forEach((item, idx) => {
               const mapped: Track = {
@@ -223,57 +223,49 @@ export const SmartQueueService = {
         const candArtist = (candidate.artist || '').toLowerCase().trim();
         const candGenre = (candidate.genre || '').toLowerCase().trim();
 
-        // 1. Popularity Score (Weight: 0.30) - Recognizable Hits
-        const popularityScore = candidate.popularity || 0.75;
+        // 1. Popularity Score (Weight: 0.35) - Recognizable Hits
+        const popularityScore = candidate.popularity || 0.80;
 
-        // 2. User Affinity Score (Weight: 0.25)
-        let userAffinityScore = 0.5;
-        if (favoriteTrackIds.has(candidate.id)) userAffinityScore += 0.35;
-        if (completedTrackIds.has(candidate.id)) userAffinityScore += 0.20;
-        if (candidate.playCount && candidate.playCount > 0) {
-          userAffinityScore += Math.min(0.25, candidate.playCount * 0.05);
-        }
+        // 2. User Affinity Score (Weight: 0.20)
+        let userAffinityScore = 0.65;
+        if (favoriteTrackIds.has(candidate.id)) userAffinityScore = 1.0;
+        else if (completedTrackIds.has(candidate.id)) userAffinityScore = 0.85;
 
-        // 3. Session Relevance & Smooth Flow Score (Weight: 0.20)
-        let sessionRelevanceScore = 0.5;
+        // 3. Session Relevance & Smooth Flow Score (Weight: 0.25)
+        let sessionRelevanceScore = 0.70;
         if (hasRealAudioFeatures(candidate)) {
           const candFeatures = getAudioFeatures(candidate);
           const candVector = getFeatureVector(candFeatures);
           sessionRelevanceScore = cosineSimilarity(currentVector, candVector);
-
-          // Energy / Tempo smooth transition bonus
           const bpmDiff = Math.abs(candFeatures.bpm - currentFeatures.bpm) / currentFeatures.bpm;
           if (bpmDiff <= 0.12) sessionRelevanceScore += 0.10;
         } else {
           if (candGenre && candGenre === currentGenre && candGenre !== 'unknown') {
-            sessionRelevanceScore += 0.30;
+            sessionRelevanceScore = 0.90;
           } else if (areGenresRelated(candGenre, currentGenre)) {
-            sessionRelevanceScore += 0.18;
+            sessionRelevanceScore = 0.80;
           }
         }
 
-        // 4. Artist Affinity & Relationship (Weight: 0.15)
-        let artistAffinityScore = 0.4;
+        // 4. Artist Affinity & Relationship (Weight: 0.20)
+        let artistAffinityScore = 0.60;
         if (candArtist && candArtist === currentArtist) {
-          artistAffinityScore = 0.95;
+          artistAffinityScore = 1.0;
         } else if (candArtist && currentArtist.includes(candArtist)) {
-          artistAffinityScore = 0.80; // Collaborator
+          artistAffinityScore = 0.85; // Collaborator
         }
 
-        // 5. Skip Penalty (Weight: -0.15)
+        // 5. Skip Penalty (Weight: -0.20)
         let skipPenalty = 0;
-        if (skippedTrackIds.has(candidate.id)) skipPenalty = 0.60;
-        if (candidate.skipCount && candidate.skipCount > 0) {
-          skipPenalty += Math.min(0.40, candidate.skipCount * 0.15);
-        }
+        if (skippedTrackIds.has(candidate.id)) skipPenalty = 0.70;
 
         // Composite Weighted Formula
         const compositeScore =
-          0.30 * popularityScore +
-          0.25 * userAffinityScore +
-          0.20 * sessionRelevanceScore +
-          0.15 * artistAffinityScore -
-          0.15 * skipPenalty;
+          0.35 * popularityScore +
+          0.20 * userAffinityScore +
+          0.25 * sessionRelevanceScore +
+          0.20 * artistAffinityScore -
+          0.20 * skipPenalty;
 
         const confidence = Math.max(0.0, Math.min(1.0, compositeScore));
 
@@ -293,7 +285,7 @@ export const SmartQueueService = {
       scoredCandidates.sort((a, b) => b.compositeScore - a.compositeScore);
 
       // ─── STAGE 4: CONFIDENCE THRESHOLD & ARTIST SATURATION GUARD ──────────
-      const CONFIDENCE_THRESHOLD = 0.60;
+      const CONFIDENCE_THRESHOLD = 0.45;
       const TARGET_COUNT = 5;
 
       const finalQueueTracks: Track[] = [];

@@ -37,7 +37,10 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           const cached = await caches.match(event.request);
-          return cached || caches.match('/index.html');
+          if (cached) return cached;
+          const fallbackIndex = await caches.match('/index.html');
+          if (fallbackIndex) return fallbackIndex;
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
         })
     );
     return;

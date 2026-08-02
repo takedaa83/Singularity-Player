@@ -105,6 +105,18 @@ export async function togglePictureInPictureMiniPlayer(): Promise<boolean> {
 
     renderPiPCanvas();
 
+    if (pipVideoElement.readyState < 1) {
+      await new Promise<void>((resolve) => {
+        if (!pipVideoElement) return resolve();
+        const onLoaded = () => {
+          pipVideoElement?.removeEventListener('loadedmetadata', onLoaded);
+          resolve();
+        };
+        pipVideoElement.addEventListener('loadedmetadata', onLoaded);
+        setTimeout(resolve, 300);
+      });
+    }
+
     await pipVideoElement.requestPictureInPicture();
 
     pipVideoElement.addEventListener('leavepictureinpicture', () => {
