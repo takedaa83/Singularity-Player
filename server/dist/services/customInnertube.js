@@ -532,8 +532,10 @@ async function customPlayer(videoId, clientKey) {
  */
 async function customGetRelated(videoId) {
     try {
+        const radioPlaylistId = `RDAMVM${videoId}`;
         const nextData = await requestInnerTube("next", "WEB_REMIX", {
-            videoId
+            videoId,
+            playlistId: radioPlaylistId
         });
         const candidates = new Map();
         // 1. Direct YouTube Music Watch Next Radio Queue Candidates

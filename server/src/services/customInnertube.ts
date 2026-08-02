@@ -576,8 +576,10 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
  */
 export async function customGetRelated(videoId: string): Promise<any[]> {
   try {
+    const radioPlaylistId = `RDAMVM${videoId}`;
     const nextData = await requestInnerTube("next", "WEB_REMIX", {
-      videoId
+      videoId,
+      playlistId: radioPlaylistId
     });
 
     const candidates: Map<string, any> = new Map();
