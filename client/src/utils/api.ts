@@ -201,6 +201,18 @@ export const api = {
     return fetchJSON<any[]>(`/api/yt/radio?${params.toString()}`, { signal });
   },
 
+  /** Prefetch stream URLs for upcoming tracks in background */
+  ytPrefetch(videoIds: string[], signal?: AbortSignal) {
+    return fetchJSON<{ status: string; count: number }>('/api/yt/prefetch', {
+      method: 'POST',
+      body: JSON.stringify({ videoIds }),
+      signal
+    }).catch((err) => {
+      console.warn('[API] Prefetch request failed silently:', err);
+      return { status: 'error', count: 0 };
+    });
+  },
+
   /** Get the streaming URL (constructs a proxy URL, does not fetch) */
   streamUrl(videoId: string): string {
     return `${getApiBaseUrl()}/api/yt/stream/${videoId}`;
