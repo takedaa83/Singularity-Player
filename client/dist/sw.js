@@ -1,4 +1,4 @@
-const CACHE_NAME = 'singularity-player-v1.6';
+const CACHE_NAME = 'singularity-player-v1.7';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy for navigation/HTML requests to avoid stale index.html referencing missing JS hashes
+  // Network-first strategy for navigation/HTML requests
   if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
     event.respondWith(
       fetch(event.request)
@@ -46,20 +46,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for assets
+  // Stale-while-revalidate for static assets with safe Response fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request)
+      if (cachedResponse) {
+        // Fetch in background to update cache
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
+          }
+        }).catch(() => {});
+        return cachedResponse;
+      }
+
+      return fetch(event.request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          if (networkResponse && networkResponse.status === 200) {
             const clone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
+        .catch(async () => {
+          const fallback = await caches.match(event.request);
+          if (fallback) return fallback;
+          return new Response('', { status: 404, statusText: 'Not Found' });
+        });
     })
   );
 });
