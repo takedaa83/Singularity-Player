@@ -21,6 +21,7 @@ import { PlaybackAnalyticsTracker } from './components/analytics/PlaybackAnalyti
 import { useSettingsStore } from './stores/settingsStore';
 import { api } from './utils/api';
 import { initDB } from './lib/db';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 // Lazy-load heavy pages for code splitting
 const HomePage = lazy(() => import('./components/home/HomePage').then(m => ({ default: m.HomePage })));
@@ -364,7 +365,8 @@ export const App: React.FC = () => {
   const selectedPlaylistId = playlistMatch ? playlistMatch[1] : null;
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-bg-primary overflow-hidden font-sans relative">
+    <ErrorBoundary>
+      <div className="w-screen h-screen flex flex-col bg-bg-primary overflow-hidden font-sans relative">
       <PlaybackAnalyticsTracker />
       {/* Main Layout Container */}
       <div className="flex-1 flex overflow-hidden relative z-10">
@@ -608,7 +610,8 @@ export const App: React.FC = () => {
         showEqualizer={showEqualizer}
         setShowEqualizer={setShowEqualizer}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 export default App;

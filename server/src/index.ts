@@ -270,7 +270,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`[Server] Running on http://localhost:${PORT}`);
   console.log(`[Server] CORS origins: * (all origins allowed)`);
   await ensureYtDlpBinary();
@@ -301,8 +301,17 @@ app.listen(PORT, async () => {
 // Graceful shutdown
 const gracefulShutdown = (signal: string) => {
   console.log(`[Server] ${signal} received — shutting down gracefully`);
-  ytdlpPool.shutdownAll();
-  process.exit(0);
+  server.close(() => {
+    console.log('[Server] HTTP server closed.');
+  });
+  try {
+    ytdlpPool.shutdownAll();
+  } catch (err) {
+    console.error('[Server] Error shutting down yt-dlp process pool:', err);
+  }
+  setTimeout(() => process.exit(0), 500);
 };
+
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -275,7 +275,7 @@ app.use((err, req, res, next) => {
     });
 });
 // Start server
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
     console.log(`[Server] Running on http://localhost:${PORT}`);
     console.log(`[Server] CORS origins: * (all origins allowed)`);
     await (0, youtubeService_1.ensureYtDlpBinary)();
@@ -304,8 +304,17 @@ app.listen(PORT, async () => {
 // Graceful shutdown
 const gracefulShutdown = (signal) => {
     console.log(`[Server] ${signal} received — shutting down gracefully`);
-    processPool_1.ytdlpPool.shutdownAll();
-    process.exit(0);
+    server.close(() => {
+        console.log('[Server] HTTP server closed.');
+    });
+    try {
+        processPool_1.ytdlpPool.shutdownAll();
+    }
+    catch (err) {
+        console.error('[Server] Error shutting down yt-dlp process pool:', err);
+    }
+    setTimeout(() => process.exit(0), 500);
 };
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -15,6 +15,7 @@ interface ScannedTrack {
   duration: number;
   mimeType: string;
   streamUrl: string;
+  coverArtUrl?: string | null;
   filePath: string;
   source: 'local';
   addedAt: number;
@@ -75,13 +76,19 @@ router.post('/scan-folder', async (req: Request, res: Response) => {
       let artist = 'Unknown Artist';
       let album = 'Local Audio';
       let duration = 0;
+      let coverArtUrl: string | null = null;
 
       try {
-        const metadata = await musicMetadata.parseFile(filePath, { duration: true, skipCovers: true });
+        const metadata = await musicMetadata.parseFile(filePath, { duration: true, skipCovers: false });
         if (metadata.common.title) title = metadata.common.title;
         if (metadata.common.artist) artist = metadata.common.artist;
         if (metadata.common.album) album = metadata.common.album;
         if (metadata.format.duration) duration = Math.round(metadata.format.duration);
+
+        if (metadata.common.picture && metadata.common.picture.length > 0) {
+          const pic = metadata.common.picture[0];
+          coverArtUrl = `data:${pic.format};base64,${pic.data.toString('base64')}`;
+        }
       } catch (metaErr) {
         // Fallback to filename title if tag parsing fails
       }
@@ -96,6 +103,7 @@ router.post('/scan-folder', async (req: Request, res: Response) => {
         duration,
         mimeType: 'audio/mpeg',
         streamUrl: relativeStreamPath,
+        coverArtUrl,
         filePath,
         source: 'local',
         addedAt: Date.now(),
