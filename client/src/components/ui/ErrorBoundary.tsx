@@ -29,13 +29,22 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
-    window.location.href = '/';
+    window.location.href = '/?t=' + Date.now();
   };
 
   private handleClearCacheAndReload = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = '/';
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => caches.delete(name));
+        });
+      }
+    } catch (e) {
+      console.warn('Cache clearing error:', e);
+    }
+    window.location.href = '/?t=' + Date.now();
   };
 
   public render() {
