@@ -73,16 +73,16 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '50mb' }));
 
-// Rate Limiting
+// Rate Limiting — Configurable via environment variables
 const generalLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 150,
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000,
+  max: Number(process.env.RATE_LIMIT_MAX) || 300,
   message: { error: 'Too many requests, please try again later.' }
 });
 
 const uploadLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 30,
+  windowMs: Number(process.env.UPLOAD_RATE_LIMIT_WINDOW_MS) || 5 * 60 * 1000,
+  max: Number(process.env.UPLOAD_RATE_LIMIT_MAX) || 50,
   message: { error: 'Upload rate limit exceeded. Please wait a few minutes.' }
 });
 

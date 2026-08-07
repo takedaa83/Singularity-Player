@@ -404,7 +404,7 @@ export class AudioEngine {
       if (isPlaying) {
         this.initAudioGraph();
         if (this.audioContext?.state === 'suspended') {
-          this.audioContext.resume();
+          this.audioContext.resume().catch((err) => console.warn('[AudioEngine] AudioContext resume deferred:', err));
         }
         
         this.updateMediaSession(currentTrack, true);
@@ -440,7 +440,7 @@ export class AudioEngine {
     const unlock = () => {
       this.initAudioGraph();
       if (this.audioContext && this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
+        this.audioContext.resume().catch((err) => console.warn('[AudioEngine] Unlock resume deferred:', err));
       }
       this.removeUnlockListeners();
     };
@@ -1071,6 +1071,7 @@ export class AudioEngine {
 
     this.stopProgressTimer();
     this.cancelActiveCrossfade();
+    this.disconnectAudioGraphNodes();
     
     if (this.audioContext) {
       try {
@@ -1101,6 +1102,26 @@ export class AudioEngine {
     this.sourceNodesCreated = false;
     this.prefetchedTrackId = null;
     this.impulseCache.clear();
+  }
+
+  private disconnectAudioGraphNodes() {
+    try {
+      if (this.gainNode1) this.gainNode1.disconnect();
+      if (this.gainNode2) this.gainNode2.disconnect();
+      if (this.eqFilters.length > 0) {
+        this.eqFilters.forEach(f => f.disconnect());
+      }
+      if (this.bypassGainNode) this.bypassGainNode.disconnect();
+      if (this.pannerNode) this.pannerNode.disconnect();
+      if (this.convolverNode) this.convolverNode.disconnect();
+      if (this.reverbGainNode) this.reverbGainNode.disconnect();
+      if (this.dryGainNode) this.dryGainNode.disconnect();
+      if (this.analyserNode) this.analyserNode.disconnect();
+      if (this.mainGainNode) this.mainGainNode.disconnect();
+      if (this.limiterNode) this.limiterNode.disconnect();
+    } catch (e) {
+      console.warn('[AudioEngine] Error disconnecting Web Audio nodes:', e);
+    }
   }
 
   public seek(time: number) {

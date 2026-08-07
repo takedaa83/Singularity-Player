@@ -43,6 +43,19 @@ const TimeCapsuleView = lazy(() => import('./components/stats/TimeCapsuleView').
 import { Visualizer3D } from './components/visualizer/Visualizer3D';
 import { VibeMatrixModal } from './components/discovery/VibeMatrixModal';
 import { LocalFolderScannerModal } from './components/library/LocalFolderScannerModal';
+import { FocusModeModal } from './components/player/FocusModeModal';
+import { MusicalDnaModal } from './components/analytics/MusicalDnaModal';
+import { MusicQuizModal } from './components/stats/MusicQuizModal';
+import { MetadataRepairModal } from './components/library/MetadataRepairModal';
+import { StemSeparatorModal } from './components/player/StemSeparatorModal';
+import { PitchHarmonizerModal } from './components/player/PitchHarmonizerModal';
+import { AiMasteringModal } from './components/player/AiMasteringModal';
+import { AiSimilarityModal } from './components/discovery/AiSimilarityModal';
+import { AiSongSuggestionsModal } from './components/discovery/AiSongSuggestionsModal';
+import { AiPlaylistStudioModal } from './components/discovery/AiPlaylistStudioModal';
+import { SimilarityGraphModal } from './components/discovery/SimilarityGraphModal';
+import { CommandPaletteModal } from './components/common/CommandPaletteModal';
+import { singularityEngine } from './services/singularityEngine';
 
 // Page transition variants
 const pageVariants = {
@@ -106,6 +119,18 @@ export const App: React.FC = () => {
   const [showSpotifyImport, setShowSpotifyImport] = useState(false);
   const [showVibeMatrix, setShowVibeMatrix] = useState(false);
   const [showFolderScanner, setShowFolderScanner] = useState(false);
+  const [showFocusMode, setShowFocusMode] = useState(false);
+  const [showMusicalDna, setShowMusicalDna] = useState(false);
+  const [showMusicQuiz, setShowMusicQuiz] = useState(false);
+  const [showMetadataRepair, setShowMetadataRepair] = useState(false);
+  const [showStemSeparator, setShowStemSeparator] = useState(false);
+  const [showPitchHarmonizer, setShowPitchHarmonizer] = useState(false);
+  const [showAiMastering, setShowAiMastering] = useState(false);
+  const [showAiSimilarity, setShowAiSimilarity] = useState(false);
+  const [showAiSuggestions, setShowAiSuggestions] = useState(false);
+  const [showAiPlaylistStudio, setShowAiPlaylistStudio] = useState(false);
+  const [showSimilarityGraph, setShowSimilarityGraph] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -141,6 +166,9 @@ export const App: React.FC = () => {
     root.style.setProperty('--primary-color', accentColor);
     root.style.setProperty('--primary-light-color', adjustHexColor(accentColor, 15));
     root.style.setProperty('--primary-dark-color', adjustHexColor(accentColor, -15));
+
+    // 4. Boot custom SingularityEngine
+    singularityEngine.initialize();
   }, [theme, accentColor, compactMode]);
 
   // Audio engine (no longer returns currentTime/duration — uses external store)
@@ -151,7 +179,7 @@ export const App: React.FC = () => {
   const currentTrack = usePlayerStore((s) => s.currentTrack);
 
   // Keyboard shortcuts — seek is now stable (useCallback-memoized)
-  useKeyboardShortcuts(seek);
+  useKeyboardShortcuts(seek, () => setShowCommandPalette(true));
 
   // Sleep Timer Auto-Pause Engine
   const sleepTimerEndTimestamp = usePlayerStore((s) => s.sleepTimerEndTimestamp);
@@ -407,6 +435,42 @@ export const App: React.FC = () => {
               setShowSpotifyImport(true);
               setMobileSidebarOpen(false);
             }}
+            onOpenFocusMode={() => {
+              setShowFocusMode(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenMusicalDna={() => {
+              setShowMusicalDna(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenMusicQuiz={() => {
+              setShowMusicQuiz(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenMetadataRepair={() => {
+              setShowMetadataRepair(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenStemSeparator={() => {
+              setShowStemSeparator(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenPitchHarmonizer={() => {
+              setShowPitchHarmonizer(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenAiMastering={() => {
+              setShowAiMastering(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenAiSimilarity={() => {
+              setShowAiSimilarity(true);
+              setMobileSidebarOpen(false);
+            }}
+            onOpenAiPlaylistStudio={() => {
+              setShowAiPlaylistStudio(true);
+              setMobileSidebarOpen(false);
+            }}
           />
         </div>
 
@@ -593,6 +657,59 @@ export const App: React.FC = () => {
         onClose={() => setShowFolderScanner(false)}
         onScanComplete={triggerRefresh}
       />
+
+      {/* Focus Mode & Pomodoro Modal */}
+      {showFocusMode && <FocusModeModal onClose={() => setShowFocusMode(false)} />}
+
+      {/* Musical DNA Radar Modal */}
+      {showMusicalDna && <MusicalDnaModal onClose={() => setShowMusicalDna(false)} />}
+
+      {/* Music Quiz Trivia Modal */}
+      {showMusicQuiz && <MusicQuizModal onClose={() => setShowMusicQuiz(false)} />}
+
+      {/* AI Metadata & Artwork Repair Modal */}
+      {showMetadataRepair && <MetadataRepairModal onClose={() => setShowMetadataRepair(false)} />}
+
+      {/* Real-Time AI Stem Separator Modal */}
+      {showStemSeparator && <StemSeparatorModal onClose={() => setShowStemSeparator(false)} />}
+
+      {/* AI Pitch Harmonizer & Auto-Tune Modal */}
+      {showPitchHarmonizer && <PitchHarmonizerModal onClose={() => setShowPitchHarmonizer(false)} />}
+
+      {/* AI Smart Auto-Mastering Modal */}
+      {showAiMastering && <AiMasteringModal onClose={() => setShowAiMastering(false)} />}
+
+      {/* AI Cosine Similarity Song Radar Modal */}
+      {showAiSimilarity && <AiSimilarityModal onClose={() => setShowAiSimilarity(false)} />}
+
+      {/* AI Song Suggestions Modal */}
+      {showAiSuggestions && <AiSongSuggestionsModal onClose={() => setShowAiSuggestions(false)} />}
+
+      {/* AI Playlist Studio Modal */}
+      {showAiPlaylistStudio && (
+        <AiPlaylistStudioModal
+          onClose={() => setShowAiPlaylistStudio(false)}
+          onPlaylistSaved={() => setRefreshTrigger((prev) => prev + 1)}
+          onOpenSimilarityGraph={() => setShowSimilarityGraph(true)}
+        />
+      )}
+
+      {/* Multi-Node Similarity Graph Modal */}
+      {showSimilarityGraph && <SimilarityGraphModal onClose={() => setShowSimilarityGraph(false)} />}
+
+      {/* Raycast / Linear Command Palette Modal */}
+      {showCommandPalette && (
+        <CommandPaletteModal
+          onClose={() => setShowCommandPalette(false)}
+          onOpenStemSeparator={() => setShowStemSeparator(true)}
+          onOpenPitchHarmonizer={() => setShowPitchHarmonizer(true)}
+          onOpenAiMastering={() => setShowAiMastering(true)}
+          onOpenFocusMode={() => setShowFocusMode(true)}
+          onOpenMusicalDna={() => setShowMusicalDna(true)}
+          onOpenAiSuggestions={() => setShowAiSuggestions(true)}
+          onOpenAiPlaylistStudio={() => setShowAiPlaylistStudio(true)}
+        />
+      )}
 
       {/* Toast Notifications */}
       <ToastContainer />

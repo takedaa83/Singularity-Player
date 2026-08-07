@@ -82,6 +82,10 @@ export const Equalizer: React.FC = () => {
                 max="12"
                 step="1"
                 value={gain}
+                aria-label={`Equalizer frequency band ${EQ_LABELS[idx]} Hz gain`}
+                aria-valuenow={gain}
+                aria-valuemin={-12}
+                aria-valuemax={12}
                 onChange={(e) => handleBandChange(idx, parseInt(e.target.value))}
                 className="absolute w-32 h-4 origin-center rotate-270 -translate-y-16 cursor-pointer opacity-0"
                 style={{ transform: 'rotate(-90deg) translateY(14px)', width: '130px' }}

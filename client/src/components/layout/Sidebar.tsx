@@ -22,6 +22,15 @@ interface SidebarProps {
   triggerRefresh: () => void;
   onUploadClick: () => void;
   onOpenSpotifyImport?: () => void;
+  onOpenFocusMode?: () => void;
+  onOpenMusicalDna?: () => void;
+  onOpenMusicQuiz?: () => void;
+  onOpenMetadataRepair?: () => void;
+  onOpenStemSeparator?: () => void;
+  onOpenPitchHarmonizer?: () => void;
+  onOpenAiMastering?: () => void;
+  onOpenAiSimilarity?: () => void;
+  onOpenAiPlaylistStudio?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -34,7 +43,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   refreshTrigger,
   triggerRefresh,
   onUploadClick,
-  onOpenSpotifyImport
+  onOpenSpotifyImport,
+  onOpenFocusMode,
+  onOpenMusicalDna,
+  onOpenMusicQuiz,
+  onOpenMetadataRepair,
+  onOpenStemSeparator,
+  onOpenPitchHarmonizer,
+  onOpenAiMastering,
+  onOpenAiSimilarity,
+  onOpenAiPlaylistStudio
 }) => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const { getAllPlaylists, savePlaylist, deletePlaylist, getAllTracks, saveTrack, getAllFavorites, toggleFavorite } = useLibraryDB();

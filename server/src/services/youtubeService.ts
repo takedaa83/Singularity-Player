@@ -265,7 +265,18 @@ export async function ensureYtDlpBinary(): Promise<string> {
   }
 }
 
-ytDlpReady = ensureYtDlpBinary();
+// Timeout protection guard: ensure server startup never blocks indefinitely on slow network download
+const TIMEOUT_MS = 12000;
+ytDlpReady = Promise.race([
+  ensureYtDlpBinary(),
+  new Promise<string>((resolve) => {
+    setTimeout(() => {
+      console.warn(`[youtubeService] ensureYtDlpBinary timed out after ${TIMEOUT_MS}ms. Falling back to system 'yt-dlp'.`);
+      YT_DLP_PATH = 'yt-dlp';
+      resolve('yt-dlp');
+    }, TIMEOUT_MS);
+  })
+]);
 
 /**
  * Custom InnerTube stream URL extraction using the IOS client.

@@ -7,6 +7,7 @@ interface AudioVisualizerProps {
 
 export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
   const visualizerStyle = usePlayerStore(state => state.visualizerStyle);
   const isPlaying = usePlayerStore(state => state.isPlaying);
   const animationRef = useRef<number | null>(null);
@@ -97,7 +98,10 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
       }
 
       const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
+      if (!dataArrayRef.current || dataArrayRef.current.length !== bufferLength) {
+        dataArrayRef.current = new Uint8Array(bufferLength);
+      }
+      const dataArray = dataArrayRef.current;
 
       if (visualizerStyle === 'wave') {
         // Oscilloscope waveform visualizer
@@ -245,7 +249,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
 
   return (
     <div className="relative w-full h-full overflow-hidden rounded-lg bg-black border border-neutral-800">
-      <canvas ref={canvasRef} className="w-full h-full block" />
+      <canvas ref={canvasRef} className="w-full h-full block" aria-hidden="true" />
     </div>
   );
 };

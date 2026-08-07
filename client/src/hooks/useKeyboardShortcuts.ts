@@ -6,18 +6,34 @@ import { timeStore } from './useAudioEngine';
  * Global keyboard shortcuts. Reads currentTime/duration from the external
  * time store (ref-based), so the listener registers ONCE and never re-registers.
  */
-export const useKeyboardShortcuts = (seek: (time: number) => void) => {
+export const useKeyboardShortcuts = (
+  seek: (time: number) => void,
+  onOpenCommandPalette?: () => void
+) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+
+      // Cmd+K / Ctrl+K or '/' to open Raycast Command Palette
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA')) {
+        e.preventDefault();
+        if (onOpenCommandPalette) {
+          onOpenCommandPalette();
+        } else {
+          const searchInput = document.querySelector('input[type="search"], input[placeholder*="Search"]') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        }
         return;
       }
-      if (target.isContentEditable) return;
+
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable) {
+        return;
+      }
 
       const state = usePlayerStore.getState();
-      // Read time from external store (not from closure/props)
       const { currentTime, duration } = timeStore.getSnapshot();
 
       switch (e.code) {

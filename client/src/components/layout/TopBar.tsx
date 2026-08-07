@@ -51,9 +51,12 @@ export const TopBar: React.FC<TopBarProps> = ({
         )}
       </Box>
 
-      {/* Centered Search Field */}
-      <Box sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', justifyContent: 'center' }}>
+      {/* Centered Search Field with Cmd+K Badge */}
+      <Box sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
         <SearchInput onSearch={onSearch} initialValue={searchQuery} />
+        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded border border-neutral-800 bg-neutral-900/60 text-[10px] font-mono text-neutral-400 shrink-0">
+          ⌘K
+        </span>
       </Box>
 
       {/* Right Action Buttons */}

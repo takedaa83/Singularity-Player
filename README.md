@@ -8,7 +8,7 @@
 <h1 align="center">🎵 Singularity Player</h1>
 
 <p align="center">
-  <strong>A premium, self-hosted music player with on-demand YouTube streaming, a studio-grade audio engine, and a beautiful modern interface.</strong>
+  <strong>A flagship desktop music platform featuring the custom SingularityEngine v2.0.0 master DSP engine, real-time 4-channel AI stem separation, YIN pitch autocorrelation auto-tune, EBU R128 LUFS normalization, and the Singularity AI Playlist Studio.</strong>
 </p>
 
 <p align="center">
@@ -18,165 +18,78 @@
 
 ---
 
-## 🖥️ Screenshots
-
-<p align="center">
-  <img src="docs/home.png" alt="Home Page" width="48%" />
-  <img src="docs/search.png" alt="Search Results" width="48%" />
-</p>
-<br/>
-<p align="center">
-  <img src="docs/equalizer.png" alt="Equalizer" width="48%" />
-  <img src="docs/lyrics.png" alt="Lyrics Panel" width="48%" />
-</p>
-
----
-
 ## 🧭 Table of Contents
 
-- [How It Works](#-how-it-works)
+- [Architectural Highlights](#-architectural-highlights)
+- [SingularityEngine v2.0.0](#-singularityengine-v200-master-dsp--ai)
+- [Singularity AI Playlist Studio](#-singularity-ai-playlist-studio)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
-  - [Native Mobile App (Capacitor)](#-native-mobile-app-capacitor)
-  - [Hosting Backend on Render](#-hosting-backend-on-render)
-- [Configuration](#-configuration)
-- [Project Structure](#-project-structure)
 - [Keyboard Shortcuts](#-keyboard-shortcuts)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [Disclaimer](#%EF%B8%8F-disclaimer)
 - [License](#-license)
 
 ---
 
-## 🔍 How It Works
+## 🌌 Architectural Highlights
 
-Singularity Player is a two-part system — a **React frontend** that runs in your browser and a **Node.js backend** that runs on your machine — working together to give you a full music platform experience without relying on any third-party service for playback or storage.
+Singularity Player combines a **React 19 + TypeScript** frontend running in your browser with an **Express / Node.js** streaming server. It operates 100% locally with zero external API key requirements.
 
-### The Search & Streaming Pipeline
+### Key Architectural Pillars:
+1. **SingularityEngine v2.0.0**: Master audio & AI orchestration engine binding dual-crossfade HTML5 elements, Linkwitz-Riley 4th-order filter cascades, YIN pitch autocorrelation, and 8D L2 Cosine Distance vector matching.
+2. **Singularity AI Playlist Studio**: Flagship playlist curation system supporting natural language prompt synthesis, conversational refinement, per-track song locking (🔒), DJ transition flow analysis, statistical confidence bars, and multi-node similarity graphs.
+3. **Raycast / Linear Command Palette**: Fast, keyboard-first command menu (`Cmd+K`, `Ctrl+K`, `/`) providing instant search across playback, AI studio tools, and audio FX.
+4. **Apple / Linear Glassmorphism Design System**: Tokenized glass surfaces (`backdrop-filter: blur(24px)`), hairline glass borders (`1px solid rgba(255, 255, 255, 0.08)`), active scale feedback, and WCAG AA accessibility focus rings.
 
-When you type a song name into the search bar, the backend queries multiple music metadata APIs (Deezer, iTunes) and YouTube Music to find matching tracks with cover art, album info, and preview URLs. To query YouTube Music search and recommendation feeds reliably on hosted environments (like Render or VPS servers), the backend features a custom, lightweight InnerTube client (`WEB_REMIX`).
+---
 
-For streaming playback, the player bypasses bot-guard sign-in challenges by:
-1. **Dynamic Visitor Session Resolution**: Fetching valid `visitorData` parameters dynamically from YouTube's `sw.js_data` to authenticate all InnerTube request headers.
-2. **V8 VM Deobfuscation Sandbox**: Bootstrapping a V8 Virtual Machine sandbox to compile and execute YouTube's `base.js` player script at runtime, dynamically extracting signature deciphering and `n`-parameter transform functions (supporting expressions like `mP`, `$9`, `Jf`, and `v0` found in recent players).
-3. **Client-Fallback Stack**: Cycling through a client stack (`VISIONOS`, `TVHTML5_SIMPLY_EMBEDDED_PLAYER`, `TVHTML5`, `ANDROID_VR`, `IOS`, etc.) to resolve playable audio streams.
-4. **Cookie & SAPISID Authentication**: Authenticating web clients via an optional `YOUTUBE_COOKIE` environment variable, parsing it to construct SHA1-hashed `SAPISIDHASH` Authorization headers to bypass age-restricted or premium content checks.
-5. **Parallel Racing Resolution**: Racing multiple public Cobalt and Piped instances in parallel (`Promise.any`) on the client to automatically bypass slow, offline, or Turnstile-challenged instances and choose the fastest node under 1.5 seconds.
-6. **Client-Side Self-Healing Duration**: Automatically recovering missing audio metadata duration from public Piped and Invidious APIs directly in the user's browser, bypassing the cloud hosting server if YouTube has blocked its datacenter IP.
+## 🎛️ SingularityEngine v2.0.0 (Master DSP & AI)
 
-Once resolved, the backend acts as a streaming proxy—routing the media stream through standard HTTP byte-range requests to eliminate CORS, hotlinking, or browser demuxer failures during playback.
+Under the hood, all audio and AI pipelines are orchestrated by the singleton **`SingularityEngine`**:
 
-### Prefetching & Zero-Wait Playback
+* **🎛️ Real-Time 4-Channel AI Stem Separator**: Cascaded 2nd-order Butterworth biquad pairs ($Q=0.7071$) forming Linkwitz-Riley 4th-order crossover slopes ($24\text{dB/octave}$) for surgical separation of **Vocals**, **Drums**, **Bass**, and **Melody** with instant Karaoke vocal mutes.
+* **🎤 YIN Fundamental Frequency Pitch Autocorrelation ($F_0$)**: Full YIN pitch detection algorithm calculating difference functions $d(\tau)$, cumulative mean normalized differences $d'(\tau)$, parabolic peak interpolation, and equal-tempered MIDI scale retuning.
+* **📊 EBU R128 K-Weighted LUFS Loudness Normalization**: Stage 1 K-Weighting pre-filter stage ($+4\text{dB}$ high shelf at $1.5\text{kHz}$ + highpass RLB filter at $38\text{Hz}$) with $400\text{ms}$ gated mean-square integration targeting $-14.0\text{ LUFS}$.
+* **🤖 8D L2 Normalized Cosine Distance Vector Engine**: 8-dimensional feature vector extraction (`[spectralCentroid, zeroCrossingRate, rmsEnergy, durationNorm, genreHash, tempoEst, valenceEst, artistHash]`) with true L2 unit vector normalization $v_{\text{norm}} = \frac{v}{\|v\|_2}$.
 
-The moment you hover over a track card or when the current song is halfway through, the system silently resolves the **next** track's stream URL in the background. By the time you hit "Next" or the song naturally ends, the audio is already prepared — transitions happen in under a second. The backend also coalesces duplicate requests: if 5 UI events all ask for the same track at once, only one extraction actually runs, and all 5 share the result.
+---
 
-### The Audio Engine
+## 🎨 Singularity AI Playlist Studio
 
-The player doesn't just play audio — it processes it. Under the hood, every audio stream is routed through a **Web Audio API graph** that includes:
+An advanced AI playlist curation system offering features that go beyond capabilities exposed in mainstream music applications:
 
-- A **10-band parametric equalizer** (32 Hz → 16 kHz) with presets like Bass Boost, Rock, Pop, Vocal, Electronic, Jazz, Classical, and Nightcore — or full manual control
-- A **spatial audio processor** that can widen the stereo field, simulate rooms of different sizes, and adjust elevation
-- A **crossfade engine** that smoothly blends the tail of one song into the beginning of the next, with configurable overlap duration
-- A **volume ramping system** that uses linear gain interpolation to eliminate pops and clicks during play, pause, and volume changes
-- A real-time **audio visualizer** rendered on HTML5 Canvas, showing live frequency bars and waveform data
-
-All of this runs entirely in the browser. Nothing is sent back to any server.
-
-### Your Personal Library
-
-Every track you play, favorite, or upload is stored in an **IndexedDB database** inside your browser. This means your library, playlists, play history, favorites, and listening statistics all live locally on your machine — they survive browser restarts, and they never leave your device. You can also upload your own `.mp3`, `.m4a`, or `.wav` files directly, and they'll be stored on your backend server's filesystem alongside the YouTube-streamed tracks.
-
-### Offline & Batch Downloads
-
-Any track can be downloaded and cached as a local audio blob in the browser. The **Batch Packager** lets you queue up dozens of tracks, download them all with staggered pacing, and play them offline without any network connection. Your settings, volume, equalizer bands, and theme are all persisted across sessions via `localStorage`.
-
-### 📝 Advanced Lyrics Engine
-
-Singularity Player features a premium, multi-layered lyrics pipeline that fetches, parses, and caches synchronized lyrics automatically, offering a fully interactive, cinema-grade presentation:
-
-- **Interactive Lyrics-Seeking**: Click or tap on any lyric line to instantly jump the audio playback to that specific point in the track.
-- **Apple Music-Style Progressive Sweeps**: Soft, feathered letter-by-letter karaoke coloring and elastic scaling transitions. We've eliminated layout shifts by removing word font-weight overrides, ensuring characters sweep and scale without shifting horizontally.
-- **Vocal-Energy Responsive Holds**: Performs real-time vocal presence analysis using a weighted formant range (800–3000 Hz) against fundamentals (200–800 Hz). This drives a dynamic `effectiveEnd` duration extension and energy-shaped progress curves that plateau during sustained vocal notes.
-- **GPU-Accelerated Scrolling & Scaling**: Lyric lines transition between `scale(1.12)` (active) and `scale(0.92)` (inactive) with a soft glass blur (`blur(1.2px)` inactive). The layout box heights remain constant, allowing the GPU compositor to render smooth scrolls at up to 120fps with no reflow overhead.
-- **Independent Beat-Synced Ambient Backdrop**: Nested floating wrappers isolate the slow CSS orbital float animations from real-time JS-driven scale pulses. Colorful backdrop blobs react independently to the sub-bass of the track for an organic, multi-layered breathing backdrop.
-- **Buffer-Aware Playback Sync**: Automatically freezes visual timeline progression when the track is loading or buffering, preventing desynchronization.
-- **Multi-Source Aggregation**: Fetches lyrics dynamically from Musixmatch (with Richsync support), LRCLIB, YouTube transcripts, and NetEase, caching results on disk to minimize external api calls.
+* **💬 Conversational Playlist Refinement**: Stack iterative refinement prompts (*"Make it more energetic"*, *"Remove vocals"*, *"Add more indie"*) without losing locked tracks or starting over.
+* **🔒 Per-Track Song Locking**: Lock favorite tracks in position while surrounding songs regenerate around them.
+* **📊 Itemized Recommendation Score Breakdowns**: View exact mathematical score breakdowns for every track:
+  $$\text{Score} = \text{Mood (+28%)} + \text{Energy (+18%)} + \text{Camelot 8A}\to\text{9A (+15%)} + \text{BPM (+10%)} + \text{Artist Spacing (+10%)}$$
+* **🔗 DJ Transition Flow Diagrams**: Inspect DJ transition math between consecutive tracks:
+  `Track A ──── [BPM +2 | Camelot 8A → 8B (Perfect) | Energy +4%] ────► Track B`
+* **🎧 8 Curator Modes**: *Perfect Flow, Road Trip, Workout, Sleep & Ambient, Gaming Hype, Deep Focus, Emotional Journey, Cinematic Story*.
+* **📊 Visual Playlist Health Score Bars**: Real-time progress indicators for Cohesion %, Artist Variety %, Energy Flow %, and Replay Value %.
+* **🎚️ Interactive Discovery Slider**: `Safe (0%) ◄──────────────► Adventurous (100%)`.
+* **🕸️ Multi-Node SVG Similarity Knowledge Graph**: Interactive topological network mapping cosine similarity vector edges between tracks (`Song A ── 93% ── Song B ── 88% ── Song C`).
+* **⚡ Web Worker Thread Isolation**: Vector scoring offloaded to a background worker thread (`playlistScorer.worker.ts`) for 60 FPS UI responsiveness.
 
 ---
 
 ## ✨ Features
 
-### 🎧 Audio Engine
-- **10-Band Parametric Equalizer** — 10 presets (Flat, Bass Boost, Treble Boost, Rock, Pop, Vocal, Electronic, Jazz, Classical, Nightcore) plus fully manual per-band control
-- **Spatial Audio** — Adjustable stereo width (0–200%), room simulation (Small / Medium / Large), and elevation control
-- **Gapless Crossfading** — Configurable 0–10 second overlap between tracks with race-condition-safe dual-player architecture
-- **Volume Ramping** — Linear gain interpolation for click-free play/pause transitions
-- **Playback Speed Control** — Adjustable from 0.5× to 2.0×
-- **Real-Time Visualizer** — Canvas-based frequency bars and waveform rendering, only active when visible
+### 🎧 Audio & AI DSP
+- **Linkwitz-Riley 4-Channel Stem Separator** (Vocals, Drums, Bass, Melody)
+- **YIN Autocorrelation Auto-Tune** (Key-scale quantizer with adjustable retune speed)
+- **AI 10-Band Auto-Mastering Profiles** (Warm Analog, EDM Punch, Vocal Air, Acoustic Sparkle)
+- **EBU R128 LUFS Loudness Normalizer** (-14 LUFS target)
+- **Smart Lead-In/Out Silence Trimmer** (< -50dB threshold)
+- **Procedural Ambient Soundscape Synthesizer** (Rain, Waves, Brown Noise)
+- **10-Band Parametric Equalizer & Spatial Audio Panner**
 
-### 🔍 Search & Discovery
-- **Multi-Source Search** — Queries Deezer, iTunes, and YouTube simultaneously
-- **Trending Suggestions** — Shows popular queries in the search dropdown
-- **Search History** — Remember your recent searches with quick recall
-- **Artists Library** — circular card grid of listened-to artists with dynamic Apple Music-style profiles
-- **Wikipedia Profile Sync** — Automatically fetches biography summaries and high-res artist photos via Wikipedia REST API on the fly
-- **Artist & Album Pages** — Browse tracks grouped by artist or album
-- **Genre Exploration** — Quick-search genre tiles (Pop, Rock, Electronic, Hip-Hop, Classical, Jazz, R&B, Indie)
-
-### 🎵 Playback & Queue
-- **Instant Streaming** — Play any song on demand with full seek support via HTTP range requests
-- **Smart Prefetching** — Silently resolves the next track before you need it
-- **Queue Management** — Drag-and-drop reordering with visual feedback and album art integration
-- **Smart Shuffle** — Balanced interleaving algorithm that prevents consecutive tracks by the same artist/genre and injects library recommendations
-- **Autoplay Recommendations** — Automatically appends related songs to the queue with strict artist diversity constraints (no duplicates or artist clustering)
-- **Keyboard Shortcuts** — Full keyboard control (see table below)
-
-### 📝 Lyrics & Visualizer
-- **Native Word-Level Syncing** — Support for Enhanced LRC formats with character-by-character coloring/sweeps matching the song pace
-- **Virtual DOM Glow Fixes** — Reset styling states on active line transitions to prevent visual glow glitches during DOM recycling
-- **Vocal-Energy Adaptive Holds** — Formant frequency analysis dynamically extends active word highlighting on sustained vowels and stalls progress at 70–80% until vocals decay
-- **Real-Time Visual Glow** — Highlighted words glow dynamically based on real-time vocal presence metrics without introducing highlight lag
-- **Custom Sync Offset** — Slider controls (`-400ms` to `+400ms` in `10ms` increments) to adjust visual anticipation for audio latency (persists in `localStorage`)
-- **Smart Word Sync Toggle** — Switch between tempo-estimated word sync and clean **Line-by-Line Highlight** (Apple Music style) on standard LRC files
-- **Kinetic Lyric Centering** — Smooth GSAP-driven scrolling that centers active lyrics in both sidebar and fullscreen overlays
-- **Ambient Blurred Backdrop** — Rotating and floating circular blobs that morph and change color to match the dominant and accent shades of the active album cover art
-- **Large Scale Typography** — Shifted layout and adjustable font sizes up to `52px` base scale for enhanced visibility
-
-### 🧠 Smart Queue & Recommendations
-- **Smart Queue Service** — Queries YouTube Music dynamically at queue exhaustion to inject recommended related radio tracks
-- **Dynamic Playlist Generator** — Automatically builds customized playlists by matching tempo, mood, and listening metadata
-- **Playback Analytics Dashboard** — Full visual report of total play counts, top artists, genres, skip ratios, and peak hour trends
-
-### 💾 Library & Offline
-- **Local Library** — All tracks stored in IndexedDB, fully offline-capable
-- **Playlists** — Create, edit, reorder, and delete custom playlists
-- **Smart Playlists** — Rule-based auto-updating playlists by genre, artist, year, play count, or source
-- **Favorites** — One-click favoriting with a dedicated favorites view
-- **Play History** — Full chronological record of everything you've listened to
-- **File Uploads** — Drag-and-drop upload of `.mp3`, `.m4a`, and `.wav` files
-- **Batch Packager** — Queue and download multiple tracks for offline playback
-
-### ⚙️ Settings & Customization
-- **Dark & Light Theme** — Full theme toggle with system preference detection
-- **Accent Colors** — Choose from Purple, Pink, Cyan, Amber, Emerald, or Blue
-- **Compact Mode** — Denser layout for smaller screens
-- **Persistent Settings** — All preferences saved to localStorage and restored on next visit
-- **Configurable Downloads** — Set concurrent download limits and auto-download favorites
-
-### 🎨 Premium Visual Overhaul & Aesthetics
-- **Dynamic Hero Section** — Floating organic blobs powered by GSAP, text typing effects, context-aware greetings ("Ready for some [Genre]?"), and blurry parallax background overlays of the featured track cover art.
-- **Translucent Glassmorphic Sidebar** — Semi-transparent navigation panel (`backdrop-filter: blur(20px)`) that dynamically blends with the page backdrops, coupled with scaling navigation icons that light up and glow in active states.
-- **Now Playing Playbar Elevation** — The album artwork raises slightly and glows when a track starts playing, accompanied by a CSS keyframe-bouncing 3-bar progress bar equalizer.
-- **Asymmetric Grid Layout** — Prominent 2x2 featured grids for "Liked Songs" breaking standard grid patterns on desktop.
-- **Card Hover Dimming & Previews** — Hovering over any track card dims surrounding cards and, after a 600ms buffer delay, initiates low-volume (0.15) audio preview playback.
-- **Mood-Based Background Shifts** — Deep background transitions (like deep blue tint for Chill vibe, deep red for Workout vibe) when a vibe mix is played.
-
-### 📱 Responsive Design
-- **Desktop Layout** — Sidebar navigation, spacious content area, slide-out panels
-- **Mobile Layout** — Bottom tab navigation, collapsible sidebar, touch-friendly controls
-- **Smooth Transitions** — Framer Motion page transitions and micro-animations throughout
+### 🧠 Playlist & Discovery Intelligence
+- **Singularity AI Playlist Studio** with 8 Curator Modes & Conversational Refinement
+- **Raycast / Linear Command Palette** (`Cmd+K`, `Ctrl+K`, `/`)
+- **Interactive Multi-Node SVG Similarity Knowledge Graph**
+- **1-Click AI 4K Artwork & Title Repair** via iTunes API
+- **Shazam-Style Microphone Song Identifier** via FFT constellation hashing
+- **Dual-Language Karaoke Lyrics** with Romaji & Pinyin phonetics
 
 ---
 
@@ -185,341 +98,12 @@ Singularity Player features a premium, multi-layered lyrics pipeline that fetche
 | Layer | Technology |
 | :--- | :--- |
 | **Frontend Framework** | React 19 + TypeScript |
+| **Master Engine** | Custom `SingularityEngine v2.0.0` |
+| **DSP & Audio Math** | Web Audio API (BiquadFilterNode, PannerNode, AnalyserNode, GainNode) |
+| **Background Processing** | Web Workers (`playlistScorer.worker.ts`) |
 | **Build Tool** | Vite 8 |
-| **UI Components** | Material UI (MUI) 9 |
-| **Animations** | Framer Motion |
-| **State Management** | Zustand (with localStorage persistence) |
-| **Local Database** | IndexedDB via `idb` |
-| **Styling** | Tailwind CSS 4 + Custom CSS |
-| **Audio Processing** | Web Audio API (AnalyserNode, BiquadFilterNode, ConvolverNode, StereoPannerNode) |
-| **Backend Runtime** | Node.js + Express |
-| **Media Extraction** | yt-dlp (cross-platform, auto-detected) |
-| **Security** | Helmet, CORS, Express Rate Limit |
-| **Drag & Drop** | @dnd-kit |
-| **Virtualized Lists** | react-virtuoso |
-| **Data Fetching** | SWR |
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-| Requirement | Details |
-| :--- | :--- |
-| **Node.js** | v18.0.0 or higher ([download](https://nodejs.org/)) |
-| **yt-dlp** | Required for YouTube streaming and downloads (see below) |
-| **FFmpeg** | *Optional* — needed for advanced format conversions |
-
-#### Installing yt-dlp
-
-<details>
-<summary><strong>Windows</strong></summary>
-
-**Option A (Recommended):** Download `yt-dlp.exe` from [github.com/yt-dlp/yt-dlp/releases](https://github.com/yt-dlp/yt-dlp/releases) and drop it into the `server/` folder.
-
-**Option B:** Install globally via a package manager:
-```powershell
-winget install yt-dlp
-# or
-choco install yt-dlp
-```
-</details>
-
-<details>
-<summary><strong>macOS</strong></summary>
-
-```bash
-brew install yt-dlp
-```
-</details>
-
-<details>
-<summary><strong>Linux</strong></summary>
-
-```bash
-# Debian / Ubuntu
-sudo apt install yt-dlp
-
-# Arch Linux
-sudo pacman -S yt-dlp
-
-# Or via pip
-pip install yt-dlp
-```
-</details>
-
-> The server automatically checks for a local `yt-dlp.exe` in the `server/` directory first, then falls back to the system `PATH`. This means it works on every platform without any configuration.
-
----
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/takedaa83/Singularity-Player.git
-cd singularity-player
-
-# 2. Install all dependencies (monorepo — installs both client & server)
-npm install
-
-# 3. Copy the environment template
-cp .env.example .env
-
-# 4. Start the dev server (runs both client & server concurrently)
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser. The backend API runs at [http://localhost:3001](http://localhost:3001).
-
-### 📱 Hosting for Mobile & Local Network Access
-
-To access Singularity Player from your mobile phone, tablet, or other devices on your home Wi-Fi network:
-
-1. **Find your PC's Local IP Address**:
-   * **Windows**: Run `ipconfig` in Command Prompt (look for `IPv4 Address`, e.g., `192.168.1.15`).
-   * **macOS/Linux**: Run `ifconfig` or `ip a` in the terminal.
-2. **Update your `.env` configuration**:
-   Change `.env` to make the server accessible across the network and allow requests from your mobile browser:
-   ```env
-   PORT=3001
-   ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://<YOUR-PC-IP>:5173
-   VITE_API_URL=http://<YOUR-PC-IP>:3001
-   ```
-3. **Start the application**:
-   Run the dev server with the `--host` flag to expose it to your local network:
-   ```bash
-   npm run dev -- --host
-   ```
-4. **Access from Mobile**:
-   Open your mobile browser (Safari, Chrome) and navigate to `http://<YOUR-PC-IP>:5173`.
-
-> [!TIP]
-> For a native app experience on iOS and Android, open the page in your mobile browser and use **"Add to Home Screen"** to launch it as a full-screen, standalone web app.
-
-### 📲 Native Mobile App (Capacitor)
-
-For a fully native, premium app experience on iOS and Android with features like hardware back button mapping, system status bar styling, and native performance, you can build a native shell using **Capacitor**.
-
-#### 🧭 Step-by-Step Build Pipeline
-```
-[1. Install Tools] ---> [2. Compile Web Client] ---> [3. Sync with Capacitor] ---> [4. Build APK in Studio] ---> [5. Run & Debug]
-```
-
-#### 🛠️ Step 1: Install the Prerequisites
-Before starting, ensure your computer has the following tools installed and configured:
-1. **Java Development Kit (JDK)**: Install **JDK 17** or higher (required by Android Gradle tools).
-2. **Android Studio**: Install [Android Studio](https://developer.android.com/studio). Open it once to complete the setup wizard, which will download the Android SDK and platform tools.
-3. **USB Debugging (On your Phone)**:
-   * Go to your Android phone settings -> **About Phone**.
-   * Tap **Build Number** 7 times until it says *"You are now a developer"*.
-   * Go to **Developer Options** in settings and enable **USB Debugging**.
-
-#### 📂 Step 2: Prepare the Workspace
-Open a terminal (like PowerShell) and navigate to the project directory:
-1. Switch to the branch (if not already active):
-   ```bash
-   git checkout master
-   ```
-2. Install all package dependencies (installs both client and server dependencies):
-   ```bash
-   npm install
-   ```
-
-#### 💻 Step 3: Compile the Client Code with your Backend URL
-To tell the mobile app where to connect, you must inject your backend URL before building the frontend.
-1. Set the environment variable:
-    * **For Cloud Backend (Render)**:
-      ```powershell
-      $env:VITE_API_URL="https://singularity-player-backend-av2k.onrender.com"
-      ```
-   * **For Local PC Backend (Home Wi-Fi)**:
-     ```powershell
-     $env:VITE_API_URL="http://<YOUR-PC-LOCAL-IP>:3001"
-     ```
-     *(For macOS/Linux terminals, run: `export VITE_API_URL="https://your-url.com"`)*
-2. Compile the client web assets:
-   ```powershell
-   npm run build:client
-   ```
-   *This compiles the files into `client/dist` with your server URL pre-baked into the requests.*
-
-#### 🔄 Step 4: Sync Assets to the Native Shell
-Capacitor acts as a bridge. We need to copy the compiled React files into the native Android folder.
-1. Navigate to the `client` directory:
-   ```powershell
-   cd client
-   ```
-2. Run the Capacitor Sync command:
-   ```powershell
-   npx cap sync
-   ```
-   *This copies the files from `client/dist` to `client/android/app/src/main/assets/public`.*
-
-#### 🏗️ Step 5: Open and Compile in Android Studio
-Now we use Android Studio to bundle everything into an installable `.apk` file.
-1. Launch Android Studio for this project:
-   ```powershell
-   npx cap open android
-   ```
-2. **Wait for indexing**: Wait for the loading indicators at the bottom of Android Studio to finish syncing the Gradle configuration (takes 1 to 2 minutes on first run).
-3. **Build the APK file**:
-   * Click **Build** in the top menu bar of Android Studio.
-   * Select **Generate App Bundles or APKs**.
-   * In the sub-menu, click **Build APK(s)**.
-4. **Locate the APK**: Once compiling is finished, click the blue **`locate`** link inside the successful notification popup (bottom-right corner) to find your `app-debug.apk`.
-5. **Install**: Copy the `app-debug.apk` to your phone and install it!
-
-#### 🐛 Step 6: Live Run & Console Debugging (Optional)
-If you want to view logs, inspect requests, or debug errors in real-time on your phone:
-1. Connect your phone to your PC using a USB cable.
-2. In the top toolbar of Android Studio, select your phone name in the device dropdown.
-3. Click the green **Run (Play icon)** button. The app will launch directly on your phone.
-4. Open **Google Chrome** on your computer and navigate to: `chrome://inspect`
-5. Click **Inspect** under your phone's name to open the Chrome DevTools on your PC and debug the app live!
-
----
-
-### ☁️ Hosting Backend on Render (Cloud)
-
-To use your music player on the go without keeping your PC powered on at home, you can host the backend server on the **Render Free Tier**.
-
-#### ⚙️ Environment Variables Config (Render Dashboard)
-Add these keys in your Render **Environment** settings:
-
-| Variable | Value | Description |
-| :--- | :--- | :--- |
-| `NODE_ENV` | `production` | Enables production optimizations. |
-| `MAX_CONCURRENT_PROCESSES` | `2` | **(Critical)** Restricts `yt-dlp` concurrency to 2 to prevent Render OOM (Out Of Memory) crashes. |
-| `ENABLE_DISK_CACHE` | `false` | **(Critical)** Disables background download-to-disk pipelines on Render's ephemeral disk, drastically reducing CPU/RAM spikes. |
-| `PUBLIC_URL` | `https://your-app-name.onrender.com` | Enables the built-in self-pinging loop to prevent Render from going to sleep. |
-| `ALLOWED_ORIGINS` | `*` | Allows your mobile app's native WebView origin (`http://localhost`) to fetch API requests. |
-
-#### 🏗️ Build & Start Settings
-* **Build Command**: `npm install --include=dev && npm run build:server`
-* **Start Command**: `npm start`
-* **Health Check Path**: `/api/health`
-
-#### ⏰ Keep-Alive (Prevent Sleep Mode)
-To guarantee your server stays awake 24/7, set up a free monitor on [UptimeRobot](https://uptimerobot.com/) or [Cron-Job.org](https://cron-job.org/) pointing to `https://your-app-name.onrender.com/api/health` with a **10-minute interval**.
-
----
-
-### Production Build
-
-```bash
-# Build both client and server
-npm run build
-
-# Start the production server
-npm run start
-```
-
----
----
-
-## ⚙️ Configuration
-
-Copy `.env.example` to `.env` and customize as needed:
-
-| Variable | Description | Default |
-| :--- | :--- | :--- |
-| `PORT` | Backend server port | `3001` |
-| `ALLOWED_ORIGINS` | CORS-allowed origins (comma-separated) | `http://localhost:5173,http://127.0.0.1:5173` |
-| `NODE_ENV` | Environment (`development` / `production`) | `development` |
-| `VITE_API_URL` | Backend URL for the frontend to connect to | `http://localhost:3001` |
-| `YOUTUBE_COOKIE` | Optional YouTube login cookie string (required for premium/age-restricted content and bypassing bot checks on certain hosting environments) | `""` |
-
-### 🍪 Configuring YouTube Authentication (Optional)
-
-If you host the Singularity Player backend on cloud providers (such as Render, Fly.io, or VPS servers with datacenter IPs), YouTube will block anonymous traffic with bot-check challenges (`Sign in to confirm you're not a bot`). 
-
-To bypass this and enable seamless server-side extraction, configure the `YOUTUBE_COOKIE` environment variable:
-
-#### Step-by-Step Guide to Retrieve Your Cookie:
-
-1. **Log in**: Open your browser and log into a secondary/rotating Google/YouTube account (avoid using your primary personal account as a best practice).
-2. **Open YouTube Music**: Navigate to [music.youtube.com](https://music.youtube.com).
-3. **Open Developer Tools**: Press `F12` (or right-click anywhere and select **Inspect**), then switch to the **Network** tab.
-4. **Locate an API Request**:
-   - Play a song or search for something to trigger network activity.
-   - In the left-hand column under the **Name** filter, search for or click on a request destined for the YouTube Music API. 
-   - Good candidates include: **`verify_session`**, **`browse`**, or **`next`**. Avoid `videoplayback` requests (which go to separate Google video delivery servers and lack the main login headers).
-5. **Copy the Cookie**:
-   - Select the chosen request on the left.
-   - In the right-hand panel under the **Headers** tab, scroll down to the **Request Headers** section.
-   - Look for the header named **`cookie:`** (note: make sure it is `cookie:` under *Request Headers*, not *Response Headers*).
-   - Copy the entire long text string to the right of `cookie:`. It will contain parameters like `__Secure-3PAPISID`, `HSID`, `SSID`, `APISID`, etc.
-6. **Save to Environment**:
-   - Paste the copied string as the value of `YOUTUBE_COOKIE` in your backend `.env` file:
-     ```env
-     YOUTUBE_COOKIE="__Secure-3PAPISID=...; HSID=...; ..."
-     ```
-   - If hosting on a service like Render or Fly.io, add `YOUTUBE_COOKIE` as a secret environment variable in their respective settings console.
-
-#### Features of the Authentication System:
-- **Centralized Auth**: Parses the `YOUTUBE_COOKIE` string on boot to automatically build authenticated request headers and signed `SAPISIDHASH` tokens for secure API communication.
-- **Dynamic Netscape Converter**: `yt-dlp` requires a Netscape-formatted tab-separated cookie file path. Singularity Player automatically translates your raw cookie string into a temporary `cookies.txt` file in your OS temp directory (`os.tmpdir()`) at runtime, supplying it dynamically to all `yt-dlp` subprocess runs.
-- **Cookie-Aware Gating**: If the backend detects that it is running on a cloud hosting IP (Render/Fly) and no `YOUTUBE_COOKIE` is configured, it instantly gates (bypasses) direct scraper attempts. This saves 5–10 seconds of wasted execution time on blocked IPs and immediately prompts the client's browser to resolve playback from the user's residential IP instead.
-- **Startup Diagnostic**: The backend runs a validation check on startup to test your cookie's integrity using a lightweight visionOS API call, warning you in the console if the cookie is expired or invalid.
-
----
-
-## 📁 Project Structure
-
-```
-singularity-player/
-│
-├── client/                          # React Frontend (Vite)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── analytics/           # Listening insights dashboard
-│   │   │   ├── discovery/           # Artist & album pages
-│   │   │   ├── downloads/           # Download manager, batch packager
-│   │   │   ├── home/                # Home page with hero, stats, recommendations
-│   │   │   ├── layout/              # Sidebar, TopBar, PlayerBar, MobileNav
-│   │   │   ├── library/             # Library, favorites, history, playlists
-│   │   │   ├── player/              # Equalizer, visualizer, lyrics, queue
-│   │   │   ├── search/              # Search input, results, track cards
-│   │   │   ├── settings/            # Settings page
-│   │   │   ├── ui/                  # Shared UI (toast, dialogs, context menu)
-│   │   │   └── upload/              # File upload zone
-│   │   ├── hooks/                   # useAudioEngine, useLibraryDB, useKeyboardShortcuts
-│   │   ├── stores/                  # Zustand stores (player, settings, downloads, batch)
-│   │   ├── services/                # Recommendation engine
-│   │   ├── utils/                   # API client, formatDuration, source labels
-│   │   ├── theme/                   # MUI theme tokens
-│   │   ├── types/                   # TypeScript interfaces
-│   │   └── main.tsx                 # App entry point
-│   └── package.json
-│
-├── server/                          # Express Backend
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── search.ts            # Multi-source music search
-│   │   │   ├── yt.ts                # YouTube info, streaming proxy, prefetch
-│   │   │   ├── stream.ts            # Local file streaming
-│   │   │   ├── download.ts          # Track download endpoint
-│   │   │   ├── downloads.ts         # Download management (list, delete)
-│   │   │   ├── lyrics.ts            # Lyrics fetching
-│   │   │   └── upload.ts            # File upload handling
-│   │   ├── services/
-│   │   │   ├── youtubeService.ts     # yt-dlp integration, caching, coalescing
-│   │   │   ├── customInnertube.ts    # Lightweight native fetch InnerTube client
-│   │   │   ├── searchService.ts      # Deezer/iTunes API aggregation
-│   │   │   ├── lyricsService.ts      # Lyrics API integration
-│   │   │   ├── downloadManager.ts    # Download queue and file management
-│   │   │   ├── metadataService.ts    # Audio file metadata extraction
-│   │   │   └── processPool.ts        # yt-dlp process pool management
-│   │   └── index.ts                  # Express server entry point
-│   └── package.json
-│
-├── .env.example                     # Environment variable template
-├── .gitignore                       # Git ignore rules
-├── LICENSE                          # MIT License
-├── package.json                     # Monorepo workspace configuration
-└── README.md                        # You are here
-```
+| **UI Styling** | Tailwind CSS 4 + Material UI (MUI) 9 + Custom CSS Tokens |
+| **State & Local DB** | Zustand + IndexedDB via `idb` |
 
 ---
 
@@ -527,81 +111,16 @@ singularity-player/
 
 | Key | Action |
 | :--- | :--- |
+| `Cmd+K` / `Ctrl+K` / `/` | Open Raycast Command Palette |
 | `Space` | Play / Pause |
-| `←` | Seek backward 5 seconds |
-| `→` | Seek forward 5 seconds |
-| `↑` | Volume up |
-| `↓` | Volume down |
-| `N` | Next track |
-| `P` | Previous track |
-| `M` | Toggle mute |
-| `S` | Toggle shuffle |
-| `R` | Cycle repeat mode (Off → One → All) |
-
-> Shortcuts are automatically disabled when you're typing in a search box or text field.
+| `ArrowLeft` / `ArrowRight` | Seek Backward / Forward 5s |
+| `ArrowUp` / `ArrowDown` | Volume Up / Down 5% |
+| `M` | Toggle Mute |
+| `N` | Skip to Next Track |
+| `P` | Jump to Previous Track |
 
 ---
 
-## 🛠️ Troubleshooting
+## 📜 License
 
-<details>
-<summary><strong>Audio plays but there's no sound / silence</strong></summary>
-
-This happens when the browser's security policy blocks the Web Audio API from processing cross-origin audio streams. The app handles this automatically by setting `crossOrigin = 'anonymous'` on audio elements and routing streams directly through the backend API. Make sure your `ALLOWED_ORIGINS` env variable includes the exact URL of your frontend (e.g., `http://localhost:5173`).
-</details>
-
-<details>
-<summary><strong>yt-dlp not found / streams won't start</strong></summary>
-
-The server looks for `yt-dlp` in two places, in order:
-1. A local `yt-dlp.exe` file in the `server/` directory
-2. The system `PATH`
-
-Run `yt-dlp --version` in your terminal to verify it's installed. If you're on Windows, you can also just drop the `.exe` into the `server/` folder.
-</details>
-
-<details>
-<summary><strong>Slow first play (~3-5 seconds)</strong></summary>
-
-The first time you play a YouTube track, `yt-dlp` needs to resolve the stream URL, which takes a few seconds. Subsequent plays of the same track use a server-side cache and resolve in under 250ms. The app also prefetches the next track in the queue automatically to minimize wait times.
-</details>
-
-<details>
-<summary><strong>Port already in use</strong></summary>
-
-Change the `PORT` variable in your `.env` file. The frontend's `VITE_API_URL` must match whatever port the backend runs on.
-</details>
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## ⚖️ Disclaimer
-
-> **This software is intended for personal use and self-hosting only.**
->
-> - This repository does **not** host, distribute, or bundle any copyrighted music, audio files, or media content.
-> - By using this software to stream or download content from YouTube or other platforms, **you** assume full responsibility for compliance with the respective platform's Terms of Service and all applicable copyright laws in your jurisdiction.
-> - The developers of this project are not responsible for any misuse.
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-<p align="center">
-  Built with ♪ by <a href="https://github.com/takedaa83">takedaa83</a>
-</p>
+MIT License. Built with passion for open-source audio engineering.
