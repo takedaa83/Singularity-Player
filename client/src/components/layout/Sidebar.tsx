@@ -358,6 +358,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: sidebarCollapsed ? 0.5 : 1 }} />
 
+        {/* AI Studio Section */}
+        <nav className="flex flex-col gap-0.5">
+          {!sidebarCollapsed && (
+            <Typography
+              variant="caption"
+              sx={{ px: 1, mb: 1, color: tokens.colors.accent.amber, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 700 }}
+            >
+              AI Studio & Sound
+            </Typography>
+          )}
+          {onOpenAiPlaylistStudio && (
+            sidebarCollapsed ? (
+              <Tooltip title="AI Playlist Studio" placement="right" arrow>
+                <button
+                  onClick={onOpenAiPlaylistStudio}
+                  aria-label="AI Playlist Studio"
+                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                >
+                  <Sparkles className="w-[18px] h-[18px] shrink-0" />
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={onOpenAiPlaylistStudio}
+                aria-label="AI Playlist Studio"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-bold transition-all bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-[18px] h-[18px] shrink-0 text-amber-400" />
+                  <span>AI Playlist Studio</span>
+                </div>
+                <span className="text-[10px] font-mono bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300 font-bold">10/10+</span>
+              </button>
+            )
+          )}
+        </nav>
+
+        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: sidebarCollapsed ? 0.5 : 1 }} />
+
         {/* Tools */}
         <nav className="flex flex-col gap-0.5">
           {!sidebarCollapsed && (
@@ -421,16 +460,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     Playlists ({playlists.length})
                   </Typography>
                 </button>
-                <Tooltip title="Create playlist" arrow>
-                  <IconButton
-                    size="small"
-                    onClick={() => setShowPlaylistInput(!showPlaylistInput)}
-                    aria-label="Create playlist"
-                    sx={{ p: 0.5, color: tokens.colors.textTertiary, '&:hover': { color: tokens.colors.textPrimary } }}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </IconButton>
-                </Tooltip>
+                <div className="flex items-center gap-1">
+                  {onOpenAiPlaylistStudio && (
+                    <Tooltip title="Open AI Playlist Studio" arrow>
+                      <button
+                        onClick={onOpenAiPlaylistStudio}
+                        aria-label="Open AI Playlist Studio"
+                        className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40 hover:bg-amber-500/30 transition-all flex items-center gap-1"
+                      >
+                        <Sparkles className="w-2.5 h-2.5" /> AI
+                      </button>
+                    </Tooltip>
+                  )}
+                  <Tooltip title="Create manual playlist" arrow>
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowPlaylistInput(!showPlaylistInput)}
+                      aria-label="Create playlist"
+                      sx={{ p: 0.5, color: tokens.colors.textTertiary, '&:hover': { color: tokens.colors.textPrimary } }}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </IconButton>
+                  </Tooltip>
+                </div>
               </div>
 
               <AnimatePresence>
