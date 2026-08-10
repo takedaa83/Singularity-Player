@@ -266,13 +266,8 @@ async function extractUrlWithCustomInnertube(videoId, quality) {
         if (!audioFormats || audioFormats.length === 0) {
             throw new Error('No audio formats returned by custom player');
         }
-        // Prioritize audio/mp4 (AAC) over audio/webm (Opus) for universal playback support
-        let filteredFormats = audioFormats.filter((f) => (f.mimeType || '').includes('audio/mp4'));
-        if (filteredFormats.length === 0) {
-            filteredFormats = audioFormats;
-        }
-        // Sort formats by bitrate descending
-        const sortedFormats = [...filteredFormats].sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+        // Sort all audio formats by bitrate descending
+        const sortedFormats = [...audioFormats].sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
         const selectedFormat = selectByQuality(sortedFormats, quality);
         if (!selectedFormat || !selectedFormat.url) {
             throw new Error('Selected format has no direct URL');

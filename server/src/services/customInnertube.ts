@@ -505,11 +505,7 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
         throw new Error("No audio formats found in streamingData");
       }
 
-      // Prioritize audio/mp4 (AAC) over audio/webm (Opus) for universal browser playback support
-      let audioFormats = rawAudioFormats.filter((f: any) => f.mimeType?.includes('audio/mp4'));
-      if (audioFormats.length === 0) {
-        audioFormats = rawAudioFormats;
-      }
+      let audioFormats = [...rawAudioFormats].sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0));
 
       // Decipher and n-transform formats
       let bestFormat: any = null;
