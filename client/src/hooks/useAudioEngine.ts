@@ -333,7 +333,7 @@ export class AudioEngine {
       return;
     }
 
-    if (trackChanged) {
+    if (trackChanged || isPlaying) {
       this.trackFailureCount = 0;
       this.lastFailedTrackId = currentTrack.id;
       this.excludedInstances.clear();

@@ -99,15 +99,15 @@ app.use((req, res, next) => {
     next();
 });
 app.use(express_1.default.json({ limit: '50mb' }));
-// Rate Limiting
+// Rate Limiting — Configurable via environment variables
 const generalLimiter = (0, express_rate_limit_1.default)({
-    windowMs: 1 * 60 * 1000,
-    max: 150,
+    windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000,
+    max: Number(process.env.RATE_LIMIT_MAX) || 300,
     message: { error: 'Too many requests, please try again later.' }
 });
 const uploadLimiter = (0, express_rate_limit_1.default)({
-    windowMs: 5 * 60 * 1000,
-    max: 30,
+    windowMs: Number(process.env.UPLOAD_RATE_LIMIT_WINDOW_MS) || 5 * 60 * 1000,
+    max: Number(process.env.UPLOAD_RATE_LIMIT_MAX) || 50,
     message: { error: 'Upload rate limit exceeded. Please wait a few minutes.' }
 });
 // Static directory serving for cover art (with cache headers)

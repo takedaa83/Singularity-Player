@@ -1,4 +1,4 @@
-const CACHE_NAME = 'singularity-player-v1.7';
+const CACHE_NAME = 'singularity-player-v1.8';
 
 self.addEventListener('install', () => {
   self.skipWaiting();

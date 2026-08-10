@@ -81,17 +81,36 @@ function sniffAudioMimeType(buffer) {
     if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
         return 'audio/webm';
     }
-    // ftyp box (MP4/M4A) — 4-byte box size, then 'ftyp' at offset 4
-    if (buffer.length >= 8 && buffer.toString('ascii', 4, 8) === 'ftyp') {
-        return 'audio/mp4';
+    // OGG container ("OggS")
+    if (buffer[0] === 0x4f && buffer[1] === 0x67 && buffer[2] === 0x67 && buffer[3] === 0x53) {
+        return 'audio/ogg';
+    }
+    // FLAC ("fLaC")
+    if (buffer[0] === 0x66 && buffer[1] === 0x4c && buffer[2] === 0x61 && buffer[3] === 0x43) {
+        return 'audio/flac';
+    }
+    // RIFF (WAV)
+    if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WAVE') {
+        return 'audio/wav';
+    }
+    // ISO BMFF (MP4/M4A/fMP4) — 4-byte box size, then box type at offset 4
+    if (buffer.length >= 8) {
+        const boxType = buffer.toString('ascii', 4, 8);
+        if (['ftyp', 'moof', 'styp', 'sidx', 'mdat', 'free', 'skip', 'wide', 'pdin', 'meta'].includes(boxType)) {
+            return 'audio/mp4';
+        }
     }
     // ID3-tagged MP3
     if (buffer[0] === 0x49 && buffer[1] === 0x44 && buffer[2] === 0x33) {
         return 'audio/mpeg';
     }
-    // Raw MPEG frame sync
+    // Raw MPEG frame sync (MP3)
     if (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0) {
         return 'audio/mpeg';
+    }
+    // ADTS AAC frame sync (12-bit 0xFFF)
+    if (buffer[0] === 0xff && (buffer[1] & 0xf0) === 0xf0) {
+        return 'audio/aac';
     }
     return null;
 }
@@ -430,12 +449,9 @@ async function proxyUrl(url, contentType, filesize, req, res, fallback) {
             return;
         }
         const sniffedType = sniffAudioMimeType(prefix);
-        if (!sniffedType) {
-            const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '');
-            console.warn(`[YT Route] Upstream returned unrecognized non-audio magic bytes for ${url}: "${snippet}". Triggering fallback.`);
-            nodeStream.destroy();
-            await fallback();
-            return;
+        if (!sniffedType && !rangeHeader && response.status !== 206) {
+            const snippet = prefix.toString('utf-8').replace(/[\x00-\x1f]/g, '').slice(0, 30);
+            console.log(`[YT Route] Stream format non-standard or mid-frame for ${url} ("${snippet}"). Defaulting to audio/mp4.`);
         }
         const finalContentType = sniffedType || contentType || response.headers.get('content-type') || 'audio/mp4';
         const headers = {
