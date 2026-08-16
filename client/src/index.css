@@ -864,6 +864,25 @@ body.fullscreen-lyrics-active .block.sm\:hidden.fixed.bottom-\[74px\] {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
 }
 
+/* ─── Low-Power & Battery-Saver Adaptive Profile ──────────────────────── */
+.low-power .glass-panel {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.low-power .glass-panel-strong {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+.low-power .animate-pulse,
+.low-power .animate-spin,
+.low-power .mesh-gradient-animated {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     transition-duration: 0.01ms !important;

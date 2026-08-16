@@ -138,8 +138,10 @@ Curate bespoke track selections with natural language intelligence and acoustic 
 | Feature | Description | Status |
 | :--- | :--- | :---: |
 | **Singularity Master Engine v3.0** | Real-time zero-allocation DSP, beat detection, LUFS matching | ✅ Production |
+| **Listen Together (Room Sync)** | Real-time synchronized playback rooms with sub-50ms clock drift compensation | ✅ Production |
 | **Better Lyrics + TTML Engine** | Sub-millisecond syllable-by-syllable word highlighting | ✅ Production |
 | **Titanium Obsidian UI** | Deep slate frosted glass with Radiant Rose accent | ✅ Production |
+| **Battery Saver & Performance Mode** | Adaptive blur shader optimization & background FFT throttling | ✅ Production |
 | **Velvety Fluid Transitions** | Apple-grade cubic-bezier fluid motion across all sheets & pages | ✅ Production |
 | **AI Stem Separation** | Linkwitz-Riley 4-channel demixing (Vocals/Drums/Bass/Melody) | ✅ Production |
 | **YIN Auto-Tune** | Fundamental frequency pitch autocorrelation & scale quantizer | ✅ Production |

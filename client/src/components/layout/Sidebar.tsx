@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Music, Heart, FolderHeart, ListMusic, Plus, Download, Upload, Trash2,
-  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, ChevronLeft, Package, User, Sparkles
+  Sliders, Search, Home, Clock, Settings, ChevronDown, ChevronRight, ChevronLeft, Package, User, Sparkles, Radio
 } from 'lucide-react';
 import { Box, Typography, IconButton, Tooltip, Divider } from '@mui/material';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
@@ -31,6 +31,7 @@ interface SidebarProps {
   onOpenAiMastering?: () => void;
   onOpenAiSimilarity?: () => void;
   onOpenAiPlaylistStudio?: () => void;
+  onOpenListenTogether?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -52,7 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenPitchHarmonizer,
   onOpenAiMastering,
   onOpenAiSimilarity,
-  onOpenAiPlaylistStudio
+  onOpenAiPlaylistStudio,
+  onOpenListenTogether
 }) => {
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const { getAllPlaylists, savePlaylist, deletePlaylist, getAllTracks, saveTrack, getAllFavorites, toggleFavorite } = useLibraryDB();
@@ -382,6 +384,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {toolsNav.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
+          {onOpenListenTogether && (
+            sidebarCollapsed ? (
+              <Tooltip title="Listen Together" placement="right" arrow>
+                <button
+                  onClick={onOpenListenTogether}
+                  aria-label="Listen Together"
+                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                >
+                  <Radio className="w-[18px] h-[18px] shrink-0 text-primary" />
+                </button>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={onOpenListenTogether}
+                aria-label="Listen Together"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                <Radio className="w-[18px] h-[18px] shrink-0 text-primary" />
+                <span>Listen Together</span>
+              </button>
+            )
+          )}
           {sidebarCollapsed ? (
             <Tooltip title="Equalizer" placement="right" arrow>
               <button

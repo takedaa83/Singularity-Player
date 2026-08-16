@@ -5,6 +5,7 @@ import { api } from '../utils/api';
 import { Track, SpatialAudioConfig } from '../types';
 import { resolveStreamOnClient, isBackendCloudHosted, fetchDurationOnClient } from '../utils/streamResolver';
 import { singularityEngine } from '../services/singularityEngine';
+import { listenTogetherService } from '../services/listenTogetherService';
 
 // ─── External time store (avoids React re-renders at 60fps) ──────────
 type TimeListener = () => void;
@@ -33,6 +34,7 @@ let lastEmitTime = 0;
 const EMIT_INTERVAL = 33; // ms (~30fps)
 
 function setTimeValues(current: number, dur: number, forceResetStamp = false) {
+  (window as any)._singularityCurrentTime = current;
   if (current !== _currentTime || forceResetStamp) {
     _currentTime = current;
     _currentTimeStampedAt = performance.now();
@@ -1140,6 +1142,7 @@ export class AudioEngine {
       ? activePlayerInstance.duration
       : this.getCurrentTrackDuration();
     setTimeValues(time, duration, true);
+    listenTogetherService.broadcastHostState(true);
   }
 
   public getAnalyser(): AnalyserNode | null {

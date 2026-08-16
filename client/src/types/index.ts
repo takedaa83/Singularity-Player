@@ -80,6 +80,7 @@ export interface UserSettings {
   theme: 'dark' | 'light' | 'system';
   accentColor: string;
   compactMode: boolean;
+  lowPowerMode: 'auto' | 'on' | 'off';
   // Playback
   volume: number;
   shuffle: boolean;
@@ -109,6 +110,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   theme: 'dark',
   accentColor: '#fa2d55',
   compactMode: false,
+  lowPowerMode: 'auto',
   volume: 0.7,
   shuffle: false,
   repeat: 'off',

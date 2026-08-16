@@ -561,12 +561,41 @@ export const SettingsPage: React.FC = () => {
           </Box>
         </SettingRow>
 
-        <SettingRow label="Compact Mode" description="Reduce spacing for denser layout" noDivider>
+        <SettingRow label="Compact Mode" description="Reduce spacing for denser layout">
           <Switch
             checked={settings.compactMode}
             onChange={(_, checked) => updateSetting('compactMode', checked)}
             slotProps={{ input: { 'aria-label': 'Toggle compact mode' } }}
           />
+        </SettingRow>
+
+        <SettingRow 
+          label="Battery Saver & Performance Mode" 
+          description="Optimizes blur shaders and reduces FFT analysis to save 70%+ battery" 
+          noDivider
+        >
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {(['auto', 'on', 'off'] as const).map((mode) => (
+              <Button
+                key={mode}
+                size="small"
+                variant={(settings.lowPowerMode || 'auto') === mode ? 'contained' : 'outlined'}
+                onClick={() => updateSetting('lowPowerMode', mode)}
+                sx={{
+                  textTransform: 'capitalize',
+                  minWidth: 54,
+                  fontSize: 11,
+                  borderRadius: `${tokens.radius.md}px`,
+                  borderColor: tokens.colors.surfaceBorder,
+                  ...((settings.lowPowerMode || 'auto') !== mode && {
+                    color: tokens.colors.textSecondary,
+                  }),
+                }}
+              >
+                {mode}
+              </Button>
+            ))}
+          </Box>
         </SettingRow>
       </SettingSection>
 

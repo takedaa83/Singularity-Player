@@ -55,6 +55,7 @@ import { AiSongSuggestionsModal } from './components/discovery/AiSongSuggestions
 import { AiPlaylistStudioModal } from './components/discovery/AiPlaylistStudioModal';
 import { SimilarityGraphModal } from './components/discovery/SimilarityGraphModal';
 import { CommandPaletteModal } from './components/common/CommandPaletteModal';
+import { ListenTogetherModal } from './components/social/ListenTogetherModal';
 import { singularityEngine } from './services/singularityEngine';
 
 // Page transition variants - Full smooth, velvety fluid transitions
@@ -131,6 +132,7 @@ export const App: React.FC = () => {
   const [showAiPlaylistStudio, setShowAiPlaylistStudio] = useState(false);
   const [showSimilarityGraph, setShowSimilarityGraph] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showListenTogether, setShowListenTogether] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -142,6 +144,7 @@ export const App: React.FC = () => {
   const theme = useSettingsStore((s) => s.settings.theme);
   const accentColor = useSettingsStore((s) => s.settings.accentColor);
   const compactMode = useSettingsStore((s) => s.settings.compactMode);
+  const lowPowerMode = useSettingsStore((s) => s.settings.lowPowerMode);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -162,7 +165,33 @@ export const App: React.FC = () => {
       root.classList.remove('compact');
     }
 
-    // 3. Sync dynamic accent properties
+    // 3. Sync low power mode class
+    const applyLowPower = async () => {
+      if (lowPowerMode === 'on') {
+        root.classList.add('low-power');
+      } else if (lowPowerMode === 'off') {
+        root.classList.remove('low-power');
+      } else {
+        // Auto: check battery level if supported
+        if ('getBattery' in navigator) {
+          try {
+            const battery: any = await (navigator as any).getBattery();
+            if (!battery.charging && battery.level < 0.2) {
+              root.classList.add('low-power');
+            } else {
+              root.classList.remove('low-power');
+            }
+          } catch {
+            root.classList.remove('low-power');
+          }
+        } else {
+          root.classList.remove('low-power');
+        }
+      }
+    };
+    applyLowPower();
+
+    // 4. Sync dynamic accent properties
     root.style.setProperty('--primary-color', accentColor);
     root.style.setProperty('--primary-light-color', adjustHexColor(accentColor, 15));
     root.style.setProperty('--primary-dark-color', adjustHexColor(accentColor, -15));
@@ -175,9 +204,9 @@ export const App: React.FC = () => {
       root.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
     } catch {}
 
-    // 4. Boot custom SingularityEngine
+    // 5. Boot custom SingularityEngine
     singularityEngine.initialize();
-  }, [theme, accentColor, compactMode]);
+  }, [theme, accentColor, compactMode, lowPowerMode]);
 
   // Audio engine (no longer returns currentTime/duration — uses external store)
   const { seek, getAnalyser } = useAudioEngine();
@@ -479,6 +508,10 @@ export const App: React.FC = () => {
               setShowAiPlaylistStudio(true);
               setMobileSidebarOpen(false);
             }}
+            onOpenListenTogether={() => {
+              setShowListenTogether(true);
+              setMobileSidebarOpen(false);
+            }}
           />
         </div>
 
@@ -716,6 +749,14 @@ export const App: React.FC = () => {
           onOpenMusicalDna={() => setShowMusicalDna(true)}
           onOpenAiSuggestions={() => setShowAiSuggestions(true)}
           onOpenAiPlaylistStudio={() => setShowAiPlaylistStudio(true)}
+        />
+      )}
+
+      {/* Listen Together Synchronized Room Modal */}
+      {showListenTogether && (
+        <ListenTogetherModal
+          isOpen={showListenTogether}
+          onClose={() => setShowListenTogether(false)}
         />
       )}
 
