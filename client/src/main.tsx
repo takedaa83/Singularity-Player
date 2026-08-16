@@ -16,6 +16,17 @@ interface ErrorBoundaryState {
   error?: Error;
 }
 
+// Automatic Vite chunk reload handler on new deployments
+window.addEventListener('vite:preloadError', (event) => {
+  console.warn('[Vite] Dynamic chunk preload error detected. Auto-refreshing page...');
+  const lastReload = sessionStorage.getItem('singularity_chunk_reload');
+  const now = Date.now();
+  if (!lastReload || now - Number(lastReload) > 8000) {
+    sessionStorage.setItem('singularity_chunk_reload', String(now));
+    window.location.reload();
+  }
+});
+
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -28,6 +39,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   componentDidCatch(error: Error, errorInfo: any) {
     console.error('[Global ErrorBoundary] Caught error:', error, errorInfo);
+    // If a chunk failed to fetch due to a new release, auto-reload once to refresh cache
+    if (error?.message && (
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Importing a module script failed') ||
+      error.message.includes('text/html')
+    )) {
+      const lastReload = sessionStorage.getItem('singularity_chunk_reload');
+      const now = Date.now();
+      if (!lastReload || now - Number(lastReload) > 8000) {
+        sessionStorage.setItem('singularity_chunk_reload', String(now));
+        window.location.reload();
+      }
+    }
   }
 
   handleClearCacheAndReload = async () => {

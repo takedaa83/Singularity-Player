@@ -229,6 +229,11 @@ if (clientDistPath) {
     app.get('*', (req, res, next) => {
         if (req.path.startsWith('/api'))
             return next();
+        // Do not serve index.html for missing static files/chunks
+        if (req.path.startsWith('/assets/') || req.path.endsWith('.js') || req.path.endsWith('.css') || req.path.endsWith('.wasm')) {
+            res.status(404).send('Asset not found');
+            return;
+        }
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.sendFile(path.join(clientDistPath, 'index.html'));
     });
