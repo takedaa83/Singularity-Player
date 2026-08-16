@@ -163,6 +163,11 @@ export const api = {
     return fetchJSON<any[]>(`/api/search?q=${encodeURIComponent(query)}`, { signal });
   },
 
+  /** Alias for search YouTube / online sources */
+  searchYouTube(query: string, signal?: AbortSignal) {
+    return this.search(query, signal);
+  },
+
   /** Get search autocomplete suggestions */
   suggestions(query: string, signal?: AbortSignal) {
     return fetchJSON<string[]>(`/api/search/suggestions?q=${encodeURIComponent(query)}`, { signal });

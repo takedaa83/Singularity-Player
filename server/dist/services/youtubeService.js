@@ -11,6 +11,7 @@ exports.getYtDlpFormatSelector = getYtDlpFormatSelector;
 exports.raceFirstSuccessful = raceFirstSuccessful;
 exports.probeInstance = probeInstance;
 exports.ensureYtDlpBinary = ensureYtDlpBinary;
+exports.scheduleYtDlpUpdater = scheduleYtDlpUpdater;
 exports.searchYouTube = searchYouTube;
 exports.getRelatedTracks = getRelatedTracks;
 exports.getYouTubeTranscript = getYouTubeTranscript;
@@ -256,6 +257,26 @@ exports.ytDlpReady = Promise.race([
         }, TIMEOUT_MS);
     })
 ]);
+/**
+ * Periodically checks for and applies yt-dlp binary self-updates in the background.
+ */
+function scheduleYtDlpUpdater() {
+    const checkUpdate = async () => {
+        try {
+            if (exports.YT_DLP_PATH) {
+                console.log('[youtubeService] Checking for yt-dlp binary updates...');
+                await execFileAsync(exports.YT_DLP_PATH, ['-U']);
+                console.log('[youtubeService] yt-dlp binary update check complete.');
+            }
+        }
+        catch (e) {
+            // Ignore if self-update is disabled or not supported on current platform
+        }
+    };
+    setTimeout(checkUpdate, 30000);
+    setInterval(checkUpdate, 12 * 60 * 60 * 1000);
+}
+scheduleYtDlpUpdater();
 /**
  * Custom InnerTube stream URL extraction using the IOS client.
  */

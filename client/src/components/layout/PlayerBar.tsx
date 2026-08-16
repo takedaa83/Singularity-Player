@@ -83,11 +83,25 @@ interface DesktopProgressSliderProps {
 const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, disabled }) => {
   const { currentTime, duration } = usePlaybackTime();
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState<number>(0);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const handleProgressBarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
     seek(val);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setHoverTime(ratio * duration);
+    setHoverX(e.clientX - rect.left);
+  };
+
+  const handleMouseLeave = () => {
+    setHoverTime(null);
   };
 
   return (
@@ -111,7 +125,21 @@ const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, dis
           </div>
         )}
       </div>
-      <div className="flex-1 relative group flex items-center h-4">
+      <div 
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className="flex-1 relative group flex items-center h-4 cursor-pointer"
+      >
+        {/* Floating Hover Time Tooltip */}
+        {hoverTime !== null && (
+          <div
+            className="absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-[10px] font-mono text-white pointer-events-none shadow-lg z-30 transition-opacity"
+            style={{ left: `${hoverX}px` }}
+          >
+            {formatTimeDisplay(hoverTime)}
+          </div>
+        )}
+
         <input
           type="range"
           min="0"
@@ -119,9 +147,9 @@ const DesktopProgressSlider: React.FC<DesktopProgressSliderProps> = ({ seek, dis
           value={currentTime}
           onChange={handleProgressBarChange}
           disabled={disabled}
-          className="w-full h-0.5 rounded-full cursor-pointer hover:h-1 transition-all duration-75 appearance-none focus:outline-none"
+          className="w-full h-1 rounded-full cursor-pointer group-hover:h-2 transition-all duration-75 appearance-none focus:outline-none relative z-10"
           style={{
-            background: `linear-gradient(to right, #fff 0%, #fff ${progressPercent}%, #333 ${progressPercent}%, #333 100%)`
+            background: `linear-gradient(to right, var(--primary, #f59e0b) 0%, var(--primary, #f59e0b) ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
           }}
         />
       </div>
@@ -214,7 +242,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
     <>
       {/* Desktop Player Bar */}
       <footer 
-        className="hidden sm:block glass-heavy border border-white/10 shrink-0 z-30 text-white fixed bottom-4 right-4 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300"
+        className="hidden sm:block glass-panel-strong shrink-0 z-30 text-white fixed bottom-4 right-4 rounded-2xl transition-all duration-300 overflow-hidden"
         style={{
           left: sidebarCollapsed ? '88px' : '256px',
         }}
@@ -406,7 +434,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               className="p-1.5 rounded transition-colors hover:text-white hover:bg-neutral-800 text-neutral-500 disabled:opacity-30 hidden sm:block"
               title="3D Audio Visualizer"
             >
-              <Sparkles className="w-4 h-4 text-purple-400" />
+              <Sparkles className="w-4 h-4 text-slate-400 group-hover:text-white" />
             </button>
 
             {/* Picture-in-Picture Mini Player Toggle */}

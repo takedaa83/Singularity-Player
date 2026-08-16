@@ -37,37 +37,34 @@ const express_1 = require("express");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const router = (0, express_1.Router)();
-// GET /api/stream/:filename
-router.get('/:filename', (req, res) => {
-    // Sanitize filename: strip any directory components to prevent traversal
-    const filename = path.basename(req.params.filename);
-    if (!filename || filename.startsWith('.')) {
-        res.status(400).json({ error: 'Invalid filename' });
-        return;
+const ALLOWED_AUDIO_EXTS = ['.mp3', '.flac', '.wav', '.ogg', '.opus', '.m4a', '.aac', '.webm', '.aiff', '.wma'];
+function getAudioContentType(ext) {
+    switch (ext.toLowerCase()) {
+        case '.flac': return 'audio/flac';
+        case '.wav': return 'audio/wav';
+        case '.ogg': return 'audio/ogg';
+        case '.opus': return 'audio/ogg';
+        case '.m4a':
+        case '.aac': return 'audio/mp4';
+        case '.webm': return 'audio/webm';
+        case '.aiff': return 'audio/aiff';
+        default: return 'audio/mpeg';
     }
-    const filePath = path.join(__dirname, '..', '..', 'uploads', 'tracks', filename);
+}
+function streamAudioFile(filePath, req, res) {
     if (!fs.existsSync(filePath)) {
         res.status(404).json({ error: 'Audio file not found' });
+        return;
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ALLOWED_AUDIO_EXTS.includes(ext)) {
+        res.status(400).json({ error: 'File is not a supported audio format' });
         return;
     }
     const stat = fs.statSync(filePath);
     const fileSize = stat.size;
     const range = req.headers.range;
-    // Determine content type based on file extension
-    const ext = path.extname(filename).toLowerCase();
-    let contentType = 'audio/mpeg'; // default
-    if (ext === '.flac')
-        contentType = 'audio/flac';
-    else if (ext === '.wav')
-        contentType = 'audio/wav';
-    else if (ext === '.ogg')
-        contentType = 'audio/ogg';
-    else if (ext === '.opus')
-        contentType = 'audio/ogg'; // or audio/opus
-    else if (ext === '.m4a' || ext === '.aac')
-        contentType = 'audio/mp4';
-    else if (ext === '.webm')
-        contentType = 'audio/webm';
+    const contentType = getAudioContentType(ext);
     if (range) {
         const parts = range.replace(/bytes=/, '').split('-');
         const start = parseInt(parts[0], 10);
@@ -97,6 +94,7 @@ router.get('/:filename', (req, res) => {
     }
     else {
         const head = {
+            'Accept-Ranges': 'bytes',
             'Content-Length': fileSize,
             'Content-Type': contentType,
         };
@@ -110,5 +108,26 @@ router.get('/:filename', (req, res) => {
         });
         file.pipe(res);
     }
+}
+// GET /api/stream/local?path=...
+router.get('/local', (req, res) => {
+    const targetPath = req.query.path;
+    if (!targetPath) {
+        res.status(400).json({ error: 'Missing path query parameter' });
+        return;
+    }
+    const normalized = path.resolve(targetPath);
+    streamAudioFile(normalized, req, res);
+});
+// GET /api/stream/:filename
+router.get('/:filename', (req, res) => {
+    // Sanitize filename: strip any directory components to prevent traversal
+    const filename = path.basename(req.params.filename);
+    if (!filename || filename.startsWith('.')) {
+        res.status(400).json({ error: 'Invalid filename' });
+        return;
+    }
+    const filePath = path.join(__dirname, '..', '..', 'uploads', 'tracks', filename);
+    streamAudioFile(filePath, req, res);
 });
 exports.default = router;

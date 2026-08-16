@@ -214,7 +214,7 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
         initial={{ x: '100%', opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
         className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 bg-neutral-950 sm:bg-neutral-900/90 sm:backdrop-blur-2xl flex flex-col justify-between py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10 shadow-2xl overflow-hidden"
       >
       <div className="flex flex-col gap-6 h-full overflow-hidden">
@@ -241,14 +241,14 @@ export const QueuePanel: React.FC<QueuePanelProps> = ({ onClose, triggerRefresh 
           </div>
           <button
             onClick={() => setAutoplay(!autoplay)}
-            className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex items-center ${
+            className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-300 focus:outline-none flex items-center ${
               autoplay ? 'bg-primary justify-end' : 'bg-neutral-800 justify-start'
             }`}
           >
             <motion.div
               layout
               className="w-3.5 h-3.5 rounded-full bg-white shadow-md"
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
             />
           </button>
         </div>

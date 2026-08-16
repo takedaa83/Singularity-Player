@@ -11,9 +11,10 @@ export interface RepairedMetadata {
   title: string;
   artist: string;
   album: string;
-  coverUrl?: string;
+  coverArtUrl?: string | null;
+  coverUrl?: string | null;
   genre?: string;
-  year?: number;
+  year?: number | null;
 }
 
 export async function fixTrackMetadata(track: Track): Promise<RepairedMetadata> {
@@ -21,7 +22,7 @@ export async function fixTrackMetadata(track: Track): Promise<RepairedMetadata> 
   const cleanedArtist = (track.artist || '').replace(/^official\s+/i, '').trim();
 
   const query = `${cleanedArtist} ${cleanedTitle}`.trim();
-  let coverUrl = track.coverUrl;
+  let coverArtUrl = track.coverArtUrl || track.coverUrl || null;
   let album = track.album || 'Single';
   let genre = track.genre;
   let year = track.year;
@@ -35,7 +36,7 @@ export async function fixTrackMetadata(track: Track): Promise<RepairedMetadata> 
         const item = data.results[0];
         if (item.artworkUrl100) {
           // Upgrade artwork to 1400x1400 HD resolution
-          coverUrl = item.artworkUrl100.replace('100x100bb', '1400x1400bb');
+          coverArtUrl = item.artworkUrl100.replace('100x100bb', '1400x1400bb');
         }
         if (item.collectionName) album = item.collectionName;
         if (item.primaryGenreName) genre = item.primaryGenreName;
@@ -50,7 +51,8 @@ export async function fixTrackMetadata(track: Track): Promise<RepairedMetadata> 
     title: cleanedTitle || track.title,
     artist: cleanedArtist || track.artist,
     album,
-    coverUrl,
+    coverArtUrl,
+    coverUrl: coverArtUrl,
     genre,
     year
   };

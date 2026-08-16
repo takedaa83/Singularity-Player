@@ -14,11 +14,13 @@ export interface Track {
   fileSize: number;            // bytes
   mimeType: string;
   coverArtUrl: string | null;  // Relative server path or external CDN URL
+  coverUrl?: string | null;    // Backward compatibility alias for coverArtUrl
   source: 'local' | 'deezer' | 'itunes' | 'demo' | 'youtube';
   streamUrl: string;           // API path or external preview CDN URL
   filePath: string | null;     // Relative server uploaded filename if local
   addedAt: number;             // timestamp
   videoId?: string;            // YouTube video ID for proxy streaming
+  shazamSignature?: string | null; // Audio signature for track recognition
   // Real analyzed audio features (optional, populated via analysis)
   bpm?: number | null;
   energy?: number | null;
@@ -39,6 +41,7 @@ export interface Track {
   lastPlayedAt?: number;
   skipCount?: number;
   totalListenDuration?: number; // total seconds this track has been listened to
+  popularity?: number;         // 0 to 1 popularity rating
   // Offline & lyrics
   isDownloaded?: boolean;
   lyrics?: string | null;       // cached plain text lyrics
@@ -104,7 +107,7 @@ export interface UserSettings {
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   theme: 'dark',
-  accentColor: '#f59e0b',
+  accentColor: '#fa2d55',
   compactMode: false,
   volume: 0.7,
   shuffle: false,

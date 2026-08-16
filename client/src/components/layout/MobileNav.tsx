@@ -67,8 +67,8 @@ export const MobileNav: React.FC = () => {
               {isActive && (
                 <motion.div
                   layoutId="activeTabGlow"
-                  className="absolute inset-x-1 inset-y-0.5 bg-primary/15 rounded-xl border border-primary/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  className="absolute inset-x-1 inset-y-0.5 bg-primary/15 rounded-xl border border-primary/30 shadow-[0_0_12px_var(--primary)]"
+                  transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
                 />
               )}
               <Icon className={`w-5 h-5 relative z-10 transition-transform ${isActive ? 'scale-110 text-primary' : ''}`} />

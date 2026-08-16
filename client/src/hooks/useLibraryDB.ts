@@ -59,6 +59,37 @@ export const useLibraryDB = () => {
     return db.count('tracks');
   };
 
+  const getTracksByArtist = async (artist: string): Promise<Track[]> => {
+    const db = await initDB();
+    const tracks = await db.getAllFromIndex('tracks', 'artist', artist);
+    return tracks.sort((a, b) => b.addedAt - a.addedAt);
+  };
+
+  const getTracksByAlbum = async (album: string): Promise<Track[]> => {
+    const db = await initDB();
+    const tracks = await db.getAllFromIndex('tracks', 'album', album);
+    return tracks.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+  };
+
+  const getRecentTracksPaginated = async (limit = 50, offset = 0): Promise<Track[]> => {
+    const db = await initDB();
+    const tx = db.transaction('tracks', 'readonly');
+    const index = tx.store.index('addedAt');
+    let cursor = await index.openCursor(null, 'prev');
+    const results: Track[] = [];
+    let skipped = 0;
+
+    while (cursor && results.length < limit) {
+      if (skipped >= offset) {
+        results.push(cursor.value);
+      } else {
+        skipped++;
+      }
+      cursor = await cursor.continue();
+    }
+    return results;
+  };
+
   // --- PLAYLISTS METHODS ---
 
   const savePlaylist = async (playlist: Playlist): Promise<void> => {
@@ -308,6 +339,9 @@ export const useLibraryDB = () => {
     getAllTracks,
     deleteTrack,
     getTrackCount,
+    getTracksByArtist,
+    getTracksByAlbum,
+    getRecentTracksPaginated,
     // Playlists
     savePlaylist,
     getAllPlaylists,

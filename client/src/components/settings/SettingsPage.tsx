@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,9 @@ import {
   Cloud,
   RefreshCw,
   Server,
+  Cpu,
+  Activity,
+  Zap,
 } from 'lucide-react';
 import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
@@ -39,16 +42,17 @@ import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { useToast } from '../../hooks/useToast';
 import { api, getApiBaseUrl, setApiBaseUrl } from '../../utils/api';
 import { initDB } from '../../lib/db';
+import { singularityEngine, EngineTelemetry } from '../../services/singularityEngine';
 
 // ─── Accent Color Palette ────────────────────────────────────────────
 
 const ACCENT_COLORS = [
-  { name: 'Purple', color: '#a855f7' },
-  { name: 'Pink', color: '#ec4899' },
-  { name: 'Cyan', color: '#22d3ee' },
-  { name: 'Amber', color: '#f59e0b' },
+  { name: 'Radiant Rose', color: '#fa2d55' },
+  { name: 'Electric Iris', color: '#8b5cf6' },
+  { name: 'Cyber Cyan', color: '#06b6d4' },
   { name: 'Emerald', color: '#10b981' },
-  { name: 'Blue', color: '#3b82f6' },
+  { name: 'Amber Gold', color: '#f59e0b' },
+  { name: 'Cobalt Blue', color: '#3b82f6' },
 ];
 
 // ─── Settings Section Wrapper ────────────────────────────────────────
@@ -157,6 +161,15 @@ export const SettingsPage: React.FC = () => {
     clearPlaySessions
   } = useLibraryDB();
   const { toast } = useToast();
+
+  const [telemetry, setTelemetry] = useState<EngineTelemetry>(() => singularityEngine.getEngineDiagnostics());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTelemetry(singularityEngine.getEngineDiagnostics());
+    }, 600);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleThemeChange = useCallback(
     (theme: UserSettings['theme']) => updateSetting('theme', theme),
@@ -934,6 +947,54 @@ export const SettingsPage: React.FC = () => {
             >
               Use Render Cloud Server
             </Button>
+          </Box>
+        </Box>
+      </SettingSection>
+
+      {/* ── Singularity Engine Telemetry ──────────────────────── */}
+      <SettingSection
+        icon={Cpu}
+        title="Singularity Master Engine (v3.0 PRO)"
+        iconColor={tokens.colors.primary}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: telemetry.status === 'ONLINE' ? '#10b981' : '#f59e0b',
+                  boxShadow: telemetry.status === 'ONLINE' ? '0 0 10px #10b981' : 'none',
+                }}
+              />
+              <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>
+                {telemetry.status} • DSP Ring Buffers Active
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: tokens.colors.textTertiary }}>
+              Engine {telemetry.version}
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 1.5 }}>
+            <Box sx={{ p: 1.5, borderRadius: `${tokens.radius.md}px`, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, display: 'block' }}>Sample Rate</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.sampleRate / 1000} kHz</Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: `${tokens.radius.md}px`, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, display: 'block' }}>Render FPS</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.measuredFps} FPS</Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: `${tokens.radius.md}px`, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, display: 'block' }}>Integrated LUFS</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.estimatedLufs} LUFS</Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: `${tokens.radius.md}px`, bgcolor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, display: 'block' }}>Neural Cache</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.prefetchedTrackCount} Pre-Cached</Typography>
+            </Box>
           </Box>
         </Box>
       </SettingSection>

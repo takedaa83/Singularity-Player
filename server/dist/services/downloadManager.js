@@ -14,6 +14,17 @@ const TRACKS_DIR = path_1.default.resolve(__dirname, '..', '..', 'uploads', 'tra
 class DownloadManager extends events_1.EventEmitter {
     jobs = new Map();
     activeProcesses = new Map();
+    MAX_COMPLETED_HISTORY = 100;
+    pruneOldJobs() {
+        const finished = Array.from(this.jobs.entries())
+            .filter(([_, job]) => job.status === 'completed' || job.status === 'failed');
+        if (finished.length > this.MAX_COMPLETED_HISTORY) {
+            const toRemove = finished.slice(0, finished.length - this.MAX_COMPLETED_HISTORY);
+            for (const [id] of toRemove) {
+                this.jobs.delete(id);
+            }
+        }
+    }
     getJob(id) {
         return this.jobs.get(id);
     }
@@ -21,6 +32,7 @@ class DownloadManager extends events_1.EventEmitter {
         if (!(0, youtubeService_1.isValidVideoId)(videoId)) {
             throw new Error('Invalid Video ID');
         }
+        this.pruneOldJobs();
         const jobId = `job-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
         const job = {
             id: jobId,

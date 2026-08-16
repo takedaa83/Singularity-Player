@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { X, Wrench, CheckCircle2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useLibraryDB } from '../../hooks/useLibraryDB';
 import { fixTrackMetadata } from '../../services/metadataFixerService';
+import { api } from '../../utils/api';
 
 interface MetadataRepairModalProps {
   onClose: () => void;
@@ -9,6 +11,8 @@ interface MetadataRepairModalProps {
 
 export const MetadataRepairModal: React.FC<MetadataRepairModalProps> = ({ onClose }) => {
   const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const queue = usePlayerStore((s) => s.queue);
+  const { saveTrack } = useLibraryDB();
   const [isFixing, setIsFixing] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [fixedInfo, setFixedInfo] = useState<any>(null);
@@ -20,19 +24,29 @@ export const MetadataRepairModal: React.FC<MetadataRepairModalProps> = ({ onClos
       const result = await fixTrackMetadata(currentTrack);
       setFixedInfo(result);
       setIsDone(true);
-      // Update store
+
+      const repairedTrack = {
+        ...currentTrack,
+        title: result.title,
+        artist: result.artist,
+        album: result.album,
+        coverArtUrl: result.coverArtUrl || result.coverUrl || currentTrack.coverArtUrl,
+        coverUrl: result.coverArtUrl || result.coverUrl || currentTrack.coverArtUrl,
+        genre: result.genre || currentTrack.genre,
+        year: result.year || currentTrack.year,
+      };
+
+      // Persist to IndexedDB
+      await saveTrack(repairedTrack);
+
+      // Update active queue and currentTrack in player store
+      const updatedQueue = queue.map((t) => (t.id === repairedTrack.id ? repairedTrack : t));
       usePlayerStore.setState({
-        currentTrack: {
-          ...currentTrack,
-          title: result.title,
-          artist: result.artist,
-          album: result.album,
-          coverUrl: result.coverUrl || currentTrack.coverUrl,
-          genre: result.genre || currentTrack.genre
-        }
+        currentTrack: repairedTrack,
+        queue: updatedQueue
       });
     } catch (e) {
-      console.error(e);
+      console.error('[MetadataRepair] Fix error:', e);
     } finally {
       setIsFixing(false);
     }
@@ -59,7 +73,7 @@ export const MetadataRepairModal: React.FC<MetadataRepairModalProps> = ({ onClos
         {currentTrack ? (
           <div className="p-4 rounded-xl bg-black/40 border border-neutral-800 flex items-center gap-4">
             <img
-              src={fixedInfo?.coverUrl || currentTrack.coverUrl || '/icons.svg'}
+              src={api.coverUrl(fixedInfo?.coverArtUrl || fixedInfo?.coverUrl || currentTrack.coverArtUrl || (currentTrack as any).coverUrl, currentTrack.videoId) || '/icons.svg'}
               alt={currentTrack.title}
               className="w-16 h-16 rounded-lg object-cover bg-neutral-800 border border-neutral-700"
             />

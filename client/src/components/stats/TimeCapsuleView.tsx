@@ -1,74 +1,101 @@
 import React, { useEffect, useState } from 'react';
 import { useLibraryDB } from '../../hooks/useLibraryDB';
+import { useToast } from '../../hooks/useToast';
 import { Track } from '../../types';
-import { Trophy, Clock, Flame, Music, Sparkles, Calendar, Share2 } from 'lucide-react';
+import { Trophy, Clock, Flame, Music, Sparkles, Calendar, Share2, Check } from 'lucide-react';
+import { api } from '../../utils/api';
 
 export const TimeCapsuleView: React.FC = () => {
-  const { getHistory } = useLibraryDB();
+  const { getPlaybackHistory, getAllTracks } = useLibraryDB();
+  const { toast } = useToast();
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [topArtists, setTopArtists] = useState<{ artist: string; count: number }[]>([]);
   const [favoriteTrack, setFavoriteTrack] = useState<Track | null>(null);
   const [totalTracksPlayed, setTotalTracksPlayed] = useState(0);
   const [peakHourLabel, setPeakHourLabel] = useState('Night Owl (10 PM - 2 AM)');
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     const calculateCapsuleStats = async () => {
-      const historyItems = await getHistory();
-      if (!historyItems || historyItems.length === 0) return;
+      try {
+        const [historyItems, allTracks] = await Promise.all([
+          getPlaybackHistory(),
+          getAllTracks()
+        ]);
+        if (!historyItems || historyItems.length === 0) return;
 
-      setTotalTracksPlayed(historyItems.length);
+        const trackMap = new Map<string, Track>();
+        for (const t of allTracks) trackMap.set(t.id, t);
 
-      let totalSecs = 0;
-      const artistCounts: Record<string, number> = {};
-      const hourCounts: Record<number, number> = {};
+        setTotalTracksPlayed(historyItems.length);
 
-      historyItems.forEach((item) => {
-        const track = item.track;
-        if (track) {
-          totalSecs += track.duration || 180;
-          if (track.artist) {
-            artistCounts[track.artist] = (artistCounts[track.artist] || 0) + 1;
+        let totalSecs = 0;
+        const artistCounts: Record<string, number> = {};
+        const hourCounts: Record<number, number> = {};
+        const trackPlayCounts: Record<string, number> = {};
+
+        historyItems.forEach((item) => {
+          const track = trackMap.get(item.trackId);
+          if (track) {
+            totalSecs += track.duration || 180;
+            if (track.artist) {
+              artistCounts[track.artist] = (artistCounts[track.artist] || 0) + 1;
+            }
+            trackPlayCounts[track.id] = (trackPlayCounts[track.id] || 0) + 1;
           }
+          if (item.playedAt) {
+            const hour = new Date(item.playedAt).getHours();
+            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+          }
+        });
+
+        setTotalMinutes(Math.round(totalSecs / 60));
+
+        // Sorted Top Artists
+        const sortedArtists = Object.entries(artistCounts)
+          .map(([artist, count]) => ({ artist, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5);
+
+        setTopArtists(sortedArtists);
+
+        // Favorite (Most Played) Track
+        const sortedTrackEntries = Object.entries(trackPlayCounts).sort((a, b) => b[1] - a[1]);
+        if (sortedTrackEntries.length > 0 && trackMap.has(sortedTrackEntries[0][0])) {
+          setFavoriteTrack(trackMap.get(sortedTrackEntries[0][0]) || null);
+        } else if (allTracks.length > 0) {
+          setFavoriteTrack(allTracks[0]);
         }
-        if (item.playedAt) {
-          const hour = new Date(item.playedAt).getHours();
-          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-        }
-      });
 
-      setTotalMinutes(Math.round(totalSecs / 60));
+        // Calculate Peak Listening Hour
+        let peakHour = 22;
+        let maxHourCount = 0;
+        Object.entries(hourCounts).forEach(([h, count]) => {
+          if (count > maxHourCount) {
+            maxHourCount = count;
+            peakHour = parseInt(h, 10);
+          }
+        });
 
-      // Sorted Top Artists
-      const sortedArtists = Object.entries(artistCounts)
-        .map(([artist, count]) => ({ artist, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      setTopArtists(sortedArtists);
-
-      // Favorite Track
-      if (historyItems[0]?.track) {
-        setFavoriteTrack(historyItems[0].track);
+        if (peakHour >= 6 && peakHour < 12) setPeakHourLabel('Morning Motivator (6 AM - 12 PM)');
+        else if (peakHour >= 12 && peakHour < 17) setPeakHourLabel('Afternoon Focus (12 PM - 5 PM)');
+        else if (peakHour >= 17 && peakHour < 22) setPeakHourLabel('Evening Groover (5 PM - 10 PM)');
+        else setPeakHourLabel('Night Owl Listener (10 PM - 2 AM)');
+      } catch (err) {
+        console.error('[TimeCapsuleView] Error computing stats:', err);
       }
-
-      // Calculate Peak Listening Hour
-      let peakHour = 22;
-      let maxHourCount = 0;
-      Object.entries(hourCounts).forEach(([h, count]) => {
-        if (count > maxHourCount) {
-          maxHourCount = count;
-          peakHour = parseInt(h, 10);
-        }
-      });
-
-      if (peakHour >= 6 && peakHour < 12) setPeakHourLabel('Morning Motivator (6 AM - 12 PM)');
-      else if (peakHour >= 12 && peakHour < 17) setPeakHourLabel('Afternoon Focus (12 PM - 5 PM)');
-      else if (peakHour >= 17 && peakHour < 22) setPeakHourLabel('Evening Groover (5 PM - 10 PM)');
-      else setPeakHourLabel('Night Owl Listener (10 PM - 2 AM)');
     };
 
     calculateCapsuleStats();
   }, []);
+
+  const handleShare = () => {
+    const summary = `🎵 My Singularity Player Time Capsule:\n⏱️ ${totalMinutes.toLocaleString()} mins streamed\n🎧 ${totalTracksPlayed} tracks played\n🔥 Top Artist: ${topArtists[0]?.artist || 'None'}\n🏆 Top Song: ${favoriteTrack?.title || 'None'}`;
+    navigator.clipboard?.writeText(summary);
+    setIsCopied(true);
+    toast('Capsule summary copied to clipboard!', 'success');
+    setTimeout(() => setIsCopied(false), 2500);
+  };
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
@@ -86,11 +113,11 @@ export const TimeCapsuleView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => alert('Snapshot copied to clipboard!')}
-            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-500/30 flex items-center space-x-2 transition-all"
+            onClick={handleShare}
+            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-500/30 flex items-center space-x-2 transition-all active:scale-95 cursor-pointer"
           >
-            <Share2 className="w-4 h-4" />
-            <span>Share Capsule</span>
+            {isCopied ? <Check className="w-4 h-4 text-emerald-300" /> : <Share2 className="w-4 h-4" />}
+            <span>{isCopied ? 'Copied!' : 'Share Capsule'}</span>
           </button>
         </div>
       </div>
@@ -168,8 +195,8 @@ export const TimeCapsuleView: React.FC = () => {
 
           {favoriteTrack ? (
             <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/60 to-slate-950 border border-purple-800/40 flex items-center space-x-4">
-              {favoriteTrack.coverArtUrl ? (
-                <img src={favoriteTrack.coverArtUrl} alt={favoriteTrack.title} className="w-16 h-16 rounded-xl object-cover border border-purple-500/30 shadow-lg" />
+              {api.coverUrl(favoriteTrack.coverArtUrl || (favoriteTrack as any).coverUrl, favoriteTrack.videoId) ? (
+                <img src={api.coverUrl(favoriteTrack.coverArtUrl || (favoriteTrack as any).coverUrl, favoriteTrack.videoId)!} alt={favoriteTrack.title} className="w-16 h-16 rounded-xl object-cover border border-purple-500/30 shadow-lg" />
               ) : (
                 <div className="w-16 h-16 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-2xl">
                   🎵

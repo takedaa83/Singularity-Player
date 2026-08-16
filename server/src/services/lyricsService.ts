@@ -4,8 +4,14 @@ import * as fs from 'fs';
 import { getYouTubeTranscript, searchYouTube } from './youtubeService';
 
 export interface LyricsResult {
-  syncedLyrics: string | null;  // LRC format with timestamps
+  syncedLyrics: string | null;  // LRC or TTML format with timestamps
   plainLyrics: string | null;   // Plain text lyrics
+  ttml?: string | null;         // Full Timed Text Markup Language XML with syllable spans
+  isSyllableSynced?: boolean;   // True if syllable/word precision is present
+  isWordSynced?: boolean;       // True if word precision is present
+  provider?: string;            // Provider identifier
+  translations?: Record<string, string> | null; // Multi-language translations
+  romanization?: string | null; // Romaji / Pinyin transliterated text
   trackName: string;
   artistName: string;
   albumName: string;
@@ -188,7 +194,8 @@ function formatLrcMs(timeMs: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
 }
 
-async function fetchAppleMusicLyrics(trackName: string, artistName: string): Promise<LyricsResult | null> {
+async function fetchAppleMusicLyrics(trackName: string, artistName: string, retryCount = 0): Promise<LyricsResult | null> {
+  if (retryCount > 1) return null;
   try {
     const token = await appleTokenManager.getToken();
     if (!token) return null;
@@ -213,7 +220,7 @@ async function fetchAppleMusicLyrics(trackName: string, artistName: string): Pro
     if (searchRes.status === 401) {
       console.warn('[LyricsService] Apple Music search unauthorized (401), clearing token and retrying...');
       appleTokenManager.clearToken();
-      return fetchAppleMusicLyrics(trackName, artistName);
+      return fetchAppleMusicLyrics(trackName, artistName, retryCount + 1);
     }
 
     if (!searchRes.ok) {
@@ -737,6 +744,67 @@ async function fetchNetEaseLyrics(trackName: string, artistName: string): Promis
   }
 }
 
+/**
+ * Better Lyrics API provider (https://github.com/better-lyrics/better-lyrics)
+ * Fetches syllable-synced and word-synced TTML / LRC lyrics with multi-singer metadata.
+ */
+async function fetchBetterLyrics(
+  trackName: string,
+  artistName: string,
+  duration?: number
+): Promise<LyricsResult | null> {
+  const cleanTrack = cleanSearchString(trackName);
+  const cleanArtist = cleanSearchString(artistName);
+
+  const endpoints = [
+    `https://api.better-lyrics.org/getLyrics?s=${encodeURIComponent(cleanTrack)}&a=${encodeURIComponent(cleanArtist)}${duration ? `&d=${Math.round(duration)}` : ''}`,
+    `https://cf-api.better-lyrics.org/getLyrics?s=${encodeURIComponent(cleanTrack)}&a=${encodeURIComponent(cleanArtist)}${duration ? `&d=${Math.round(duration)}` : ''}`,
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(endpoint, {
+        headers: {
+          'User-Agent': 'SingularityPlayer/1.5.0 (https://github.com/better-lyrics/better-lyrics)',
+          'Accept': 'application/json, text/plain, */*'
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        const data: any = await res.json();
+        if (data && (data.ttml || data.syncedLyrics || data.lyrics || data.lrc)) {
+          const ttml = data.ttml || null;
+          const syncedLyrics = data.syncedLyrics || data.lrc || (ttml ? ttml : null);
+          const plainLyrics = data.plainLyrics || data.lyrics || null;
+
+          return {
+            syncedLyrics,
+            plainLyrics,
+            ttml,
+            isSyllableSynced: Boolean(ttml && ttml.includes('<span')),
+            isWordSynced: Boolean(ttml || (syncedLyrics && syncedLyrics.includes('<'))),
+            provider: 'better-lyrics',
+            translations: data.translations || null,
+            romanization: data.romanization || data.romaji || null,
+            trackName,
+            artistName,
+            albumName: data.album || '',
+            duration: duration || data.duration || 0
+          };
+        }
+      }
+    } catch (err) {
+      // Fall through to next provider
+    }
+  }
+
+  return null;
+}
+
 export async function fetchLyrics(
   trackName: string,
   artistName: string,
@@ -754,9 +822,17 @@ export async function fetchLyrics(
     return diskCached;
   }
 
-  // 3. Fallback Chain: Apple Music -> Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
+  // 3. Fallback Chain: Better Lyrics -> Apple Music TTML -> Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
 
-  // A0. Apple Music
+  // A0. Better Lyrics (Highest precision syllable TTML & word-sync)
+  const betterLyricsRes = await fetchBetterLyrics(trackName, artistName, duration);
+  if (betterLyricsRes) {
+    lyricsCache.set(trackName, artistName, betterLyricsRes);
+    await saveLyricsToDisk(trackName, artistName, betterLyricsRes);
+    return betterLyricsRes;
+  }
+
+  // A1. Apple Music
   const appleRes = await fetchAppleMusicLyrics(trackName, artistName);
   if (appleRes) {
     lyricsCache.set(trackName, artistName, appleRes);

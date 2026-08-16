@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Mic, Disc, Sliders, Music, Zap } from 'lucide-react';
 import { stemSeparatorService, StemGains } from '../../services/stemSeparatorService';
 import { usePlayerStore } from '../../stores/playerStore';
+import { api } from '../../utils/api';
 
 interface StemSeparatorModalProps {
   onClose: () => void;
@@ -49,7 +50,11 @@ export const StemSeparatorModal: React.FC<StemSeparatorModalProps> = ({ onClose 
 
         {currentTrack && (
           <div className="flex items-center gap-3 p-3 rounded-xl bg-black/40 border border-neutral-800">
-            <img src={currentTrack.coverUrl || '/icons.svg'} alt={currentTrack.title} className="w-12 h-12 rounded-lg object-cover" />
+            <img
+              src={api.coverUrl(currentTrack.coverArtUrl || (currentTrack as any).coverUrl, currentTrack.videoId) || '/icons.svg'}
+              alt={currentTrack.title}
+              className="w-12 h-12 rounded-lg object-cover border border-neutral-800"
+            />
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-semibold truncate">{currentTrack.title}</span>
               <span className="text-xs text-neutral-400 truncate">{currentTrack.artist}</span>

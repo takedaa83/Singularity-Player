@@ -380,3 +380,60 @@ export function generateShazamSignature(samples: Int16Array): string {
   const state = new SignatureGeneratorState();
   return state.process(samples);
 }
+
+/**
+ * Converts an AudioBuffer (any sample rate/channel count) to 16kHz mono Int16 PCM
+ * and produces a Shazam signature.
+ */
+export function generateSignatureFromBuffer(buffer: AudioBuffer): string {
+  const targetSampleRate = 16000;
+  const numChannels = buffer.numberOfChannels;
+  const srcSampleRate = buffer.sampleRate;
+  const srcLength = buffer.length;
+
+  const resampleRatio = targetSampleRate / srcSampleRate;
+  const targetLength = Math.max(2, Math.floor(srcLength * resampleRatio));
+  const pcm16 = new Int16Array(targetLength);
+
+  // Mix down channels to mono and downsample
+  for (let i = 0; i < targetLength; i++) {
+    const srcIndex = Math.min(srcLength - 1, Math.floor(i / resampleRatio));
+    let sample = 0;
+    for (let ch = 0; ch < numChannels; ch++) {
+      sample += buffer.getChannelData(ch)[srcIndex];
+    }
+    sample = (sample / numChannels) * 32767;
+    pcm16[i] = Math.max(-32768, Math.min(32767, Math.round(sample)));
+  }
+
+  return generateShazamSignature(pcm16);
+}
+
+/**
+ * Compares two Shazam signatures and returns a match confidence score (0 - 100).
+ */
+export function matchSignature(sigA: string, sigB: string): number {
+  if (!sigA || !sigB) return 0;
+  if (sigA === sigB) return 100;
+
+  const rawA = sigA.replace(/^data:.*?;base64,/, '');
+  const rawB = sigB.replace(/^data:.*?;base64,/, '');
+
+  try {
+    const binA = atob(rawA);
+    const binB = atob(rawB);
+    const minLen = Math.min(binA.length, binB.length);
+    if (minLen === 0) return 0;
+
+    let matchingBytes = 0;
+    for (let i = 0; i < minLen; i++) {
+      if (binA.charCodeAt(i) === binB.charCodeAt(i)) {
+        matchingBytes++;
+      }
+    }
+
+    return Math.round((matchingBytes / minLen) * 100);
+  } catch {
+    return 0;
+  }
+}

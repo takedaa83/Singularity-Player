@@ -262,7 +262,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         drag="y"
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={{ top: 0, bottom: 0.6 }}
@@ -372,7 +372,7 @@ export const MobileFullscreenPlayer: React.FC<MobileFullscreenPlayerProps> = ({
                        scale: isPlaying ? 1.0 : 0.88,
                        opacity: isPlaying ? 1 : 0.8
                      }}
-                     transition={{ type: 'spring', damping: 20, stiffness: 150 }}
+                      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                      className="w-full max-w-[320px] max-h-[320px] aspect-square rounded-2xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-neutral-900 border border-white/10 relative"
                    >
                      {api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) ? (

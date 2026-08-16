@@ -141,22 +141,28 @@ export const SmartQueueService = {
     if (radioResults.length === 0 && anchorTrack.artist) {
       try {
         const hits = await deps.apiClient.search(`${anchorTrack.artist} top hits`);
-        if (hits && hits.length > 0) {
           radioResults = hits
-            .map((item) => ({
+            .map((item: any): Track => ({
               id: `yt-${item.videoId}`,
               title: item.title,
               artist: item.artist,
               album: item.album || 'Single',
+              genre: '',
+              year: null,
+              trackNumber: null,
               duration: item.duration || 200,
+              bitrate: null,
+              sampleRate: null,
+              fileSize: 0,
+              mimeType: 'audio/mp4',
               coverArtUrl: item.coverArtUrl || null,
-              source: 'youtube' as const,
+              source: 'youtube',
               streamUrl: `/api/yt/stream/${item.videoId}`,
+              filePath: null,
               videoId: item.videoId,
               addedAt: Date.now(),
             }))
             .filter(passesQualityFilter);
-        }
       } catch (e) {
         console.warn('[SmartQueueEngine] Fallback artist search failed:', e);
       }

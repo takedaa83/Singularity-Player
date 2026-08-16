@@ -43,7 +43,7 @@ export const VibeMatrixModal: React.FC<VibeMatrixModalProps> = ({ isOpen, onClos
       else if (coords.x > 0 && coords.y < 0) vibeQuery = 'heavy bass rock rap hype';
       else if (coords.x < 0 && coords.y < 0) vibeQuery = 'lofi hip hop deep focus study';
 
-      const results = await api.searchYouTube(vibeQuery);
+      const results = await api.search(vibeQuery);
       if (results && results.length > 0) {
         const mapped = results.map((item) => ({
           id: `yt-${item.videoId}`,

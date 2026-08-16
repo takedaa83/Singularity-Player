@@ -274,7 +274,7 @@ export const SpotifyImportModal: React.FC<SpotifyImportModalProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+            transition={{ duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 shadow-2xl p-6 text-white"
           >

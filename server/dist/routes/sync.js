@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
+const fsPromises = __importStar(require("fs/promises"));
 const router = (0, express_1.Router)();
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const SYNC_FILE = path.join(DATA_DIR, 'library_sync.json');
@@ -51,12 +52,12 @@ router.post('/push', async (req, res) => {
         return;
     }
     try {
-        // Save backup JSON to disk
+        // Save backup JSON to disk asynchronously
         const payload = {
             ...data,
             syncedAt: Date.now()
         };
-        fs.writeFileSync(SYNC_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+        await fsPromises.writeFile(SYNC_FILE, JSON.stringify(payload, null, 2), 'utf-8');
         res.json({
             success: true,
             message: 'Library synced to server successfully',
@@ -75,7 +76,7 @@ router.get('/pull', async (req, res) => {
             res.status(404).json({ error: 'No synced library found on server' });
             return;
         }
-        const content = fs.readFileSync(SYNC_FILE, 'utf-8');
+        const content = await fsPromises.readFile(SYNC_FILE, 'utf-8');
         res.json(JSON.parse(content));
     }
     catch (error) {
@@ -90,8 +91,10 @@ router.get('/status', async (req, res) => {
             res.json({ exists: false });
             return;
         }
-        const stats = fs.statSync(SYNC_FILE);
-        const content = fs.readFileSync(SYNC_FILE, 'utf-8');
+        const [stats, content] = await Promise.all([
+            fsPromises.stat(SYNC_FILE),
+            fsPromises.readFile(SYNC_FILE, 'utf-8')
+        ]);
         const parsed = JSON.parse(content);
         res.json({
             exists: true,

@@ -96,10 +96,10 @@ export const tokens = {
   },
   // Transitions
   transitions: {
-    fast: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
-    normal: '250ms cubic-bezier(0.4, 0, 0.2, 1)',
-    slow: '400ms cubic-bezier(0.4, 0, 0.2, 1)',
-    spring: '500ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+    fast: '220ms cubic-bezier(0.16, 1, 0.3, 1)',
+    normal: '380ms cubic-bezier(0.16, 1, 0.3, 1)',
+    slow: '520ms cubic-bezier(0.16, 1, 0.3, 1)',
+    spring: '480ms cubic-bezier(0.16, 1, 0.3, 1)',
   },
 } as const;
 
@@ -137,22 +137,22 @@ export const getMuiTheme = (themeMode: 'light' | 'dark', accentColor: string) =>
         contrastText: '#ffffff',
       },
       secondary: {
-        main: tokens.colors.accent.pink,
+        main: primaryMain,
       },
       background: {
-        default: themeMode === 'dark' ? '#000000' : '#ffffff',
-        paper: themeMode === 'dark' ? '#0a0a0a' : '#fafafa',
+        default: themeMode === 'dark' ? '#0a0b0f' : '#f8f9fa',
+        paper: themeMode === 'dark' ? '#12141a' : '#ffffff',
       },
       text: {
-        primary: themeMode === 'dark' ? '#ffffff' : '#0a0a0a',
-        secondary: themeMode === 'dark' ? '#a3a3a3' : '#525252',
-        disabled: themeMode === 'dark' ? '#525252' : '#a3a3a3',
+        primary: themeMode === 'dark' ? '#ffffff' : '#0f172a',
+        secondary: themeMode === 'dark' ? '#94a3b8' : '#475569',
+        disabled: themeMode === 'dark' ? '#475569' : '#94a3b8',
       },
       error: { main: tokens.colors.error },
       warning: { main: tokens.colors.warning },
       success: { main: tokens.colors.success },
       info: { main: tokens.colors.info },
-      divider: themeMode === 'dark' ? '#262626' : '#e5e5e5',
+      divider: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
     },
     shape: {
       borderRadius: tokens.radius.md,

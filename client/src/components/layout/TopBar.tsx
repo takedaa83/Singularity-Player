@@ -32,11 +32,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className="h-14 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20"
-      style={{
-        backgroundColor: tokens.colors.surface,
-        borderBottom: `1px solid ${tokens.colors.surfaceBorder}`,
-      }}
+      className="h-14 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 glass-panel border-x-0 border-t-0"
     >
       {/* Left balancing box (Menu button on mobile, empty on desktop) */}
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
@@ -44,7 +40,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <IconButton
             onClick={onMenuClick}
             aria-label="Open menu"
-            sx={{ display: { lg: 'none' }, color: tokens.colors.textSecondary, p: 0.5 }}
+            sx={{ display: { lg: 'none' }, color: 'var(--text-secondary)', p: 0.5 }}
           >
             <Menu className="w-5 h-5" />
           </IconButton>
@@ -54,7 +50,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Centered Search Field with Cmd+K Badge */}
       <Box sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
         <SearchInput onSearch={onSearch} initialValue={searchQuery} />
-        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded border border-neutral-800 bg-neutral-900/60 text-[10px] font-mono text-neutral-400 shrink-0">
+        <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md border border-white/10 bg-white/5 text-[10px] font-mono text-slate-400 shrink-0">
           ⌘K
         </span>
       </Box>
@@ -67,7 +63,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <IconButton
               aria-label="Active downloads"
               sx={{
-                color: tokens.colors.accent.cyan,
+                color: 'var(--primary)',
                 animation: 'pulse 2s infinite',
                 '@keyframes pulse': {
                   '0%, 100%': { opacity: 1 },
@@ -87,9 +83,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Tooltip title="Import Spotify Playlist">
             <button
               onClick={onOpenSpotifyImport}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all active:scale-95 shadow-sm"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
               <span className="hidden sm:inline">Spotify Import</span>
             </button>
           </Tooltip>
@@ -102,14 +98,15 @@ export const TopBar: React.FC<TopBarProps> = ({
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             sx={{
               p: 1,
-              borderRadius: `${tokens.radius.lg}px`,
-              backgroundColor: tokens.colors.surfaceVariant,
-              border: `1px solid ${tokens.colors.surfaceBorder}`,
-              color: tokens.colors.textSecondary,
-              transition: tokens.transitions.fast,
+              borderRadius: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: 'var(--text-secondary)',
+              transition: 'all 0.2s ease',
               '&:hover': {
-                borderColor: tokens.colors.textTertiary,
-                color: tokens.colors.textPrimary,
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#fff',
               },
             }}
           >

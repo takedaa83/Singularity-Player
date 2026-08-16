@@ -99,13 +99,13 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
 
       const bufferLength = analyser.frequencyBinCount;
       if (!dataArrayRef.current || dataArrayRef.current.length !== bufferLength) {
-        dataArrayRef.current = new Uint8Array(bufferLength);
+        dataArrayRef.current = new Uint8Array(new ArrayBuffer(bufferLength));
       }
       const dataArray = dataArrayRef.current;
 
       if (visualizerStyle === 'wave') {
         // Oscilloscope waveform visualizer
-        analyser.getByteTimeDomainData(dataArray);
+        analyser.getByteTimeDomainData(dataArray as any);
 
         ctx.lineWidth = 3;
         // Create glowing purple/pink gradient
@@ -142,7 +142,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
 
       } else if (visualizerStyle === 'circular') {
         // Circular frequency visualizer
-        analyser.getByteFrequencyData(dataArray);
+        analyser.getByteFrequencyData(dataArray as any);
 
         const centerX = width / 2;
         const centerY = height / 2;
@@ -190,7 +190,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ getAnalyser })
 
       } else {
         // Default: 'bars' frequency columns downsampled to 128 bars
-        analyser.getByteFrequencyData(dataArray);
+        analyser.getByteFrequencyData(dataArray as any);
 
         const displayBars = 128;
         const step = Math.max(1, Math.floor(bufferLength / displayBars));

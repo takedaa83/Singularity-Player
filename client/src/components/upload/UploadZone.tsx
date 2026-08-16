@@ -131,10 +131,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onClose, triggerRefresh 
       className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4 text-white"
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        initial={{ scale: 0.96, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.96, opacity: 0, y: 12 }}
+        transition={{ duration: 0.44, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-xl bg-neutral-900 border border-neutral-800 rounded-2xl p-6 flex flex-col gap-6 shadow-2xl"
       >
         

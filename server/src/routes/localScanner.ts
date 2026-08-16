@@ -93,7 +93,7 @@ router.post('/scan-folder', async (req: Request, res: Response) => {
         // Fallback to filename title if tag parsing fails
       }
 
-      const relativeStreamPath = `/api/stream/${encodeURIComponent(fileName)}`;
+      const relativeStreamPath = `/api/stream/local?path=${encodeURIComponent(filePath)}`;
 
       tracks.push({
         id: `local-${Buffer.from(filePath).toString('hex').substring(0, 16)}`,

@@ -167,52 +167,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const mainNav = [
-    { id: 'home', icon: Home, label: 'Home', color: tokens.colors.primary },
-    { id: 'library', icon: FolderHeart, label: 'Library', color: '#10b981' }, // Emerald
-    { id: 'artists', icon: User, label: 'Artists', color: '#f59e0b' }, // Amber
-    { id: 'favorites', icon: Heart, label: 'Favorites', color: tokens.colors.accent.pink }, // Pink
-    { id: 'history', icon: Clock, label: 'History', color: '#3b82f6' }, // Blue
+    { id: 'home', icon: Home, label: 'Home' },
+    { id: 'library', icon: FolderHeart, label: 'Library' },
+    { id: 'artists', icon: User, label: 'Artists' },
+    { id: 'favorites', icon: Heart, label: 'Favorites' },
+    { id: 'history', icon: Clock, label: 'History' },
   ];
 
   const toolsNav = [
-    { id: 'capsule', icon: Sparkles, label: 'Time Capsule', color: '#a855f7' }, // Purple
-    { id: 'downloads', icon: Download, label: 'Downloads', color: tokens.colors.accent.cyan }, // Cyan
-    { id: 'batch-download', icon: Package, label: 'Batch Packager', color: '#ec4899' }, // Fuchsia
-    { id: 'settings', icon: Settings, label: 'Settings', color: '#a3a3a3' }, // Gray
+    { id: 'capsule', icon: Sparkles, label: 'Time Capsule' },
+    { id: 'downloads', icon: Download, label: 'Downloads' },
+    { id: 'batch-download', icon: Package, label: 'Batch Packager' },
+    { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
-  const NavButton: React.FC<{ id: string; icon: any; label: string; color?: string }> = ({ id, icon: Icon, label, color }) => {
+  const NavButton: React.FC<{ id: string; icon: any; label: string }> = ({ id, icon: Icon, label }) => {
     const active = isViewActive(id) && !selectedPlaylistId;
-    const activeColor = color || tokens.colors.primary;
     
     const buttonContent = (
       <button
         onClick={() => { setActiveView(id); setSelectedPlaylistId(null); }}
         aria-label={`Navigate to ${label}`}
-        className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2'} rounded-xl text-sm font-semibold transition-all relative group`}
-        style={{
-          backgroundColor: active ? `${activeColor}12` : 'transparent',
-          color: active ? tokens.colors.textPrimary : tokens.colors.textSecondary,
-        }}
+        className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-semibold transition-all relative group ${
+          active
+            ? 'bg-white/10 text-white font-bold shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-white/5'
+        }`}
       >
         <Icon
           className={`w-[18px] h-[18px] shrink-0 transition-all duration-300 ${
             active 
-              ? 'opacity-100 scale-110 drop-shadow-[0_0_8px_var(--icon-glow)]' 
-              : 'opacity-50 group-hover:opacity-90 group-hover:scale-105'
+              ? 'text-primary opacity-100 scale-105' 
+              : 'text-slate-400 group-hover:text-white opacity-80 group-hover:opacity-100 group-hover:scale-105'
           }`}
-          style={{ 
-            color: activeColor,
-            '--icon-glow': activeColor 
-          } as React.CSSProperties}
         />
-        {!sidebarCollapsed && <span className="group-hover:text-white transition-colors">{label}</span>}
+        {!sidebarCollapsed && <span className="transition-colors">{label}</span>}
         {active && (
           <motion.div
             layoutId="sidebar-indicator"
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[4px] rounded-r-full shadow-[0_0_10px_var(--icon-glow)]"
-            style={{ height: 20, backgroundColor: activeColor, '--icon-glow': activeColor } as React.CSSProperties}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary shadow-[0_0_12px_var(--primary)]"
+            style={{ height: 18 }}
+            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
           />
         )}
       </button>
@@ -231,33 +226,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}
-      style={{
-        backgroundColor: 'rgba(10, 10, 12, 0.6)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRight: `1px solid rgba(255, 255, 255, 0.05)`,
-      }}
+      className={`h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10 transition-all duration-300 glass-panel border-y-0 border-l-0 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}
     >
       <div className="flex flex-col gap-6 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
         {/* Branding */}
         <div className={`flex items-center ${sidebarCollapsed ? 'flex-col justify-center gap-4' : 'justify-between px-2'} pt-1`}>
           <div className="flex items-center gap-3">
             <div
-              className="p-2 rounded-xl"
-              style={{
-                background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-              }}
+              className="p-2.5 rounded-xl shadow-[0_0_20px_rgba(250,45,85,0.35)] flex items-center justify-center bg-primary"
             >
               <Music className="w-5 h-5 text-white" />
             </div>
             {!sidebarCollapsed && (
               <div>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, letterSpacing: '0.1em', fontSize: 13, color: tokens.colors.textPrimary }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '0.08em', fontSize: 13, color: '#ffffff' }}>
                   SINGULARITY
                 </Typography>
-                <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.15em' }}>
-                  MUSIC PLATFORM
+                <Typography variant="caption" sx={{ color: 'var(--text-tertiary)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.15em' }}>
+                  AUDIO PLATFORM
                 </Typography>
               </div>
             )}
@@ -268,7 +254,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size="small"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             sx={{ 
-              color: tokens.colors.textTertiary, 
+              color: 'var(--text-tertiary)', 
               '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
               mt: sidebarCollapsed ? 1 : 0
             }}
@@ -285,14 +271,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onUploadClick}
                   aria-label="Upload music"
-                  className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-                    color: '#fff',
-                    boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
+                  className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md bg-white/10 hover:bg-white/20 text-white border border-white/10"
                 >
                   <Upload className="w-[18px] h-[18px]" />
                 </button>
@@ -302,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={onOpenSpotifyImport}
                     aria-label="Import Spotify Playlist"
-                    className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md hover:shadow-lg bg-emerald-500 hover:bg-emerald-400 text-black"
+                    className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10"
                   >
                     <ListMusic className="w-[18px] h-[18px]" />
                   </button>
@@ -314,14 +293,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onUploadClick}
                 aria-label="Upload music"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
-                style={{
-                  background: `linear-gradient(135deg, ${tokens.colors.primary}, ${tokens.colors.accent.pink})`,
-                  color: '#fff',
-                  boxShadow: `0 4px 14px ${tokens.colors.primary}30`,
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md bg-white/10 hover:bg-white/20 text-white border border-white/10 hover:border-white/20 backdrop-blur-md"
               >
                 <Upload className="w-4 h-4" />
                 <span>Upload Music</span>
@@ -331,7 +303,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onOpenSpotifyImport}
                   aria-label="Import Spotify Playlist"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs active:scale-95 transition-all shadow-md hover:shadow-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs active:scale-95 transition-all shadow-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 backdrop-blur-md"
                 >
                   <ListMusic className="w-4 h-4" />
                   <span>Import Spotify Link</span>
@@ -346,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!sidebarCollapsed && (
             <Typography
               variant="caption"
-              sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
+              sx={{ px: 1, mb: 1, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
             >
               Menu
             </Typography>
@@ -356,14 +328,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </nav>
 
-        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: sidebarCollapsed ? 0.5 : 1 }} />
+        <Divider sx={{ borderColor: 'var(--border-primary)', mx: sidebarCollapsed ? 0.5 : 1 }} />
 
         {/* AI Studio Section */}
         <nav className="flex flex-col gap-0.5">
           {!sidebarCollapsed && (
             <Typography
               variant="caption"
-              sx={{ px: 1, mb: 1, color: tokens.colors.accent.amber, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 700 }}
+              sx={{ px: 1, mb: 1, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 700 }}
             >
               AI Studio & Sound
             </Typography>
@@ -374,7 +346,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onOpenAiPlaylistStudio}
                   aria-label="AI Playlist Studio"
-                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all bg-amber-500/10 text-amber-400 hover:bg-amber-500/20"
+                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5"
                 >
                   <Sparkles className="w-[18px] h-[18px] shrink-0" />
                 </button>
@@ -383,13 +355,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onOpenAiPlaylistStudio}
                 aria-label="AI Playlist Studio"
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-bold transition-all bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30"
+                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10"
               >
                 <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-[18px] h-[18px] shrink-0 text-amber-400" />
+                  <Sparkles className="w-[18px] h-[18px] shrink-0 text-primary" />
                   <span>AI Playlist Studio</span>
                 </div>
-                <span className="text-[10px] font-mono bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300 font-bold">10/10+</span>
+                <span className="text-[10px] font-mono bg-primary/20 px-1.5 py-0.5 rounded text-primary font-bold">Studio</span>
               </button>
             )
           )}
@@ -415,11 +387,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setShowEqualizer(!showEqualizer)}
                 aria-label="Toggle equalizer"
-                className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all"
-                style={{
-                  backgroundColor: showEqualizer ? `${tokens.colors.accent.amber}12` : 'transparent',
-                  color: showEqualizer ? tokens.colors.accent.amber : tokens.colors.textSecondary,
-                }}
+                className={`w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all ${
+                  showEqualizer ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                }`}
               >
                 <Sliders className="w-[18px] h-[18px] shrink-0" />
               </button>
@@ -428,34 +398,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => setShowEqualizer(!showEqualizer)}
               aria-label="Toggle equalizer"
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-              style={{
-                backgroundColor: showEqualizer ? `${tokens.colors.accent.amber}18` : 'transparent',
-                color: showEqualizer ? tokens.colors.accent.amber : tokens.colors.textSecondary,
-              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                showEqualizer ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
             >
               <Sliders className="w-[18px] h-[18px] shrink-0" />
-              <span className="hover:text-white transition-colors">Equalizer</span>
+              <span>Equalizer</span>
             </button>
           )}
         </nav>
 
         {!sidebarCollapsed && (
           <>
-            <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: 1 }} />
+            <Divider sx={{ borderColor: 'var(--border-primary)', mx: 1 }} />
             
             {/* Playlists */}
             <div className="flex flex-col gap-0.5">
               <div className="flex justify-between items-center px-1 mb-1">
                 <button
                   onClick={() => setPlaylistsExpanded(!playlistsExpanded)}
-                  className="flex items-center gap-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                  className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
                   aria-label={playlistsExpanded ? 'Collapse playlists' : 'Expand playlists'}
                 >
                   {playlistsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                   <Typography
                     variant="caption"
-                    sx={{ color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
+                    sx={{ color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
                   >
                     Playlists ({playlists.length})
                   </Typography>
@@ -466,9 +434,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <button
                         onClick={onOpenAiPlaylistStudio}
                         aria-label="Open AI Playlist Studio"
-                        className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40 hover:bg-amber-500/30 transition-all flex items-center gap-1"
+                        className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[10px] font-bold border border-white/10 hover:bg-white/15 transition-all flex items-center gap-1"
                       >
-                        <Sparkles className="w-2.5 h-2.5" /> AI
+                        <Sparkles className="w-2.5 h-2.5 text-primary" /> AI
                       </button>
                     </Tooltip>
                   )}

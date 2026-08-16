@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
 
 const router = Router();
 
@@ -21,12 +22,12 @@ router.post('/push', async (req: Request, res: Response) => {
   }
 
   try {
-    // Save backup JSON to disk
+    // Save backup JSON to disk asynchronously
     const payload = {
       ...data,
       syncedAt: Date.now()
     };
-    fs.writeFileSync(SYNC_FILE, JSON.stringify(payload, null, 2), 'utf-8');
+    await fsPromises.writeFile(SYNC_FILE, JSON.stringify(payload, null, 2), 'utf-8');
     res.json({ 
       success: true, 
       message: 'Library synced to server successfully', 
@@ -45,7 +46,7 @@ router.get('/pull', async (req: Request, res: Response) => {
       res.status(404).json({ error: 'No synced library found on server' });
       return;
     }
-    const content = fs.readFileSync(SYNC_FILE, 'utf-8');
+    const content = await fsPromises.readFile(SYNC_FILE, 'utf-8');
     res.json(JSON.parse(content));
   } catch (error) {
     console.error('[Sync Route] Pull error:', error);
@@ -60,8 +61,10 @@ router.get('/status', async (req: Request, res: Response) => {
       res.json({ exists: false });
       return;
     }
-    const stats = fs.statSync(SYNC_FILE);
-    const content = fs.readFileSync(SYNC_FILE, 'utf-8');
+    const [stats, content] = await Promise.all([
+      fsPromises.stat(SYNC_FILE),
+      fsPromises.readFile(SYNC_FILE, 'utf-8')
+    ]);
     const parsed = JSON.parse(content);
     res.json({
       exists: true,

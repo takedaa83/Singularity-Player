@@ -27,7 +27,7 @@ export const ToastContainer: React.FC = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, x: 60, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
             className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl bg-neutral-900/95 backdrop-blur-lg border ${borderColors[toast.type]} shadow-2xl shadow-black/40 min-w-[260px] max-w-[380px]`}
           >
             {icons[toast.type]}

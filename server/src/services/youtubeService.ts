@@ -279,6 +279,28 @@ ytDlpReady = Promise.race([
 ]);
 
 /**
+ * Periodically checks for and applies yt-dlp binary self-updates in the background.
+ */
+export function scheduleYtDlpUpdater() {
+  const checkUpdate = async () => {
+    try {
+      if (YT_DLP_PATH) {
+        console.log('[youtubeService] Checking for yt-dlp binary updates...');
+        await execFileAsync(YT_DLP_PATH, ['-U']);
+        console.log('[youtubeService] yt-dlp binary update check complete.');
+      }
+    } catch (e) {
+      // Ignore if self-update is disabled or not supported on current platform
+    }
+  };
+
+  setTimeout(checkUpdate, 30000);
+  setInterval(checkUpdate, 12 * 60 * 60 * 1000);
+}
+
+scheduleYtDlpUpdater();
+
+/**
  * Custom InnerTube stream URL extraction using the IOS client.
  */
 async function extractUrlWithCustomInnertube(videoId: string, quality: 'high' | 'medium' | 'low'): Promise<StreamResult | null> {

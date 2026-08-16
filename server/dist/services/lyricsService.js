@@ -197,7 +197,9 @@ function formatLrcMs(timeMs) {
     const centiseconds = Math.floor((timeMs % 1000) / 10);
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
 }
-async function fetchAppleMusicLyrics(trackName, artistName) {
+async function fetchAppleMusicLyrics(trackName, artistName, retryCount = 0) {
+    if (retryCount > 1)
+        return null;
     try {
         const token = await appleTokenManager.getToken();
         if (!token)
@@ -219,7 +221,7 @@ async function fetchAppleMusicLyrics(trackName, artistName) {
         if (searchRes.status === 401) {
             console.warn('[LyricsService] Apple Music search unauthorized (401), clearing token and retrying...');
             appleTokenManager.clearToken();
-            return fetchAppleMusicLyrics(trackName, artistName);
+            return fetchAppleMusicLyrics(trackName, artistName, retryCount + 1);
         }
         if (!searchRes.ok) {
             console.warn(`[LyricsService] Apple Music catalog search returned status ${searchRes.status}`);
@@ -698,6 +700,58 @@ async function fetchNetEaseLyrics(trackName, artistName) {
         return null;
     }
 }
+/**
+ * Better Lyrics API provider (https://github.com/better-lyrics/better-lyrics)
+ * Fetches syllable-synced and word-synced TTML / LRC lyrics with multi-singer metadata.
+ */
+async function fetchBetterLyrics(trackName, artistName, duration) {
+    const cleanTrack = cleanSearchString(trackName);
+    const cleanArtist = cleanSearchString(artistName);
+    const endpoints = [
+        `https://api.better-lyrics.org/getLyrics?s=${encodeURIComponent(cleanTrack)}&a=${encodeURIComponent(cleanArtist)}${duration ? `&d=${Math.round(duration)}` : ''}`,
+        `https://cf-api.better-lyrics.org/getLyrics?s=${encodeURIComponent(cleanTrack)}&a=${encodeURIComponent(cleanArtist)}${duration ? `&d=${Math.round(duration)}` : ''}`,
+    ];
+    for (const endpoint of endpoints) {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 4000);
+            const res = await fetch(endpoint, {
+                headers: {
+                    'User-Agent': 'SingularityPlayer/1.5.0 (https://github.com/better-lyrics/better-lyrics)',
+                    'Accept': 'application/json, text/plain, */*'
+                },
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && (data.ttml || data.syncedLyrics || data.lyrics || data.lrc)) {
+                    const ttml = data.ttml || null;
+                    const syncedLyrics = data.syncedLyrics || data.lrc || (ttml ? ttml : null);
+                    const plainLyrics = data.plainLyrics || data.lyrics || null;
+                    return {
+                        syncedLyrics,
+                        plainLyrics,
+                        ttml,
+                        isSyllableSynced: Boolean(ttml && ttml.includes('<span')),
+                        isWordSynced: Boolean(ttml || (syncedLyrics && syncedLyrics.includes('<'))),
+                        provider: 'better-lyrics',
+                        translations: data.translations || null,
+                        romanization: data.romanization || data.romaji || null,
+                        trackName,
+                        artistName,
+                        albumName: data.album || '',
+                        duration: duration || data.duration || 0
+                    };
+                }
+            }
+        }
+        catch (err) {
+            // Fall through to next provider
+        }
+    }
+    return null;
+}
 async function fetchLyrics(trackName, artistName, albumName, duration) {
     // 1. Check in-memory cache
     const cached = lyricsCache.get(trackName, artistName);
@@ -709,8 +763,15 @@ async function fetchLyrics(trackName, artistName, albumName, duration) {
         lyricsCache.set(trackName, artistName, diskCached);
         return diskCached;
     }
-    // 3. Fallback Chain: Apple Music -> Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
-    // A0. Apple Music
+    // 3. Fallback Chain: Better Lyrics -> Apple Music TTML -> Musixmatch -> LRCLIB -> YouTube Captions -> NetEase
+    // A0. Better Lyrics (Highest precision syllable TTML & word-sync)
+    const betterLyricsRes = await fetchBetterLyrics(trackName, artistName, duration);
+    if (betterLyricsRes) {
+        lyricsCache.set(trackName, artistName, betterLyricsRes);
+        await saveLyricsToDisk(trackName, artistName, betterLyricsRes);
+        return betterLyricsRes;
+    }
+    // A1. Apple Music
     const appleRes = await fetchAppleMusicLyrics(trackName, artistName);
     if (appleRes) {
         lyricsCache.set(trackName, artistName, appleRes);

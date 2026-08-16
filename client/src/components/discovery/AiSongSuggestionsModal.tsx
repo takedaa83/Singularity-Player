@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Play, Plus, Check, Disc } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { generateAiSongSuggestions, AiTrackRecommendation } from '../../services/aiRecommendationService';
+import { api } from '../../utils/api';
 
 interface AiSongSuggestionsModalProps {
   onClose: () => void;
@@ -29,16 +30,16 @@ export const AiSongSuggestionsModal: React.FC<AiSongSuggestionsModalProps> = ({ 
 
   const handleAddToQueue = (rec: AiTrackRecommendation) => {
     addToQueue(rec.track);
-    setAddedIds(new Set(addedIds).add(rec.track.id));
+    setAddedIds((prev) => new Set(prev).add(rec.track.id));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-xl rounded-2xl bg-neutral-900 border border-neutral-800 p-6 text-white shadow-2xl flex flex-col gap-6">
+      <div className="relative w-full max-w-lg rounded-2xl bg-neutral-900 border border-neutral-800 p-6 text-white shadow-2xl flex flex-col gap-6">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
-          aria-label="Close AI Song Suggestions"
+          aria-label="Close AI Suggestions"
         >
           <X className="w-5 h-5" />
         </button>
@@ -52,7 +53,11 @@ export const AiSongSuggestionsModal: React.FC<AiSongSuggestionsModalProps> = ({ 
 
         {currentTrack && (
           <div className="p-3.5 rounded-xl bg-black/40 border border-neutral-800 flex items-center gap-3">
-            <img src={currentTrack.coverUrl || '/icons.svg'} alt={currentTrack.title} className="w-12 h-12 rounded-lg object-cover" />
+            <img
+              src={api.coverUrl(currentTrack.coverArtUrl || (currentTrack as any).coverUrl, currentTrack.videoId) || '/icons.svg'}
+              alt={currentTrack.title}
+              className="w-12 h-12 rounded-lg object-cover border border-neutral-800"
+            />
             <div className="flex flex-col min-w-0">
               <span className="text-xs text-neutral-400 font-mono uppercase tracking-wider">Seed Track</span>
               <span className="text-sm font-semibold truncate">{currentTrack.title}</span>
@@ -70,7 +75,11 @@ export const AiSongSuggestionsModal: React.FC<AiSongSuggestionsModalProps> = ({ 
                 className="p-3 rounded-xl bg-neutral-800/40 border border-neutral-800 flex items-center justify-between gap-3 hover:bg-neutral-800/70 transition-all"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <img src={rec.track.coverUrl || '/icons.svg'} alt={rec.track.title} className="w-10 h-10 rounded-md object-cover" />
+                  <img
+                    src={api.coverUrl(rec.track.coverArtUrl || (rec.track as any).coverUrl, rec.track.videoId) || '/icons.svg'}
+                    alt={rec.track.title}
+                    className="w-10 h-10 rounded-md object-cover border border-neutral-800"
+                  />
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-semibold truncate">{rec.track.title}</span>
                     <span className="text-xs text-neutral-400 truncate">{rec.track.artist}</span>

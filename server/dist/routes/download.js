@@ -94,9 +94,9 @@ router.post('/batch', (req, res) => {
             // Determine file extension
             const ext = path.extname(track.filePath) || path.extname(track.originalName) || '.mp3';
             // Clean up names to prevent invalid ZIP folder characters
-            const cleanArtist = track.artist.replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
-            const cleanAlbum = track.album.replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
-            const cleanTitle = track.title.replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
+            const cleanArtist = (track.artist || 'Unknown Artist').replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
+            const cleanAlbum = (track.album || 'Unknown Album').replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
+            const cleanTitle = (track.title || 'Untitled Track').replace(/[\/\\?%*:|"<>\.]/g, '_').trim();
             // Structure folders: Artist / Album / Title.ext
             const zipPath = `${cleanArtist}/${cleanAlbum}/${cleanTitle}${ext}`;
             archive.file(fullPath, { name: zipPath });

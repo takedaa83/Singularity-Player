@@ -18,12 +18,12 @@ export async function precacheUpcomingQueue(queue: Track[], activeIndex: number)
   try {
     const cache = await caches.open(CACHE_NAME);
     for (const track of upcoming) {
-      if (track.audioUrl) {
-        const match = await cache.match(track.audioUrl);
+      if (track.streamUrl) {
+        const match = await cache.match(track.streamUrl);
         if (!match) {
           console.log(`[OfflinePrecache] Pre-caching audio stream: ${track.title}`);
-          fetch(track.audioUrl).then((res) => {
-            if (res.ok) cache.put(track.audioUrl, res);
+          fetch(track.streamUrl).then((res) => {
+            if (res.ok) cache.put(track.streamUrl, res);
           }).catch(() => {});
         }
       }

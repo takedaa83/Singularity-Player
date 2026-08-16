@@ -4,6 +4,7 @@ import { useToastStore } from './useToast';
 import { api } from '../utils/api';
 import { Track, SpatialAudioConfig } from '../types';
 import { resolveStreamOnClient, isBackendCloudHosted, fetchDurationOnClient } from '../utils/streamResolver';
+import { singularityEngine } from '../services/singularityEngine';
 
 // ─── External time store (avoids React re-renders at 60fps) ──────────
 type TimeListener = () => void;
@@ -686,6 +687,9 @@ export class AudioEngine {
 
     if (!nextTrackObj || this.prefetchedTrackId === nextTrackObj.id) return;
 
+    // Proactively pre-cache upcoming track metadata, stream links, and album art
+    singularityEngine.prefetchUpcomingTracks(queue, activeQueueIndex);
+
     const inactivePlayer = this.activePlayer === 1 ? this.audio2 : this.audio1;
     const targetSrc = this.getStreamUrlWithParams(nextTrackObj.streamUrl, streamingQuality);
 
@@ -940,7 +944,12 @@ export class AudioEngine {
       title: track.title,
       artist: track.artist,
       album: track.album || '',
-      artwork: coverUrl ? [{ src: coverUrl, sizes: '512x512', type: 'image/jpeg' }] : [],
+      artwork: coverUrl ? [
+        { src: coverUrl, sizes: '96x96', type: 'image/jpeg' },
+        { src: coverUrl, sizes: '128x128', type: 'image/jpeg' },
+        { src: coverUrl, sizes: '256x256', type: 'image/jpeg' },
+        { src: coverUrl, sizes: '512x512', type: 'image/jpeg' }
+      ] : [],
     });
 
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';

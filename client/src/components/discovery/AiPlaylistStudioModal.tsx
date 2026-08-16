@@ -7,6 +7,9 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Play, Plus, Check, Sliders, Activity, Zap, RefreshCw, BookmarkPlus, Info, Compass, Lock, Unlock, Network, ArrowRight } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useLibraryDB } from '../../hooks/useLibraryDB';
+import { useToast } from '../../hooks/useToast';
+import { api } from '../../utils/api';
 import {
   aiPlaylistStudioService,
   PlaylistMode,
@@ -28,6 +31,8 @@ export const AiPlaylistStudioModal: React.FC<AiPlaylistStudioModalProps> = ({
 }) => {
   const queue = usePlayerStore((s) => s.queue);
   const playTrack = usePlayerStore((s) => s.playTrack);
+  const { savePlaylist, saveTracksBulk } = useLibraryDB();
+  const { toast } = useToast();
 
   const [prompt, setPrompt] = useState('Late-night rainy lo-fi beats with smooth saxophone');
   const [refinementPrompt, setRefinementPrompt] = useState('');
@@ -79,10 +84,30 @@ export const AiPlaylistStudioModal: React.FC<AiPlaylistStudioModalProps> = ({
     setGeneratedPlaylist({ ...generatedPlaylist, tracks: updatedTracks });
   };
 
-  const handleSaveToLibrary = () => {
+  const handleSaveToLibrary = async () => {
     if (!generatedPlaylist) return;
-    setIsSaved(true);
-    if (onPlaylistSaved) onPlaylistSaved();
+    try {
+      const playlistId = `ai-playlist-${Date.now()}`;
+      const playlistTracks = generatedPlaylist.tracks.map(t => t.track);
+      
+      await saveTracksBulk(playlistTracks);
+      await savePlaylist({
+        id: playlistId,
+        name: generatedPlaylist.title,
+        description: generatedPlaylist.description,
+        coverUrl: null,
+        trackIds: playlistTracks.map(t => t.id),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      setIsSaved(true);
+      toast(`Saved "${generatedPlaylist.title}" to your library!`, 'success');
+      if (onPlaylistSaved) onPlaylistSaved();
+    } catch (err) {
+      console.error('[AiPlaylistStudio] Failed to save playlist:', err);
+      toast('Failed to save playlist to library', 'error');
+    }
   };
 
   const handlePlayFirst = () => {
@@ -286,7 +311,7 @@ export const AiPlaylistStudioModal: React.FC<AiPlaylistStudioModalProps> = ({
                             {rec.locked ? <Lock className="w-3.5 h-3.5 text-amber-400" /> : <Unlock className="w-3.5 h-3.5" />}
                           </button>
                           <span className="w-4 text-center font-mono text-neutral-500 text-[11px]">{idx + 1}</span>
-                          <img src={rec.track.coverUrl || '/icons.svg'} alt={rec.track.title} className="w-8 h-8 rounded object-cover" />
+                          <img src={api.coverUrl(rec.track.coverArtUrl || (rec.track as any).coverUrl, rec.track.videoId) || '/icons.svg'} alt={rec.track.title} className="w-8 h-8 rounded object-cover" />
                           <div className="flex flex-col min-w-0">
                             <span className="font-semibold truncate">{rec.track.title}</span>
                             <span className="text-[10px] text-neutral-400 truncate">{rec.track.artist}</span>

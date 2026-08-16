@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, Sparkles, Activity, Disc, Heart, Zap } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
+import { getAudioFeatures } from '../../utils/musicMath';
 
 interface MusicalDnaModalProps {
   onClose: () => void;
@@ -8,17 +9,72 @@ interface MusicalDnaModalProps {
 
 export const MusicalDnaModal: React.FC<MusicalDnaModalProps> = ({ onClose }) => {
   const queue = usePlayerStore((s) => s.queue);
+  const currentTrack = usePlayerStore((s) => s.currentTrack);
   const favorites = usePlayerStore((s) => s.favorites);
 
-  // Derive DNA scores based on user queue/favorites metadata
-  const metrics = [
-    { label: 'Energy', value: 85, angle: 0 },
-    { label: 'Acousticness', value: 45, angle: 60 },
-    { label: 'Danceability', value: 78, angle: 120 },
-    { label: 'Valence (Mood)', value: 65, angle: 180 },
-    { label: 'Speechiness', value: 30, angle: 240 },
-    { label: 'Instrumentalness', value: 55, angle: 300 }
-  ];
+  // Compute live acoustic feature vectors from user library / queue
+  const { metrics, avgBpm, topVibe } = useMemo(() => {
+    const candidateTracks = queue.length > 0 ? queue : (currentTrack ? [currentTrack] : []);
+    if (candidateTracks.length === 0) {
+      return {
+        metrics: [
+          { label: 'Energy', value: 70, angle: 0 },
+          { label: 'Acousticness', value: 40, angle: 60 },
+          { label: 'Danceability', value: 65, angle: 120 },
+          { label: 'Valence (Mood)', value: 60, angle: 180 },
+          { label: 'Speechiness', value: 35, angle: 240 },
+          { label: 'Instrumentalness', value: 50, angle: 300 }
+        ],
+        avgBpm: 120,
+        topVibe: 'Eclectic Fusion'
+      };
+    }
+
+    let totalEnergy = 0;
+    let totalAcoustic = 0;
+    let totalDance = 0;
+    let totalValence = 0;
+    let totalInstrumental = 0;
+    let totalBpm = 0;
+
+    candidateTracks.forEach((t) => {
+      const f = getAudioFeatures(t);
+      totalEnergy += f.energy;
+      totalAcoustic += f.acousticness;
+      totalDance += f.danceability;
+      totalValence += f.valence;
+      totalInstrumental += f.instrumentalness;
+      totalBpm += f.bpm;
+    });
+
+    const len = candidateTracks.length;
+    const energyVal = Math.round((totalEnergy / len) * 100);
+    const acousticVal = Math.round((totalAcoustic / len) * 100);
+    const danceVal = Math.round((totalDance / len) * 100);
+    const valenceVal = Math.round((totalValence / len) * 100);
+    const instrumentalVal = Math.round((totalInstrumental / len) * 100);
+    const speechVal = Math.round(((totalEnergy + totalDance) / (2 * len)) * 60);
+    const meanBpm = Math.round(totalBpm / len);
+
+    let vibe = 'Dynamic Pop & Melodic Flow';
+    if (energyVal > 75 && danceVal > 70) vibe = 'High-Energy Electronic / Dance';
+    else if (acousticVal > 60) vibe = 'Warm Acoustic & Organic Indie';
+    else if (valenceVal > 70) vibe = 'Euphoric & Upbeat Vibes';
+    else if (instrumentalVal > 60) vibe = 'Atmospheric Ambient / Lo-Fi';
+
+    return {
+      metrics: [
+        { label: 'Energy', value: Math.max(15, Math.min(100, energyVal)), angle: 0 },
+        { label: 'Acousticness', value: Math.max(15, Math.min(100, acousticVal)), angle: 60 },
+        { label: 'Danceability', value: Math.max(15, Math.min(100, danceVal)), angle: 120 },
+        { label: 'Valence (Mood)', value: Math.max(15, Math.min(100, valenceVal)), angle: 180 },
+        { label: 'Speechiness', value: Math.max(15, Math.min(100, speechVal)), angle: 240 },
+        { label: 'Instrumentalness', value: Math.max(15, Math.min(100, instrumentalVal)), angle: 300 }
+      ],
+      avgBpm: meanBpm,
+      topVibe: vibe
+    };
+  }, [queue, currentTrack]);
 
   const size = 300;
   const center = size / 2;
@@ -105,11 +161,11 @@ export const MusicalDnaModal: React.FC<MusicalDnaModalProps> = ({ onClose }) => 
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="p-3 rounded-lg bg-neutral-800/50 border border-neutral-800">
             <span className="text-neutral-400 block mb-1">Primary Sound Vibe</span>
-            <span className="font-semibold text-cyan-300">High-Energy Electronic</span>
+            <span className="font-semibold text-cyan-300 truncate block">{topVibe}</span>
           </div>
           <div className="p-3 rounded-lg bg-neutral-800/50 border border-neutral-800">
-            <span className="text-neutral-400 block mb-1">Favorite Tempo</span>
-            <span className="font-semibold text-cyan-300">124 BPM</span>
+            <span className="text-neutral-400 block mb-1">Mean Track Tempo</span>
+            <span className="font-semibold text-cyan-300">{avgBpm} BPM</span>
           </div>
         </div>
       </div>

@@ -191,12 +191,15 @@ export const TrackScrollRowItem: React.FC<{
 
     hoverTimeoutRef.current = setTimeout(() => {
       if (previewAudioRef.current) {
-        previewAudioRef.current.pause();
+        try {
+          previewAudioRef.current.pause();
+          previewAudioRef.current.src = '';
+        } catch {}
       }
       const audio = new Audio(streamUrl);
       audio.volume = 0.15;
       previewAudioRef.current = audio;
-      audio.play().catch(e => {
+      audio.play().catch((e) => {
         if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') {
           console.warn('Preview audio playback failed or was interrupted:', e);
         }
@@ -211,7 +214,10 @@ export const TrackScrollRowItem: React.FC<{
       hoverTimeoutRef.current = null;
     }
     if (previewAudioRef.current) {
-      previewAudioRef.current.pause();
+      try {
+        previewAudioRef.current.pause();
+        previewAudioRef.current.src = '';
+      } catch {}
       previewAudioRef.current = null;
     }
   };
@@ -222,7 +228,11 @@ export const TrackScrollRowItem: React.FC<{
         clearTimeout(hoverTimeoutRef.current);
       }
       if (previewAudioRef.current) {
-        previewAudioRef.current.pause();
+        try {
+          previewAudioRef.current.pause();
+          previewAudioRef.current.src = '';
+        } catch {}
+        previewAudioRef.current = null;
       }
     };
   }, []);
@@ -677,34 +687,35 @@ const QuickPlayGridItem: React.FC<QuickPlayGridItemProps> = ({
           )}
         </Box>
 
-        {/* Floating Green Spotify-Style Play Button on Hover */}
+        {/* Floating Apple-Style Play Button on Hover */}
         <Box
           className="quick-play-btn"
           sx={{
             opacity: isCurrentlyActive ? 1 : 0,
-            transform: isCurrentlyActive ? 'scale(1)' : 'scale(0.7)',
-            width: 40,
-            height: 40,
+            transform: isCurrentlyActive ? 'scale(1)' : 'scale(0.8)',
+            width: 38,
+            height: 38,
             borderRadius: '50%',
-            bgcolor: tokens.colors.primary,
-            color: '#000',
+            bgcolor: '#ffffff',
+            color: '#000000',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             mr: 2,
             flexShrink: 0,
-            boxShadow: '0 6px 18px rgba(0,0,0,0.5)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
             transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
             zIndex: 2,
             '&:hover': {
               transform: 'scale(1.1) !important',
+              bgcolor: '#f4f4f5',
             }
           }}
         >
           {isCurrentlyActive ? (
-            <PauseIcon sx={{ fontSize: 22, color: '#000' }} />
+            <PauseIcon sx={{ fontSize: 20, color: '#000000' }} />
           ) : (
-            <PlayArrowIcon sx={{ fontSize: 22, ml: 0.2, color: '#000' }} />
+            <PlayArrowIcon sx={{ fontSize: 20, ml: 0.2, color: '#000000' }} />
           )}
         </Box>
 
@@ -1812,7 +1823,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <motion.div className="gsap-section" variants={fadeUpVariants}>
             <SectionHeader
               title="Recently Played"
-              icon={<AccessTimeIcon sx={{ fontSize: 20, color: tokens.colors.textTertiary }} />}
+              icon={<AccessTimeIcon sx={{ fontSize: 20, color: 'var(--text-tertiary)' }} />}
               onSeeAll={() => onNavigate('history')}
             />
             <TrackScrollRow
@@ -1832,7 +1843,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <SectionHeader
               title="Recommended Tracks"
               subtitle="Suggested songs based on your listening style"
-              icon={<PlayCircleIcon sx={{ fontSize: 20, color: tokens.colors.primary }} />}
+              icon={<PlayCircleIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
             />
             <TrackScrollRow
               tracks={smartRecommendedTracks}
@@ -1850,7 +1861,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <motion.div className="gsap-section" variants={fadeUpVariants}>
             <SectionHeader
               title="Favorites"
-              icon={<FavoriteIcon sx={{ fontSize: 20, color: tokens.colors.accent.pink }} />}
+              icon={<FavoriteIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
               onSeeAll={() => onNavigate('favorites')}
             />
             <TrackScrollRow
@@ -1870,7 +1881,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <SectionHeader
               title="On Repeat"
               subtitle="Your absolute favorites right now"
-              icon={<PlayCircleIcon sx={{ fontSize: 20, color: tokens.colors.primary }} />}
+              icon={<PlayCircleIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
             />
             <TrackScrollRow
               tracks={onRepeatTracks}
@@ -1887,7 +1898,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <SectionHeader
               title="Heavy Rotation"
               subtitle="Tracks you've spent the most time with"
-              icon={<QueueMusicIcon sx={{ fontSize: 20, color: tokens.colors.accent.amber }} />}
+              icon={<QueueMusicIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
             />
             <TrackScrollRow
               tracks={heavyRotationTracks}
@@ -1904,7 +1915,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <SectionHeader
               title="Forgotten Gems"
               subtitle="Favorites you haven't played in a while"
-              icon={<ExploreIcon sx={{ fontSize: 20, color: tokens.colors.accent.cyan }} />}
+              icon={<ExploreIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
             />
             <TrackScrollRow
               tracks={forgottenGemsTracks}
@@ -1923,7 +1934,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             <SectionHeader
               title="Curate a Vibe Mix"
               subtitle="Choose a mood to generate a custom-sequenced playlist from your library"
-              icon={<ExploreIcon sx={{ fontSize: 20, color: tokens.colors.primary }} />}
+              icon={<ExploreIcon sx={{ fontSize: 20, color: 'var(--primary)' }} />}
             />
             <Box
               sx={{

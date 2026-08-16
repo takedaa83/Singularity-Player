@@ -36,6 +36,9 @@ import { useAudioEngine, timeStore } from '../../hooks/useAudioEngine';
 import { tokens } from '../../theme/muiTheme';
 import { api } from '../../utils/api';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { parseTTML } from '../../utils/ttmlParser';
+import { romanizeText, hasCjkCharacters } from '../../utils/romanization';
+import { Languages, Globe2 } from 'lucide-react';
 
 interface LyricsPanelProps {
   onClose: () => void;
@@ -45,12 +48,18 @@ interface WordInfo {
   word: string;
   start: number; // absolute time in milliseconds
   end: number;   // absolute time in milliseconds
+  isBackground?: boolean;
 }
 
 interface LrcLine {
   time: number; // seconds
+  endTime?: number; // seconds
   text: string;
   words?: WordInfo[];
+  singer?: string; // 'v1' | 'v2'
+  isBackground?: boolean; // ad-lib / backing vocal
+  translation?: string;
+  romanization?: string;
 }
 
 interface SyncLine {
@@ -180,9 +189,22 @@ function computeVocalPresence(
 }
 
 function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
-  // Try to parse as JSON first
+  if (!lrc) return [];
+  const trimmed = lrc.trim();
+
+  // 1. Check for TTML (Timed Text Markup Language from Better Lyrics / Apple Music)
+  if (trimmed.includes('<tt') || (trimmed.includes('<p ') && (trimmed.includes('begin=') || trimmed.includes('<span')))) {
+    const ttmlResult = parseTTML(trimmed);
+    if (ttmlResult && ttmlResult.lines.length > 0) {
+      return ttmlResult.lines.map((l) => ({
+        ...l,
+        romanization: hasCjkCharacters(l.text) ? romanizeText(l.text) : undefined
+      }));
+    }
+  }
+
+  // 2. Try to parse as JSON
   try {
-    const trimmed = lrc.trim();
     if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
       const parsed = JSON.parse(trimmed);
       const lines: LrcLine[] = [];
@@ -191,17 +213,24 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
       for (const item of jsonLines) {
         const text = item.line || item.text || '';
         const startTimeMs = item.startTime !== undefined ? item.startTime : (item.start || item.time * 1000 || 0);
+        const endTimeMs = item.endTime !== undefined ? item.endTime : (item.end || 0);
         
         const words: WordInfo[] = (item.words || []).map((w: any) => ({
           word: w.text || w.word || '',
           start: w.start !== undefined ? w.start : (w.startTime || 0),
-          end: w.end !== undefined ? w.end : (w.endTime || 0)
+          end: w.end !== undefined ? w.end : (w.endTime || 0),
+          isBackground: w.isBackground || false
         }));
         
         lines.push({
           time: startTimeMs / 1000,
+          endTime: endTimeMs > 0 ? endTimeMs / 1000 : undefined,
           text,
-          words: words.length > 0 ? words : undefined
+          words: words.length > 0 ? words : undefined,
+          singer: item.singer || item.agent || undefined,
+          isBackground: item.isBackground || false,
+          translation: item.translation || undefined,
+          romanization: hasCjkCharacters(text) ? romanizeText(text) : undefined
         });
       }
       if (lines.length > 0) {
@@ -349,48 +378,55 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
         // Calculate dynamic vocal speed per character and word based on characters per second
         const rawCharsPerSec = totalChars / (lineDuration / 1000 || 1);
         let msPerChar = 35;
-        let msPerWord = 220;
+        let msPerWord = 200;
 
         if (rawCharsPerSec > 12) {
           // Super fast (e.g. rapid rap/singing)
           msPerChar = 18;
-          msPerWord = 120;
+          msPerWord = 110;
         } else if (rawCharsPerSec > 8) {
           // Fast (e.g. upbeat pop/rock)
-          msPerChar = 25;
-          msPerWord = 160;
+          msPerChar = 24;
+          msPerWord = 150;
         } else if (rawCharsPerSec < 4) {
           // Very slow / drawn out vocals
-          msPerChar = 50;
-          msPerWord = 300;
+          msPerChar = 48;
+          msPerWord = 280;
         }
 
         const vocalDuration = wordsArray.length * msPerWord + totalChars * msPerChar;
-        const minSingingFloor = Math.min(lineDuration, wordsArray.length * 150);
+        const minSingingFloor = Math.min(lineDuration, wordsArray.length * 160);
         const estimatedSingingDuration = Math.min(
           lineDuration,
           Math.max(minSingingFloor, vocalDuration)
         );
         
         // Adjust timing weights depending on characters-per-second density
-        let baseWeight = 180;
-        let charWeight = 40;
+        let baseWeight = 160;
+        let charWeight = 38;
         
         if (rawCharsPerSec > 12) {
-          baseWeight = 240;
+          baseWeight = 220;
           charWeight = 10;
         } else if (rawCharsPerSec > 8) {
-          baseWeight = 200;
-          charWeight = 25;
+          baseWeight = 190;
+          charWeight = 22;
         } else if (rawCharsPerSec < 4) {
-          baseWeight = 100;
-          charWeight = 60;
+          baseWeight = 110;
+          charWeight = 55;
         }
         
         const wordWeights = wordsArray.map(w => {
           const vowelCount = (w.match(/[aeiouáéíóúàèìòùâêîôûäëïöü]/gi) || []).length;
+          const diphthongs = (w.match(/(ai|ay|ea|ee|ei|ey|oa|oe|oi|oo|ou|ow|au|aw|ie|ui)/gi) || []).length;
           const consonantClusters = (w.match(/[^aeiouáéíóúàèìòùâêîôûäëïöü\s]{2,}/gi) || []).length;
-          return baseWeight + vowelCount * 70 + w.length * charWeight - consonantClusters * 15;
+          
+          // Punctuation cadence bonuses for natural human pauses
+          let punctuationBonus = 0;
+          if (/[,;:]$/.test(w)) punctuationBonus += 110;
+          if (/[.!?—…]$/.test(w)) punctuationBonus += 220;
+
+          return baseWeight + vowelCount * 60 + diphthongs * 80 + w.length * charWeight - consonantClusters * 12 + punctuationBonus;
         });
         const totalWeight = wordWeights.reduce((sum, w) => sum + w, 0) || 1;
         
@@ -710,6 +746,13 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
   const { seek, getAnalyser } = useAudioEngine();
 
   const [rawLrcText, setRawLrcText] = useState('');
+  const [providerName, setProviderName] = useState<string | null>(null);
+  const [showRomanization, setShowRomanization] = useState<boolean>(() => {
+    return localStorage.getItem('lyrics_show_romanization') !== 'false';
+  });
+  const [showTranslation, setShowTranslation] = useState<boolean>(() => {
+    return localStorage.getItem('lyrics_show_translation') === 'true';
+  });
   const [syncOffset, setSyncOffset] = useState(() => {
     const stored = localStorage.getItem('lyrics_sync_offset');
     if (stored) return parseInt(stored, 10);
@@ -1022,6 +1065,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         // Bulk DOM updates for all lyric lines (handles seeking and instant snapping)
         const allLines = document.querySelectorAll('.lyrics-line[data-line-index]');
         allLines.forEach(el => {
+          if (!el) return;
           const lineIdx = parseInt(el.getAttribute('data-line-index') || '-1', 10);
           if (lineIdx < newActiveIdx) {
             el.classList.add('completed');
@@ -1029,19 +1073,25 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             
             const words = el.querySelectorAll('.karaoke-word');
             words.forEach(w => {
-              w.classList.add('completed');
-              w.classList.remove('active');
-              (w as HTMLElement).style.setProperty('--word-progress', '100%');
-              (w as HTMLElement).style.setProperty('--word-energy', '0');
+              const htmlW = w as HTMLElement;
+              if (htmlW && htmlW.style) {
+                htmlW.classList.add('completed');
+                htmlW.classList.remove('active');
+                htmlW.style.setProperty('--word-progress', '100%');
+                htmlW.style.setProperty('--word-energy', '0');
+              }
             });
           } else if (lineIdx > newActiveIdx) {
             el.classList.remove('completed', 'active', 'active-line');
             
             const words = el.querySelectorAll('.karaoke-word');
             words.forEach(w => {
-              w.classList.remove('completed', 'active');
-              (w as HTMLElement).style.setProperty('--word-progress', '0%');
-              (w as HTMLElement).style.setProperty('--word-energy', '0');
+              const htmlW = w as HTMLElement;
+              if (htmlW && htmlW.style) {
+                htmlW.classList.remove('completed', 'active');
+                htmlW.style.setProperty('--word-progress', '0%');
+                htmlW.style.setProperty('--word-energy', '0');
+              }
             });
           } else if (lineIdx === newActiveIdx) {
             el.classList.add('active', 'active-line');
@@ -1049,30 +1099,37 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
             
             const words = el.querySelectorAll('.karaoke-word');
             words.forEach(w => {
-              w.classList.remove('completed', 'active');
-              (w as HTMLElement).style.setProperty('--word-progress', '0%');
-              (w as HTMLElement).style.setProperty('--word-energy', '0');
+              const htmlW = w as HTMLElement;
+              if (htmlW && htmlW.style) {
+                htmlW.classList.remove('completed', 'active');
+                htmlW.style.setProperty('--word-progress', '0%');
+                htmlW.style.setProperty('--word-energy', '0');
+              }
             });
           }
         });
 
-        // Pre-cache word timing data from React state instead of querySelector
+        // Pre-cache word timing data from React state with strict element verification
         const newActiveLine = syncedLines[newActiveIdx];
         const lineEl = document.querySelector(`.lyrics-line.active-line`) || document.querySelector(`[data-line-index="${newActiveIdx}"]`);
         if (lineEl && newActiveLine?.words) {
           const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
           wordEls.forEach(w => {
-            w.classList.remove('completed', 'active');
-            w.style.setProperty('--word-progress', '0%');
-            w.style.setProperty('--word-energy', '0');
+            if (w && w.style) {
+              w.classList.remove('completed', 'active');
+              w.style.setProperty('--word-progress', '0%');
+              w.style.setProperty('--word-energy', '0');
+            }
           });
-          wordCacheRef.current = newActiveLine.words.map((w, i) => ({
-            el: wordEls[i],
-            start: w.start,
-            end: w.end,
-            effectiveEnd: w.end,
-            state: 'pending' as const,
-          }));
+          wordCacheRef.current = newActiveLine.words
+            .map((w, i) => ({
+              el: wordEls[i],
+              start: w.start,
+              end: w.end,
+              effectiveEnd: w.end,
+              state: 'pending' as const,
+            }))
+            .filter((item): item is { el: HTMLElement; start: number; end: number; effectiveEnd: number; state: 'pending' } => Boolean(item.el && item.el.style));
         } else {
           wordCacheRef.current = [];
         }
@@ -1085,23 +1142,28 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         if (lineEl && newActiveLine?.words) {
           const wordEls = Array.from(lineEl.querySelectorAll('.karaoke-word')) as HTMLElement[];
           wordEls.forEach(w => {
-            w.classList.remove('completed', 'active');
-            w.style.setProperty('--word-progress', '0%');
-            w.style.setProperty('--word-energy', '0');
+            if (w && w.style) {
+              w.classList.remove('completed', 'active');
+              w.style.setProperty('--word-progress', '0%');
+              w.style.setProperty('--word-energy', '0');
+            }
           });
-          wordCacheRef.current = newActiveLine.words.map((w, i) => ({
-            el: wordEls[i],
-            start: w.start,
-            end: w.end,
-            effectiveEnd: w.end,
-            state: 'pending' as const,
-          }));
+          wordCacheRef.current = newActiveLine.words
+            .map((w, i) => ({
+              el: wordEls[i],
+              start: w.start,
+              end: w.end,
+              effectiveEnd: w.end,
+              state: 'pending' as const,
+            }))
+            .filter((item): item is { el: HTMLElement; start: number; end: number; effectiveEnd: number; state: 'pending' } => Boolean(item.el && item.el.style));
         }
       }
 
-      // ── Per-word loop ──
+      // ── Per-word loop (guaranteed null-safe) ──
       for (let i = 0; i < wordCacheRef.current.length; i++) {
         const word = wordCacheRef.current[i];
+        if (!word || !word.el || !word.el.style) continue;
         const nextWord = i < wordCacheRef.current.length - 1 ? wordCacheRef.current[i + 1] : null;
 
         // ── Not reached yet ──
@@ -1128,46 +1190,12 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         }
 
         // ── Active ──
-        if (timeMs <= word.effectiveEnd) {
-          if (word.state === 'completed') {
-            word.el.classList.remove('completed');
-            word.state = 'active';
-          }
-          const nominalDuration = word.end - word.start;
-
-          // Dynamic end extension: while energy is above threshold and we're past
-          // 55% of the nominal word, keep the effective end ~200ms ahead.
-          // Cap at 1.8× the original word duration or the next word's start to prevent runaway holds.
-          if (energy > HOLD_THRESHOLD && timeMs > word.start + nominalDuration * 0.55) {
-            let maxEnd = word.end + nominalDuration * 1.8;
-            if (nextWord) {
-              maxEnd = Math.min(maxEnd, nextWord.start);
-            }
-            word.effectiveEnd = Math.min(maxEnd, timeMs + 200);
-          }
-          // If energy dropped while we're past the LRC end, snap to complete in 80ms
-          if (timeMs > word.end && energy <= HOLD_THRESHOLD) {
-            word.effectiveEnd = Math.min(word.effectiveEnd, timeMs + 80);
-          }
-
-          const effectiveDuration = Math.max(1, word.effectiveEnd - word.start);
-          const t = Math.min(1, (timeMs - word.start) / effectiveDuration); // [0, 1]
-
-          // ── Energy-shaped progress curve ──
-          let progress: number;
-          if (energy > HOLD_THRESHOLD) {
-            const exponent = Math.max(0.25, 1.0 - energy * 1.2);
-            const holdCurve = 1 - Math.pow(1 - t, exponent);
-            const blend = Math.min(1, (energy - HOLD_THRESHOLD) * 5);
-            progress = t * (1 - blend) + holdCurve * blend;
-          } else {
-            progress = t;
-          }
-
-          progress = Math.max(0, Math.min(1, progress));
+        if (timeMs >= word.start && timeMs < word.end) {
+          const duration = Math.max(1, word.end - word.start);
+          const progress = Math.max(0, Math.min(1, (timeMs - word.start) / duration));
 
           word.el.style.setProperty('--word-progress', `${(progress * 100).toFixed(1)}%`);
-          word.el.style.setProperty('--word-energy', `${energy.toFixed(3)}`);
+          word.el.style.setProperty('--word-energy', '0');
 
           if (word.state !== 'active') {
             word.el.classList.add('active');
@@ -1176,7 +1204,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           }
 
         // ── Complete ──
-        } else if (timeMs > word.effectiveEnd && word.state !== 'completed') {
+        } else if (timeMs >= word.end && word.state !== 'completed') {
           word.el.style.setProperty('--word-progress', '100%');
           word.el.style.setProperty('--word-energy', '0');
           word.el.classList.replace('active', 'completed') || word.el.classList.add('completed');
@@ -1301,9 +1329,24 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
         const data = await res.json();
         let loadedSynced = false;
         
-        if (data.syncedLyrics) {
-          setRawLrcText(data.syncedLyrics);
-          setPlainLyrics(data.plainLyrics || data.syncedLyrics.replace(/\[\d+:\d+\.\d+\]/g, ''));
+        if (data.provider) {
+          const names: Record<string, string> = {
+            'better-lyrics': 'Better Lyrics ⚡',
+            'apple-music': 'Apple Music 🎵',
+            'musixmatch': 'Musixmatch',
+            'lrclib': 'LRCLIB 📝',
+            'netease': 'NetEase',
+            'youtube': 'YouTube Captions',
+          };
+          setProviderName(names[data.provider] || data.provider);
+        } else {
+          setProviderName(null);
+        }
+
+        const effectiveSynced = data.ttml || data.syncedLyrics;
+        if (effectiveSynced) {
+          setRawLrcText(effectiveSynced);
+          setPlainLyrics(data.plainLyrics || effectiveSynced.replace(/<[^>]+>/g, '').replace(/\[\d+:\d+\.\d+\]/g, ''));
           setHasLyrics(true);
           loadedSynced = true;
         }
@@ -1490,16 +1533,21 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           initial={{ x: 320, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 320, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
           className="w-full sm:w-80 h-full fixed sm:relative right-0 top-0 bottom-0 bg-neutral-950 sm:bg-neutral-900/90 sm:backdrop-blur-2xl flex flex-col py-6 px-4 text-white shrink-0 z-50 sm:z-40 border-l border-white/10 shadow-2xl overflow-hidden"
         >
           <div className="flex flex-col gap-5 h-full overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center px-2 shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Mic2 className="w-4 h-4 text-white" />
                 <h3 className="text-sm font-semibold tracking-wide">Lyrics</h3>
-                {syncedLines.length > 0 && (
+                {providerName && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[9px] font-bold tracking-wider border border-amber-500/30">
+                    {providerName}
+                  </span>
+                )}
+                {syncedLines.length > 0 && !providerName && (
                   <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1">
                     <Sparkles className="w-2.5 h-2.5 animate-pulse" />
                     Synced
@@ -1507,6 +1555,17 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                 )}
               </div>
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowRomanization(!showRomanization)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold transition-all border ${
+                    showRomanization
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                      : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                  }`}
+                  title="Toggle Romaji / Pinyin transliteration"
+                >
+                  あ/A
+                </button>
                 <IconButton onClick={() => setIsFullscreen(true)} size="small" sx={{ color: 'neutral.400' }} title="Full Screen View">
                   <Maximize2 size={14} />
                 </IconButton>
@@ -1568,6 +1627,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                     <div className="h-32" />
                     {syncedLines.map((line, idx) => {
                       const isActive = idx === activeLineIndex;
+                      const isBg = line.isBackground || line.singer === 'v2';
                       return (
                         <div
                           key={idx}
@@ -1575,23 +1635,30 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                           onClick={() => handleLineClick(line.time)}
                           data-line-index={idx}
                           className={`lyrics-line py-2.5 px-2 cursor-pointer rounded-lg transition-all duration-300 relative ${
+                            isBg ? 'text-right pl-6 italic' : 'text-left'
+                          } ${
                             isActive
                               ? 'active active-line text-white font-bold bg-white/5 shadow-sm'
                               : 'text-neutral-400 hover:text-white font-medium opacity-60'
                           }`}
                           style={{ 
                             fontSize: `${fontSize - 2}px`,
-                            transform: isActive ? 'scale(1.05) translate3d(0, 0, 0)' : 'scale(1.0) translate3d(0, 0, 0)',
-                            transformOrigin: 'left center',
-                            filter: isActive ? 'blur(0px)' : 'blur(0.3px)'
+                            transform: isActive ? 'scale(1.04) translate3d(0, 0, 0)' : 'scale(1.0) translate3d(0, 0, 0)',
+                            transformOrigin: isBg ? 'right center' : 'left center',
+                            opacity: isActive ? 1 : 0.45
                           }}
                         >
+                          {isBg && (
+                            <span className="inline-block mr-1.5 px-1 py-0.2 rounded bg-white/10 text-[9px] font-mono not-italic text-amber-300/90 align-middle">
+                              BG
+                            </span>
+                          )}
                           {line.words && line.words.length > 0 && wordHighlightEnabled ? (
                             <span className="inline-block transition-all duration-300">
                               {line.words.map((wordInfo, wIdx) => (
                                 <React.Fragment key={wIdx}>
                                   <span
-                                    className="karaoke-word"
+                                    className={`karaoke-word ${wordInfo.isBackground ? 'italic opacity-80' : ''}`}
                                     data-start={wordInfo.start}
                                     data-end={wordInfo.end}
                                   >
@@ -1603,6 +1670,18 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                             </span>
                           ) : (
                             line.text
+                          )}
+                          {/* Real-time Romanization / Romaji Subtitle */}
+                          {showRomanization && line.romanization && (
+                            <div className="text-[10px] font-mono text-amber-300/80 tracking-wide mt-0.5 opacity-90 not-italic">
+                              {line.romanization}
+                            </div>
+                          )}
+                          {/* Real-time Translation Subtitle */}
+                          {showTranslation && line.translation && (
+                            <div className="text-[10px] font-sans text-sky-300/80 mt-0.5 opacity-90 not-italic">
+                              {line.translation}
+                            </div>
                           )}
                         </div>
                       );
@@ -1681,104 +1760,77 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       {/* Full-Screen Immersive Karaoke / Sync Creator Mode */}
       <AnimatePresence>        {isFullscreen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, scale: 0.98, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 16 }}
+            transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
           >
-            {/* SVG Displacement Filter for Fluid/Organic Abstract Deformation */}
-            <svg style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}>
-              <defs>
-                <filter id="fluid-organic-distortion">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.0035" numOctaves="3" result="noise" />
-                  <feDisplacementMap in="SourceGraphic" in2="noise" scale="180" xChannelSelector="R" yChannelSelector="G" />
-                </filter>
-              </defs>
-            </svg>
-
-            {/* Smooth dynamic radial gradient backdrop centered behind the album art */}
-            <div 
-              className="absolute inset-0 transition-all duration-1000 ease-in-out z-0 pointer-events-none"
-              style={{
-                background: ambientColors && ambientColors.length >= 2 
-                  ? `radial-gradient(circle at 25% 50%, ${ambientColors[0]} 0%, ${ambientColors[1]} 55%, ${ambientColors[2] || '#000'} 100%)`
-                  : 'linear-gradient(135deg, #18181b 0%, #09090b 100%)',
-                filter: 'brightness(0.35) saturate(1.8)',
-                opacity: 1.0,
-              }}
-            />
-
-            {/* Dreamy Animated Floating Blobs for Soothing Ambient Pulsing */}
-            <div 
-              ref={ambientContainerRef}
-              className="absolute inset-0 overflow-hidden pointer-events-none z-0"
-              style={{ transformOrigin: 'center center', filter: 'url(#fluid-organic-distortion)' }}
-            >
-              {/* Blob 1 Wrapper */}
-              <div 
-                className="absolute w-[500px] h-[500px] animate-float-blob-1"
-                style={{ left: '10%', top: '15%' }}
-              >
+            {/* High-End Apple Music-style Frosted Glass Album Aura Backdrop */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+              {currentTrack?.coverArtUrl ? (
+                <img
+                  src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) || ''}
+                  alt=""
+                  className="w-full h-full object-cover filter blur-[100px] scale-125 opacity-30 brightness-75 contrast-125 transition-all duration-1000"
+                />
+              ) : (
                 <div 
-                  ref={blob1Ref}
-                  className="w-full h-full rounded-full filter blur-[90px] opacity-[0.38]"
+                  className="w-full h-full"
                   style={{
-                    background: ambientColors && ambientColors.length > 0 ? ambientColors[0] : 'rgba(168, 85, 247, 0.4)',
-                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
-                    transformOrigin: 'center center',
+                    background: ambientColors && ambientColors.length >= 2
+                      ? `radial-gradient(circle at 30% 40%, ${ambientColors[0]} 0%, ${ambientColors[1]} 60%, #050508 100%)`
+                      : 'linear-gradient(135deg, #18181f 0%, #09090b 100%)',
+                    filter: 'blur(80px) brightness(0.4)',
+                    opacity: 0.8
                   }}
                 />
-              </div>
-              {/* Blob 2 Wrapper */}
-              <div 
-                className="absolute w-[550px] h-[550px] animate-float-blob-2"
-                style={{ right: '12%', bottom: '10%' }}
-              >
-                <div 
-                  ref={blob2Ref}
-                  className="w-full h-full rounded-full filter blur-[110px] opacity-[0.32]"
-                  style={{
-                    background: ambientColors && ambientColors.length > 1 ? ambientColors[1] : 'rgba(236, 72, 153, 0.3)',
-                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
-                    transformOrigin: 'center center',
-                  }}
-                />
-              </div>
-              {/* Blob 3 Wrapper */}
-              <div 
-                className="absolute w-[450px] h-[450px] animate-float-blob-3"
-                style={{ left: '38%', top: '45%' }}
-              >
-                <div 
-                  ref={blob3Ref}
-                  className="w-full h-full rounded-full filter blur-[80px] opacity-[0.26]"
-                  style={{
-                    background: ambientColors && ambientColors.length > 2 ? ambientColors[2] : 'rgba(59, 130, 246, 0.25)',
-                    transition: 'background 1.5s ease-in-out, transform 0.15s cubic-bezier(0.1, 0.8, 0.2, 1)',
-                    transformOrigin: 'center center',
-                  }}
-                />
-              </div>
+              )}
+              {/* Refined Glassmorphic Darkening Veil */}
+              <div className="absolute inset-0 bg-neutral-950/70 backdrop-blur-[60px]" />
             </div>
 
-            {/* Dynamic Backdrop Blur & Dim Overlay that pulses to the beat */}
-            <div 
-              ref={backdropRef}
-              className="absolute inset-0 backdrop-blur-[110px] pointer-events-none z-0"
-              style={{
-                background: 'rgba(0, 0, 0, 0.65)',
-              }}
-            />
+            {/* Top Bar: Close Button top-left, Settings/Toggles top-right */}
+            <div className="absolute top-6 left-6 right-6 z-30 flex items-center justify-between pointer-events-none">
+              <button
+                onClick={() => { setIsFullscreen(false); setIsSyncMode(false); }}
+                className="p-3 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-neutral-300 hover:text-white pointer-events-auto backdrop-blur-md border border-white/10"
+                title="Close Fullscreen"
+              >
+                <X size={20} />
+              </button>
 
-            {/* Close Button top-left */}
-            <button
-              onClick={() => { setIsFullscreen(false); setIsSyncMode(false); }}
-              className="absolute top-6 left-6 z-30 p-3 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 transition-all text-neutral-400 hover:text-white"
-              title="Close Fullscreen"
-            >
-              <X size={20} />
-            </button>
+              <div className="flex items-center gap-2 pointer-events-auto backdrop-blur-md bg-black/30 p-1.5 rounded-full border border-white/10">
+                {providerName && (
+                  <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-wider border border-amber-500/30 flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    {providerName}
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowRomanization(!showRomanization)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                    showRomanization
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm'
+                      : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                  }`}
+                  title="Toggle CJK Romaji / Pinyin transliteration"
+                >
+                  あ/A Romaji
+                </button>
+                <button
+                  onClick={() => setShowTranslation(!showTranslation)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                    showTranslation
+                      ? 'bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm'
+                      : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                  }`}
+                  title="Toggle real-time lyrics translation"
+                >
+                  文/A Subtitles
+                </button>
+              </div>
+            </div>
 
             {/* Immersive Lyrics Scrolling View (Standard Split Screen) */}
             {!isSyncMode && (
@@ -1819,43 +1871,68 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                       {syncedLines.length > 0 ? (
                         syncedLines.map((line, idx) => {
                           const isActive = idx === activeLineIndex;
+                          const isBg = line.isBackground || line.singer === 'v2';
                           return (
                             <div
                               key={idx}
                               ref={isActive ? activeFullLineRef : undefined}
                               onClick={() => handleLineClick(line.time)}
                               data-line-index={idx}
-                              className={`lyrics-line py-4 px-2 cursor-pointer transition-all duration-500 text-left select-none my-6 flex items-start justify-start origin-left ${
+                              className={`lyrics-line py-4 px-2 cursor-pointer transition-all duration-500 select-none my-6 flex flex-col ${
+                                isBg ? 'items-end text-right origin-right' : 'items-start text-left origin-left'
+                              } ${
                                 isActive ? 'active active-line' : ''
                               }`}
                               style={{
                                 fontSize: `${fontSize + 12}px`,
-                                lineHeight: 1.5,
-                                opacity: isActive ? 1.0 : 0.30,
-                                transform: isActive ? 'scale(1.12) translate3d(0, 0, 0)' : 'scale(0.92) translate3d(0, 0, 0)',
-                                filter: isActive ? 'blur(0px)' : 'blur(1.2px)',
+                                lineHeight: 1.45,
+                                opacity: isActive ? 1.0 : (isBg ? 0.25 : 0.35),
+                                transform: isActive ? 'scale(1.08) translate3d(0, 0, 0)' : 'scale(0.95) translate3d(0, 0, 0)',
                                 color: 'white',
                                 fontWeight: isActive ? 800 : 700,
                                 letterSpacing: '-0.02em'
                               }}
                             >
-                              {line.words && line.words.length > 0 && wordHighlightEnabled ? (
-                                <span className="inline-block transition-all duration-300">
-                                  {line.words.map((wordInfo, wIdx) => (
-                                    <React.Fragment key={wIdx}>
-                                      <span
-                                        className="karaoke-word inline-block"
-                                        data-start={wordInfo.start}
-                                        data-end={wordInfo.end}
-                                      >
-                                        {wordInfo.word}
-                                      </span>
-                                      {wIdx < line.words!.length - 1 && ' '}
-                                    </React.Fragment>
-                                  ))}
-                                </span>
-                              ) : (
-                                line.text
+                              <div className="flex items-center gap-2">
+                                {isBg && (
+                                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-mono font-medium not-italic text-amber-300/90 border border-white/10">
+                                    Ad-lib / Harmony
+                                  </span>
+                                )}
+                                <div className={isBg ? 'italic' : ''}>
+                                  {line.words && line.words.length > 0 && wordHighlightEnabled ? (
+                                    <span className="inline-block transition-all duration-300">
+                                      {line.words.map((wordInfo, wIdx) => (
+                                        <React.Fragment key={wIdx}>
+                                          <span
+                                            className={`karaoke-word inline-block ${wordInfo.isBackground ? 'italic opacity-85' : ''}`}
+                                            data-start={wordInfo.start}
+                                            data-end={wordInfo.end}
+                                          >
+                                            {wordInfo.word}
+                                          </span>
+                                          {wIdx < line.words!.length - 1 && ' '}
+                                        </React.Fragment>
+                                      ))}
+                                    </span>
+                                  ) : (
+                                    line.text
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Real-time Romanization / Romaji Subtitle */}
+                              {showRomanization && line.romanization && (
+                                <div className="text-sm font-mono text-amber-300/80 tracking-wide mt-1 opacity-90 not-italic font-normal">
+                                  {line.romanization}
+                                </div>
+                              )}
+
+                              {/* Real-time Translation Subtitle */}
+                              {showTranslation && line.translation && (
+                                <div className="text-sm font-sans text-sky-300/85 mt-1 opacity-90 not-italic font-normal">
+                                  {line.translation}
+                                </div>
                               )}
                             </div>
                           );

@@ -21,6 +21,19 @@ export interface DownloadJob {
 class DownloadManager extends EventEmitter {
   private jobs = new Map<string, DownloadJob>();
   private activeProcesses = new Map<string, ChildProcess>();
+  private readonly MAX_COMPLETED_HISTORY = 100;
+
+  private pruneOldJobs() {
+    const finished = Array.from(this.jobs.entries())
+      .filter(([_, job]) => job.status === 'completed' || job.status === 'failed');
+
+    if (finished.length > this.MAX_COMPLETED_HISTORY) {
+      const toRemove = finished.slice(0, finished.length - this.MAX_COMPLETED_HISTORY);
+      for (const [id] of toRemove) {
+        this.jobs.delete(id);
+      }
+    }
+  }
 
   getJob(id: string): DownloadJob | undefined {
     return this.jobs.get(id);
@@ -30,6 +43,8 @@ class DownloadManager extends EventEmitter {
     if (!isValidVideoId(videoId)) {
       throw new Error('Invalid Video ID');
     }
+
+    this.pruneOldJobs();
 
     const jobId = `job-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
     const job: DownloadJob = {

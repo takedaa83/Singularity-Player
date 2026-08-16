@@ -36,7 +36,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   onOpenAiMastering,
   onOpenFocusMode,
   onOpenMusicalDna,
-  onOpenAiSuggestions
+  onOpenAiSuggestions,
+  onOpenAiPlaylistStudio,
 }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
