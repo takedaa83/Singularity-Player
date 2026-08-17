@@ -760,12 +760,12 @@ input[type="range"]::-webkit-slider-runnable-track {
   position: relative;
   display: inline-block;
   --word-progress: 0%;
-  color: rgba(255, 255, 255, 0.30);
+  --word-energy: 0;
+  color: rgba(255, 255, 255, 0.35);
   transform: scale(1.0);
   transform-origin: left center;
-  margin-right: 0.06em;
-  will-change: background;
-  transition: color 0.2s ease;
+  will-change: background, transform;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
 }
 
 .karaoke-word.active {
@@ -773,12 +773,14 @@ input[type="range"]::-webkit-slider-runnable-track {
     90deg,
     #ffffff 0%,
     #ffffff var(--word-progress, 0%),
-    rgba(255, 255, 255, 0.30) var(--word-progress, 0%),
-    rgba(255, 255, 255, 0.30) 100%
+    rgba(255, 255, 255, 0.35) var(--word-progress, 0%),
+    rgba(255, 255, 255, 0.35) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  transform: scale(calc(1 + var(--word-energy, 0) * 0.12));
+  filter: drop-shadow(0 0 calc(var(--word-energy, 0) * 16px) rgba(255, 255, 255, 0.75));
 }
 
 .karaoke-word.completed {
@@ -787,10 +789,12 @@ input[type="range"]::-webkit-slider-runnable-track {
   -webkit-text-fill-color: #ffffff !important;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
+  transform: scale(1.0);
 }
 
 .light .karaoke-word {
-  color: rgba(17, 24, 39, 0.28);
+  color: rgba(17, 24, 39, 0.30);
+  --word-energy: 0;
 }
 
 .light .karaoke-word.active {
@@ -798,12 +802,13 @@ input[type="range"]::-webkit-slider-runnable-track {
     90deg,
     #111827 0%,
     #111827 var(--word-progress, 0%),
-    rgba(17, 24, 39, 0.28) var(--word-progress, 0%),
-    rgba(17, 24, 39, 0.28) 100%
+    rgba(17, 24, 39, 0.30) var(--word-progress, 0%),
+    rgba(17, 24, 39, 0.30) 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  transform: scale(calc(1 + var(--word-energy, 0) * 0.10));
 }
 
 .light .karaoke-word.completed {
@@ -812,6 +817,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   -webkit-text-fill-color: #111827 !important;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
+  transform: scale(1.0);
 }
 
 /* ── Hide scrollbars while keeping functionality ── */

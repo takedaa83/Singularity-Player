@@ -9,6 +9,7 @@ export interface TtmlWord {
   start: number; // milliseconds
   end: number;   // milliseconds
   isBackground?: boolean;
+  hasTrailingSpace?: boolean;
 }
 
 export interface TtmlLine {
@@ -16,6 +17,7 @@ export interface TtmlLine {
   endTime?: number; // seconds
   text: string;
   words?: TtmlWord[];
+  backgroundWords?: TtmlWord[];
   singer?: string; // 'v1' | 'v2' | string
   isBackground?: boolean; // ad-lib / backing vocal
   translation?: string;
@@ -113,6 +115,7 @@ function extractLinesFromDoc(doc: Document): TtmlParseResult {
 
     const spanElements = p.querySelectorAll('span');
     const words: TtmlWord[] = [];
+    const bgWords: TtmlWord[] = [];
     let lineText = '';
 
     if (spanElements.length > 0) {
@@ -125,20 +128,29 @@ function extractLinesFromDoc(doc: Document): TtmlParseResult {
 
         const wStart = spanBegin ? parseTimestampToMs(spanBegin) : lineStartMs;
         const wEnd = spanEnd ? parseTimestampToMs(spanEnd) : (lineEndMs || wStart + 300);
-        const wText = span.textContent || '';
+        const rawSpanText = span.textContent || '';
+        const hasTrailing = /\s$/.test(rawSpanText) || span.nextSibling?.nodeType === Node.TEXT_NODE;
+        const trimmedSpanText = rawSpanText.trim();
 
-        if (wText.trim()) {
+        if (trimmedSpanText) {
           // If span contains word without spaces, check if syllable
-          if (wText.length > 0 && !wText.includes(' ')) {
+          if (trimmedSpanText.length > 0 && !trimmedSpanText.includes(' ')) {
             isSyllableSynced = true;
           }
 
-          words.push({
-            word: wText,
+          const wordObj: TtmlWord = {
+            word: trimmedSpanText,
             start: wStart,
             end: wEnd,
-            isBackground: isSpanBg
-          });
+            isBackground: isSpanBg,
+            hasTrailingSpace: hasTrailing
+          };
+
+          if (isSpanBg && !isLineBg) {
+            bgWords.push(wordObj);
+          } else {
+            words.push(wordObj);
+          }
         }
       });
 
@@ -153,6 +165,7 @@ function extractLinesFromDoc(doc: Document): TtmlParseResult {
         endTime: lineEndMs ? lineEndMs / 1000 : undefined,
         text: lineText.trim(),
         words: words.length > 0 ? words : undefined,
+        backgroundWords: bgWords.length > 0 ? bgWords : undefined,
         singer: agentAttr || undefined,
         isBackground: isLineBg,
       });

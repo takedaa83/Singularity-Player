@@ -273,7 +273,12 @@ async function fetchAppleMusicLyrics(trackName, artistName, retryCount = 0) {
         const lyricsJson = await lyricsRes.json();
         let syncedLyrics = null;
         let plainLyrics = lyricsJson.plain || null;
-        if (lyricsJson.elrcMultiPerson) {
+        let ttml = lyricsJson.ttml || null;
+        if (lyricsJson.ttml && typeof lyricsJson.ttml === 'string' && lyricsJson.ttml.includes('<tt')) {
+            ttml = lyricsJson.ttml;
+            syncedLyrics = lyricsJson.ttml;
+        }
+        else if (lyricsJson.elrcMultiPerson) {
             syncedLyrics = lyricsJson.elrcMultiPerson;
         }
         else if (lyricsJson.elrc) {
@@ -285,25 +290,27 @@ async function fetchAppleMusicLyrics(trackName, artistName, retryCount = 0) {
             for (const line of lyricsJson.content) {
                 const timeMs = line.timestamp || 0;
                 const timeStr = formatLrcMs(timeMs);
-                const lineText = line.text && Array.isArray(line.text)
-                    ? line.text.map((w) => w.text).join(' ')
-                    : '';
-                if (lineText.trim()) {
-                    let agentPrefix = '';
-                    if (line.background)
-                        agentPrefix = '{bg}';
-                    else if (line.oppositeTurn)
-                        agentPrefix = '{agent:v2}';
-                    lrcLines.push(`[${timeStr}]${agentPrefix}${lineText}`);
-                    plainLines.push(lineText);
-                    if (line.text && line.text.length > 0) {
-                        const wordTimings = line.text.map((w) => {
-                            const startSec = (w.timestamp || 0) / 1000;
-                            const endSec = (w.endtime || 0) / 1000;
-                            return `${w.text}:${startSec.toFixed(3)}:${endSec.toFixed(3)}`;
-                        }).join('|');
-                        lrcLines.push(`<${wordTimings}>`);
+                let agentPrefix = '';
+                if (line.background)
+                    agentPrefix = '{bg}';
+                else if (line.oppositeTurn)
+                    agentPrefix = '{agent:v2}';
+                if (Array.isArray(line.text) && line.text.length > 0) {
+                    let lineStr = `[${timeStr}]${agentPrefix}`;
+                    let plainStr = '';
+                    for (const w of line.text) {
+                        const wTimeMs = w.timestamp !== undefined ? w.timestamp : timeMs;
+                        const wTimeStr = formatLrcMs(wTimeMs);
+                        const wText = w.text || '';
+                        lineStr += `<${wTimeStr}>${wText} `;
+                        plainStr += wText + ' ';
                     }
+                    lrcLines.push(lineStr.trimEnd());
+                    plainLines.push(plainStr.trimEnd());
+                }
+                else if (typeof line.text === 'string' && line.text.trim()) {
+                    lrcLines.push(`[${timeStr}]${agentPrefix}${line.text.trim()}`);
+                    plainLines.push(line.text.trim());
                 }
             }
             syncedLyrics = lrcLines.join('\n');
@@ -311,12 +318,16 @@ async function fetchAppleMusicLyrics(trackName, artistName, retryCount = 0) {
                 plainLyrics = plainLines.join('\n');
             }
         }
-        if (!syncedLyrics && !plainLyrics) {
+        if (!syncedLyrics && !plainLyrics && !ttml) {
             return null;
         }
         return {
-            syncedLyrics,
+            syncedLyrics: syncedLyrics || ttml,
             plainLyrics,
+            ttml,
+            isSyllableSynced: Boolean(ttml && ttml.includes('<span')),
+            isWordSynced: Boolean(ttml || (syncedLyrics && syncedLyrics.includes('<'))),
+            provider: 'apple-music',
             trackName: attr.name || trackName,
             artistName: attr.artistName || artistName,
             albumName,

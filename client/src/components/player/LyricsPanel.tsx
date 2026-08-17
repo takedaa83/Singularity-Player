@@ -49,6 +49,7 @@ interface WordInfo {
   start: number; // absolute time in milliseconds
   end: number;   // absolute time in milliseconds
   isBackground?: boolean;
+  hasTrailingSpace?: boolean;
 }
 
 interface LrcLine {
@@ -56,6 +57,7 @@ interface LrcLine {
   endTime?: number; // seconds
   text: string;
   words?: WordInfo[];
+  backgroundWords?: WordInfo[];
   singer?: string; // 'v1' | 'v2'
   isBackground?: boolean; // ad-lib / backing vocal
   translation?: string;
@@ -242,6 +244,13 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
   }
 
   const lines: LrcLine[] = [];
+  // Parse global [offset:±ms] metadata tag if present
+  let globalOffsetMs = 0;
+  const offsetMatch = lrc.match(/\[offset:\s*([+-]?\d+)\s*\]/i);
+  if (offsetMatch) {
+    globalOffsetMs = parseInt(offsetMatch[1], 10) || 0;
+  }
+
   // Matches [MM:SS.xx], [MM:SS.xxx], [MM:SS], [M:SS], [H:MM:SS] etc. with optional spaces
   const lineRegex = /^\[\s*(\d+)\s*:\s*(\d+)\s*(?:[.:]\s*(\d+))?\s*\](.*)/;
   const rawLines = lrc.split('\n');
@@ -257,7 +266,7 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
       const seconds = parseInt(match[2], 10);
       const msVal = match[3] ? match[3].padEnd(3, '0').substring(0, 3) : '000';
       const ms = parseInt(msVal, 10);
-      const lineTime = (minutes * 60 + seconds) * 1000 + ms;
+      const lineTime = (minutes * 60 + seconds) * 1000 + ms + globalOffsetMs;
       const content = match[4].trim();
       if (content) {
         tempParsed.push({ lineTime, content });
@@ -271,106 +280,57 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
     const curr = tempParsed[i];
     const next = tempParsed[i + 1];
     const nextLineTime = next ? next.lineTime : curr.lineTime + 8000;
-    // Matches any word tag like <MM:SS.xx>, <SS.xx>, <M:SS.xx> with optional spaces
-    const wordTagRegex = /<\s*(?:(\d+)\s*:\s*)?(\d+)\s*(?:[.:]\s*(\d+))?\s*>/g;
     
+    // Check for Enhanced LRC word tags (e.g. <00:14.50>word <00:15.20>word)
     if (curr.content.includes('<')) {
       const words: WordInfo[] = [];
-      const tags: { time: number; index: number; text: string }[] = [];
-      let match;
+      const tagRegex = /<\s*(?:(\d+)\s*:\s*)?(\d+)\s*(?:[.:]\s*(\d+))?\s*>([^<]*)/g;
+      let tagMatch;
+      let matchedAny = false;
 
-      wordTagRegex.lastIndex = 0;
-      while ((match = wordTagRegex.exec(curr.content)) !== null) {
-        const tagMin = match[1] ? parseInt(match[1], 10) : 0;
-        const tagSec = parseInt(match[2], 10);
-        const tagMsVal = match[3] ? match[3].padEnd(3, '0').substring(0, 3) : '000';
+      while ((tagMatch = tagRegex.exec(curr.content)) !== null) {
+        matchedAny = true;
+        const tagMin = tagMatch[1] ? parseInt(tagMatch[1], 10) : 0;
+        const tagSec = parseInt(tagMatch[2], 10);
+        const tagMsVal = tagMatch[3] ? tagMatch[3].padEnd(3, '0').substring(0, 3) : '000';
         const tagMs = parseInt(tagMsVal, 10);
-        const tagTime = (tagMin * 60 + tagSec) * 1000 + tagMs;
-        tags.push({ time: tagTime, index: match.index, text: match[0] });
-      }
-
-      let lastIndex = 0;
-      let lastTime = curr.lineTime;
-
-      for (let j = 0; j < tags.length; j++) {
-        const tag = tags[j];
-        const wordText = curr.content.substring(lastIndex, tag.index).trim();
+        const wordStart = (tagMin * 60 + tagSec) * 1000 + tagMs + globalOffsetMs;
+        const rawWordText = tagMatch[4] || '';
+        const hasTrailing = /\s$/.test(rawWordText);
+        const wordText = rawWordText.trim();
         if (wordText) {
-          const subWords = segmentText(wordText);
-          if (subWords.length > 1) {
-            const subDuration = tag.time - lastTime;
-            const subWordWeights = subWords.map(w => 150 + w.length * 50);
-            const totalSubWeight = subWordWeights.reduce((sum, w) => sum + w, 0) || 1;
-            
-            let runningSubTime = lastTime;
-            for (let k = 0; k < subWords.length; k++) {
-              const sw = subWords[k];
-              const swWeight = subWordWeights[k];
-              const swDuration = (swWeight / totalSubWeight) * subDuration;
-              words.push({
-                word: sw,
-                start: runningSubTime,
-                end: runningSubTime + swDuration
-              });
-              runningSubTime += swDuration;
-            }
-          } else {
-            words.push({
-              word: wordText,
-              start: lastTime,
-              end: tag.time
-            });
-          }
-        }
-        lastTime = tag.time;
-        lastIndex = tag.index + tag.text.length;
-      }
-
-      const finalWordText = curr.content.substring(lastIndex).trim();
-      if (finalWordText) {
-        const maxFinalWordDuration = Math.min(nextLineTime - lastTime, Math.max(350, finalWordText.length * 70));
-        const subWords = segmentText(finalWordText);
-        if (subWords.length > 1) {
-          const subWordWeights = subWords.map(w => 150 + w.length * 50);
-          const totalSubWeight = subWordWeights.reduce((sum, w) => sum + w, 0) || 1;
-          
-          let runningSubTime = lastTime;
-          for (let k = 0; k < subWords.length; k++) {
-            const sw = subWords[k];
-            const swWeight = subWordWeights[k];
-            const swDuration = (swWeight / totalSubWeight) * maxFinalWordDuration;
-            words.push({
-              word: sw,
-              start: runningSubTime,
-              end: runningSubTime + swDuration
-            });
-            runningSubTime += swDuration;
-          }
-        } else {
           words.push({
-            word: finalWordText,
-            start: lastTime,
-            end: lastTime + maxFinalWordDuration
+            word: wordText,
+            start: wordStart,
+            end: wordStart + 300,
+            hasTrailingSpace: hasTrailing
           });
         }
       }
 
-      for (let j = 0; j < words.length; j++) {
-        const w = words[j];
-        const nextW = words[j + 1];
-        if (w.end <= w.start) {
-          w.end = nextW ? nextW.start : nextLineTime;
+      if (matchedAny && words.length > 0) {
+        for (let j = 0; j < words.length; j++) {
+          const w = words[j];
+          const nextW = words[j + 1];
+          if (nextW) {
+            w.end = nextW.start;
+          } else {
+            w.end = Math.min(nextLineTime, w.start + Math.max(350, w.word.length * 75));
+          }
         }
-      }
 
-      const cleanText = curr.content.replace(wordTagRegex, ' ').replace(/\s+/g, ' ').trim();
-      lines.push({
-        time: curr.lineTime / 1000,
-        text: cleanText,
-        words: words.length > 0 ? words : undefined
-      });
-    } else {
-      if (estimateWordSync) {
+        const cleanText = curr.content.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+        lines.push({
+          time: curr.lineTime / 1000,
+          endTime: nextLineTime / 1000,
+          text: cleanText,
+          words: words
+        });
+        continue;
+      }
+    }
+
+    if (estimateWordSync) {
         const wordsArray = segmentText(curr.content);
         const totalChars = curr.content.replace(/\s+/g, '').length || 1;
         const lineDuration = nextLineTime - curr.lineTime;
@@ -460,7 +420,6 @@ function parseLRC(lrc: string, estimateWordSync: boolean): LrcLine[] {
         });
       }
     }
-  }
 
   return lines;
 }
@@ -1017,6 +976,17 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       const isSeeking = Math.abs(timeMs - lastTimeMsRef.current) > 1000 || timeMs < lastTimeMsRef.current - 300;
       if (isSeeking || !isPlaying) {
         maxTimeMsRef.current = timeMs;
+        // Re-evaluate word cache on backward seeks within active line
+        if (isSeeking) {
+          wordCacheRef.current.forEach(w => {
+            if (w.el && w.el.style) {
+              w.state = 'pending';
+              w.el.classList.remove('completed', 'active');
+              w.el.style.setProperty('--word-progress', '0%');
+              w.el.style.setProperty('--word-energy', '0');
+            }
+          });
+        }
       } else {
         if (timeMs < maxTimeMsRef.current) {
           timeMs = maxTimeMsRef.current;
@@ -1045,16 +1015,18 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
       }
       
       wordEnergyRef.current = wordEnergyRef.current * 0.5 + vocalPresence * 0.5;
-      const energy = wordEnergyRef.current;
-      const HOLD_THRESHOLD = 0.16;
 
-      // 1. Update active line index
+      // 1. Update active line index (Binary Search for O(log N) efficiency)
       let newActiveIdx = -1;
-      for (let i = 0; i < syncedLines.length; i++) {
-        if (syncedLines[i].time * 1000 <= timeMs) {
-          newActiveIdx = i;
+      let low = 0;
+      let high = syncedLines.length - 1;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        if (syncedLines[mid].time * 1000 <= timeMs) {
+          newActiveIdx = mid;
+          low = mid + 1;
         } else {
-          break;
+          high = mid - 1;
         }
       }
 
@@ -1195,7 +1167,13 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
           const progress = Math.max(0, Math.min(1, (timeMs - word.start) / duration));
 
           word.el.style.setProperty('--word-progress', `${(progress * 100).toFixed(1)}%`);
-          word.el.style.setProperty('--word-energy', '0');
+
+          // Apple Music signature sustained-note vocal pulse
+          const isLongNote = duration > 750;
+          const activeEnergy = isLongNote 
+            ? Math.min(1, wordEnergyRef.current * 1.8) 
+            : Math.min(1, wordEnergyRef.current * 0.85);
+          word.el.style.setProperty('--word-energy', activeEnergy.toFixed(2));
 
           if (word.state !== 'active') {
             word.el.classList.add('active');
@@ -1622,68 +1600,105 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                 {!loading && !isEditing && syncedLines.length > 0 && (
                   <div
                     ref={lyricsContainerRef}
-                    className="flex-1 overflow-y-auto px-2 scroll-smooth relative no-scrollbar"
+                    className="flex-1 overflow-y-auto px-2 relative no-scrollbar"
                   >
                     <div className="h-32" />
                     {syncedLines.map((line, idx) => {
                       const isActive = idx === activeLineIndex;
                       const isBg = line.isBackground || line.singer === 'v2';
+                      const dist = Math.abs(idx - activeLineIndex);
+                      let lineOpacity = 0.18;
+                      let lineBlur = 2.2;
+                      if (isActive) {
+                        lineOpacity = 1;
+                        lineBlur = 0;
+                      } else if (dist === 1) {
+                        lineOpacity = 0.52;
+                        lineBlur = 0.5;
+                      } else if (dist === 2) {
+                        lineOpacity = 0.32;
+                        lineBlur = 1.2;
+                      }
+
                       return (
-                        <div
-                          key={idx}
-                          ref={isActive ? activeLineRef : undefined}
-                          onClick={() => handleLineClick(line.time)}
-                          data-line-index={idx}
-                          className={`lyrics-line py-2.5 px-2 cursor-pointer rounded-lg transition-all duration-300 relative ${
-                            isBg ? 'text-right pl-6 italic' : 'text-left'
-                          } ${
-                            isActive
-                              ? 'active active-line text-white font-bold bg-white/5 shadow-sm'
-                              : 'text-neutral-400 hover:text-white font-medium opacity-60'
-                          }`}
-                          style={{ 
-                            fontSize: `${fontSize - 2}px`,
-                            transform: isActive ? 'scale(1.04) translate3d(0, 0, 0)' : 'scale(1.0) translate3d(0, 0, 0)',
-                            transformOrigin: isBg ? 'right center' : 'left center',
-                            opacity: isActive ? 1 : 0.45
-                          }}
-                        >
-                          {isBg && (
-                            <span className="inline-block mr-1.5 px-1 py-0.2 rounded bg-white/10 text-[9px] font-mono not-italic text-amber-300/90 align-middle">
-                              BG
-                            </span>
-                          )}
-                          {line.words && line.words.length > 0 && wordHighlightEnabled ? (
-                            <span className="inline-block transition-all duration-300">
-                              {line.words.map((wordInfo, wIdx) => (
-                                <React.Fragment key={wIdx}>
-                                  <span
-                                    className={`karaoke-word ${wordInfo.isBackground ? 'italic opacity-80' : ''}`}
-                                    data-start={wordInfo.start}
-                                    data-end={wordInfo.end}
-                                  >
-                                    {wordInfo.word}
+                        <React.Fragment key={idx}>
+                          <div
+                            ref={isActive ? activeLineRef : undefined}
+                            onClick={() => handleLineClick(line.time)}
+                            data-line-index={idx}
+                            className={`lyrics-line py-2.5 px-2 cursor-pointer rounded-lg transition-all duration-300 relative ${
+                              isBg ? 'text-right pl-6 italic' : 'text-left'
+                            } ${
+                              isActive
+                                ? 'active active-line text-white font-bold bg-white/5 shadow-sm'
+                                : 'text-neutral-400 hover:text-white font-medium'
+                            }`}
+                            style={{ 
+                              fontSize: `${fontSize - 2}px`,
+                              transform: isActive ? 'scale(1.04) translate3d(0, 0, 0)' : 'scale(1.0) translate3d(0, 0, 0)',
+                              transformOrigin: isBg ? 'right center' : 'left center',
+                              opacity: lineOpacity,
+                              filter: lineBlur > 0 ? `blur(${lineBlur}px)` : 'none'
+                            }}
+                          >
+                            {isBg && (
+                              <span className="inline-block mr-1.5 px-1 py-0.2 rounded bg-white/10 text-[9px] font-mono not-italic text-amber-300/90 align-middle">
+                                BG
+                              </span>
+                            )}
+                            {line.words && line.words.length > 0 && wordHighlightEnabled ? (
+                              <span className="inline-block transition-all duration-300">
+                                {line.words.map((wordInfo, wIdx) => (
+                                  <React.Fragment key={wIdx}>
+                                    <span
+                                      className={`karaoke-word ${wordInfo.isBackground ? 'italic opacity-80' : ''}`}
+                                      data-start={wordInfo.start}
+                                      data-end={wordInfo.end}
+                                    >
+                                      {wordInfo.word}
+                                    </span>
+                                    {wordInfo.hasTrailingSpace !== false && (wIdx < line.words!.length - 1) && (wordInfo.hasTrailingSpace || !line.isSyllableSynced ? ' ' : '')}
+                                  </React.Fragment>
+                                ))}
+                              </span>
+                            ) : (
+                              line.text
+                            )}
+
+                            {/* Secondary Background Vocal Track */}
+                            {line.backgroundWords && line.backgroundWords.length > 0 && (
+                              <div className="text-right text-xs italic text-amber-200/80 mt-1 pl-6">
+                                {line.backgroundWords.map((bw, bwIdx) => (
+                                  <span key={bwIdx} className="karaoke-word" data-start={bw.start} data-end={bw.end}>
+                                    {bw.word}{bw.hasTrailingSpace ? ' ' : ''}
                                   </span>
-                                  {wIdx < line.words!.length - 1 && ' '}
-                                </React.Fragment>
-                              ))}
-                            </span>
-                          ) : (
-                            line.text
-                          )}
-                          {/* Real-time Romanization / Romaji Subtitle */}
-                          {showRomanization && line.romanization && (
-                            <div className="text-[10px] font-mono text-amber-300/80 tracking-wide mt-0.5 opacity-90 not-italic">
-                              {line.romanization}
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Real-time Romanization / Romaji Subtitle */}
+                            {showRomanization && line.romanization && (
+                              <div className="text-[10px] font-mono text-amber-300/80 tracking-wide mt-0.5 opacity-90 not-italic">
+                                {line.romanization}
+                              </div>
+                            )}
+                            {/* Real-time Translation Subtitle */}
+                            {showTranslation && line.translation && (
+                              <div className="text-[10px] font-sans text-sky-300/80 mt-0.5 opacity-90 not-italic">
+                                {line.translation}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Instrumental Break Dots Indicator */}
+                          {idx < syncedLines.length - 1 && (syncedLines[idx + 1].time - (line.endTime || line.time)) > 4.5 && (
+                            <div className="flex items-center gap-1.5 py-2 px-3 text-neutral-500 opacity-60">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse [animation-delay:0.2s]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse [animation-delay:0.4s]" />
                             </div>
                           )}
-                          {/* Real-time Translation Subtitle */}
-                          {showTranslation && line.translation && (
-                            <div className="text-[10px] font-sans text-sky-300/80 mt-0.5 opacity-90 not-italic">
-                              {line.translation}
-                            </div>
-                          )}
-                        </div>
+                        </React.Fragment>
                       );
                     })}
                     <div className="h-40" />
@@ -1864,7 +1879,7 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                 <div className="w-full md:w-[62%] flex flex-col relative overflow-hidden h-full">
                   <div
                     ref={fullLyricsContainerRef}
-                    className="flex-1 overflow-y-auto px-6 md:pl-2 md:pr-12 py-20 mask-fade-gradient bg-transparent no-scrollbar scroll-smooth"
+                    className="flex-1 overflow-y-auto px-6 md:pl-2 md:pr-12 py-20 mask-fade-gradient bg-transparent no-scrollbar"
                   >
                     <div ref={scrollWrapperRef} className="w-full text-left">
                       <div style={{ height: '35vh' }} />
@@ -1872,69 +1887,105 @@ export const LyricsPanel: React.FC<LyricsPanelProps> = ({ onClose }) => {
                         syncedLines.map((line, idx) => {
                           const isActive = idx === activeLineIndex;
                           const isBg = line.isBackground || line.singer === 'v2';
+                          const dist = Math.abs(idx - activeLineIndex);
+                          let lineOpacity = 0.15;
+                          let lineBlur = 2.5;
+                          if (isActive) {
+                            lineOpacity = 1.0;
+                            lineBlur = 0;
+                          } else if (dist === 1) {
+                            lineOpacity = 0.52;
+                            lineBlur = 0.6;
+                          } else if (dist === 2) {
+                            lineOpacity = 0.30;
+                            lineBlur = 1.4;
+                          }
+
                           return (
-                            <div
-                              key={idx}
-                              ref={isActive ? activeFullLineRef : undefined}
-                              onClick={() => handleLineClick(line.time)}
-                              data-line-index={idx}
-                              className={`lyrics-line py-4 px-2 cursor-pointer transition-all duration-500 select-none my-6 flex flex-col ${
-                                isBg ? 'items-end text-right origin-right' : 'items-start text-left origin-left'
-                              } ${
-                                isActive ? 'active active-line' : ''
-                              }`}
-                              style={{
-                                fontSize: `${fontSize + 12}px`,
-                                lineHeight: 1.45,
-                                opacity: isActive ? 1.0 : (isBg ? 0.25 : 0.35),
-                                transform: isActive ? 'scale(1.08) translate3d(0, 0, 0)' : 'scale(0.95) translate3d(0, 0, 0)',
-                                color: 'white',
-                                fontWeight: isActive ? 800 : 700,
-                                letterSpacing: '-0.02em'
-                              }}
-                            >
-                              <div className="flex items-center gap-2">
-                                {isBg && (
-                                  <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-mono font-medium not-italic text-amber-300/90 border border-white/10">
-                                    Ad-lib / Harmony
-                                  </span>
-                                )}
-                                <div className={isBg ? 'italic' : ''}>
-                                  {line.words && line.words.length > 0 && wordHighlightEnabled ? (
-                                    <span className="inline-block transition-all duration-300">
-                                      {line.words.map((wordInfo, wIdx) => (
-                                        <React.Fragment key={wIdx}>
-                                          <span
-                                            className={`karaoke-word inline-block ${wordInfo.isBackground ? 'italic opacity-85' : ''}`}
-                                            data-start={wordInfo.start}
-                                            data-end={wordInfo.end}
-                                          >
-                                            {wordInfo.word}
-                                          </span>
-                                          {wIdx < line.words!.length - 1 && ' '}
-                                        </React.Fragment>
-                                      ))}
+                            <React.Fragment key={idx}>
+                              <div
+                                ref={isActive ? activeFullLineRef : undefined}
+                                onClick={() => handleLineClick(line.time)}
+                                data-line-index={idx}
+                                className={`lyrics-line py-4 px-2 cursor-pointer transition-all duration-500 select-none my-6 flex flex-col ${
+                                  isBg ? 'items-end text-right origin-right' : 'items-start text-left origin-left'
+                                } ${
+                                  isActive ? 'active active-line' : ''
+                                }`}
+                                style={{
+                                  fontSize: `${fontSize + 12}px`,
+                                  lineHeight: 1.45,
+                                  opacity: lineOpacity,
+                                  filter: lineBlur > 0 ? `blur(${lineBlur}px)` : 'none',
+                                  transform: isActive ? 'scale(1.08) translate3d(0, 0, 0)' : 'scale(0.96) translate3d(0, 0, 0)',
+                                  color: 'white',
+                                  fontWeight: isActive ? 800 : 700,
+                                  letterSpacing: '-0.02em'
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isBg && (
+                                    <span className="px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-mono font-medium not-italic text-amber-300/90 border border-white/10">
+                                      Ad-lib / Harmony
                                     </span>
-                                  ) : (
-                                    line.text
                                   )}
+                                  <div className={isBg ? 'italic' : ''}>
+                                    {line.words && line.words.length > 0 && wordHighlightEnabled ? (
+                                      <span className="inline-block transition-all duration-300">
+                                        {line.words.map((wordInfo, wIdx) => (
+                                          <React.Fragment key={wIdx}>
+                                            <span
+                                              className={`karaoke-word inline-block ${wordInfo.isBackground ? 'italic opacity-85' : ''}`}
+                                              data-start={wordInfo.start}
+                                              data-end={wordInfo.end}
+                                            >
+                                              {wordInfo.word}
+                                            </span>
+                                            {wordInfo.hasTrailingSpace !== false && (wIdx < line.words!.length - 1) && (wordInfo.hasTrailingSpace || !line.isSyllableSynced ? ' ' : '')}
+                                          </React.Fragment>
+                                        ))}
+                                      </span>
+                                    ) : (
+                                      line.text
+                                    )}
+                                  </div>
                                 </div>
+
+                                {/* Secondary Background Vocal Track */}
+                                {line.backgroundWords && line.backgroundWords.length > 0 && (
+                                  <div className="text-right text-base italic text-amber-200/80 mt-2 pl-12">
+                                    {line.backgroundWords.map((bw, bwIdx) => (
+                                      <span key={bwIdx} className="karaoke-word" data-start={bw.start} data-end={bw.end}>
+                                        {bw.word}{bw.hasTrailingSpace ? ' ' : ''}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Real-time Romanization / Romaji Subtitle */}
+                                {showRomanization && line.romanization && (
+                                  <div className="text-sm font-mono text-amber-300/80 tracking-wide mt-1 opacity-90 not-italic font-normal">
+                                    {line.romanization}
+                                  </div>
+                                )}
+
+                                {/* Real-time Translation Subtitle */}
+                                {showTranslation && line.translation && (
+                                  <div className="text-sm font-sans text-sky-300/85 mt-1 opacity-90 not-italic font-normal">
+                                    {line.translation}
+                                  </div>
+                                )}
                               </div>
 
-                              {/* Real-time Romanization / Romaji Subtitle */}
-                              {showRomanization && line.romanization && (
-                                <div className="text-sm font-mono text-amber-300/80 tracking-wide mt-1 opacity-90 not-italic font-normal">
-                                  {line.romanization}
+                              {/* Instrumental Break Dots Indicator */}
+                              {idx < syncedLines.length - 1 && (syncedLines[idx + 1].time - (line.endTime || line.time)) > 4.5 && (
+                                <div className="flex items-center gap-2.5 py-4 px-3 text-neutral-500 opacity-60 my-2">
+                                  <span className="w-2.5 h-2.5 rounded-full bg-white/50 animate-pulse" />
+                                  <span className="w-2.5 h-2.5 rounded-full bg-white/50 animate-pulse [animation-delay:0.2s]" />
+                                  <span className="w-2.5 h-2.5 rounded-full bg-white/50 animate-pulse [animation-delay:0.4s]" />
                                 </div>
                               )}
-
-                              {/* Real-time Translation Subtitle */}
-                              {showTranslation && line.translation && (
-                                <div className="text-sm font-sans text-sky-300/85 mt-1 opacity-90 not-italic font-normal">
-                                  {line.translation}
-                                </div>
-                              )}
-                            </div>
+                            </React.Fragment>
                           );
                         })
                       ) : (
