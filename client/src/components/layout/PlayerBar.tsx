@@ -277,17 +277,22 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
               <>
                 {/* Album Cover Art */}
                 <div 
-                  className={`w-12 h-12 sm:w-13 sm:h-13 rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 transition-all duration-500 ease-out ${
+                  className={`w-12 h-12 sm:w-13 sm:h-13 rounded-xl overflow-hidden bg-neutral-900 border shrink-0 transition-all duration-500 ease-out relative group cursor-pointer ${
                     isPlaying 
-                      ? 'translate-y-[-6px] scale-[1.08] shadow-[0_10px_20px_rgba(0,0,0,0.5)] border-white/10 now-playing-glow' 
-                      : 'translate-y-0 scale-100 shadow-none'
+                      ? 'translate-y-[-4px] scale-[1.06] border-white/20' 
+                      : 'translate-y-0 scale-100 border-neutral-800 shadow-none'
                   }`}
+                  style={{
+                    boxShadow: isPlaying
+                      ? '0 12px 28px -4px var(--ambient-primary, rgba(250,45,85,0.40)), 0 0 15px 1px rgba(255,255,255,0.05)'
+                      : undefined,
+                  }}
                 >
                   {api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId) ? (
                     <img 
                       src={api.coverUrl(currentTrack.coverArtUrl, currentTrack.videoId)!} 
                       alt={currentTrack.title} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
                         const target = e.currentTarget;
                         if (currentTrack.videoId && target.src !== `https://i.ytimg.com/vi/${currentTrack.videoId}/hqdefault.jpg`) {

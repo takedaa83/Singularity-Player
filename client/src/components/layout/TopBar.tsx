@@ -32,7 +32,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className="h-14 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 glass-panel border-x-0 border-t-0"
+      className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 backdrop-blur-2xl bg-black/40 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
     >
       {/* Left balancing box (Menu button on mobile, empty on desktop) */}
       <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>

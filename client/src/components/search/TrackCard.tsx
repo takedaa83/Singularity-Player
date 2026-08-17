@@ -174,12 +174,12 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
         onContextMenu={handleContextMenu}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`group flex items-center justify-between p-3 rounded-lg cursor-pointer border select-none ${
+        className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer border select-none transition-all duration-300 ${
           isCurrent 
-            ? 'bg-primary/15 border-primary/30' 
+            ? 'bg-gradient-to-r from-primary/15 via-primary/8 to-transparent border-primary/40 shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-sm' 
             : isSelected
-              ? 'bg-primary/10 border-primary/20'
-              : 'bg-transparent border-border-primary'
+              ? 'bg-primary/10 border-primary/30'
+              : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/[0.06] hover:border-white/10 hover:shadow-lg'
         }`}
       >
         {/* 1. Track Info (Art + Title/Artist) */}
@@ -188,13 +188,13 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           {isMultiSelectMode ? (
             <div 
               onClick={(e) => { e.stopPropagation(); onToggleSelect?.(); }}
-              className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+              className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                 isSelected 
-                  ? 'bg-primary border-primary text-bg-primary' 
+                  ? 'bg-primary border-primary text-bg-primary font-bold' 
                   : 'border-text-disabled hover:border-text-primary'
               }`}
             >
-              {isSelected && <span className="text-[10px] font-bold">✓</span>}
+              {isSelected && <span className="text-[10px]">✓</span>}
             </div>
           ) : (
             <div className="w-6 text-center text-xs text-text-tertiary group-hover:hidden flex items-center justify-center">
@@ -202,9 +202,9 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
               ) : isCurrent && isPlaying ? (
                 <div className="flex justify-center items-end gap-0.5 h-3.5 w-6">
-                  <span className="w-0.5 h-3 bg-primary animate-[pulse_1s_infinite_alternate]" />
-                  <span className="w-0.5 h-2 bg-primary animate-[pulse_0.7s_infinite_alternate]" />
-                  <span className="w-0.5 h-3.5 bg-primary animate-[pulse_1.2s_infinite_alternate]" />
+                  <span className="w-0.5 h-3.5 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                  <span className="w-0.5 h-4.5 bg-primary rounded-full animate-bounce [animation-delay:0.3s]" />
+                  <span className="w-0.5 h-2.5 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
                 </div>
               ) : (
                 <span className="font-mono text-text-disabled">#</span>
@@ -216,7 +216,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           {!isMultiSelectMode && (
             <button
               onClick={(e) => { e.stopPropagation(); handlePlayClick(); }}
-              className="w-6 justify-center items-center hidden group-hover:flex text-text-secondary hover:text-text-primary"
+              className="w-6 justify-center items-center hidden group-hover:flex text-text-secondary hover:text-text-primary transition-transform active:scale-90"
             >
               {isCurrent && isBuffering ? (
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -229,7 +229,11 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           )}
 
           {/* Artwork */}
-          <div className="w-11 h-11 rounded-lg overflow-hidden bg-bg-tertiary border border-border-primary shrink-0 relative">
+          <div 
+            className={`w-11 h-11 rounded-lg overflow-hidden bg-bg-tertiary border shrink-0 relative transition-transform duration-300 group-hover:scale-105 ${
+              isCurrent ? 'border-primary/50 shadow-[0_4px_12px_rgba(0,0,0,0.5)]' : 'border-white/10'
+            }`}
+          >
             {api.coverUrl(track.coverArtUrl, track.videoId) ? (
               <img 
                 src={api.coverUrl(track.coverArtUrl, track.videoId)!} 
@@ -252,7 +256,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
 
           {/* Title & Artist */}
           <div className="flex flex-col truncate">
-            <span className={`text-sm font-semibold truncate ${isCurrent ? 'text-primary' : 'text-text-primary'}`}>
+            <span className={`text-sm font-semibold truncate ${isCurrent ? 'text-primary' : 'text-text-primary group-hover:text-white'}`}>
               {track.title}
             </span>
             <div className="flex items-center gap-2 mt-0.5">

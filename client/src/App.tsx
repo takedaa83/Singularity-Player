@@ -543,7 +543,29 @@ export const App: React.FC = () => {
         </div>
 
         {/* Central Dashboard Panel */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-bg-primary">
+        <main className="flex-1 flex flex-col overflow-hidden bg-bg-primary relative">
+          {/* Dynamic Living Aura Lighting Engine */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
+            <div
+              className="absolute -top-[25%] -left-[15%] w-[65vw] h-[65vw] rounded-full blur-[140px] opacity-25 mix-blend-screen transition-all duration-1000 ease-out animate-pulse"
+              style={{
+                background: 'radial-gradient(circle, var(--ambient-primary, rgba(250,45,85,0.30)) 0%, transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute top-[25%] -right-[20%] w-[60vw] h-[60vw] rounded-full blur-[150px] opacity-20 mix-blend-screen transition-all duration-1000 ease-out"
+              style={{
+                background: 'radial-gradient(circle, var(--ambient-secondary, rgba(139,92,246,0.25)) 0%, transparent 70%)',
+              }}
+            />
+            <div
+              className="absolute -bottom-[25%] left-[20%] w-[60vw] h-[60vw] rounded-full blur-[160px] opacity-15 mix-blend-screen transition-all duration-1000 ease-out"
+              style={{
+                background: 'radial-gradient(circle, var(--primary, rgba(245,158,11,0.20)) 0%, transparent 70%)',
+              }}
+            />
+          </div>
+
           <TopBar
             onSearch={handleSearchSubmit}
             searchQuery={searchQuery}
@@ -552,7 +574,7 @@ export const App: React.FC = () => {
             onOpenSpotifyImport={() => setShowSpotifyImport(true)}
           />
 
-          <div className="flex-1 overflow-y-auto overscroll-x-none overscroll-y-contain px-4 sm:px-6 lg:px-8 py-6 pb-44 sm:pb-32 relative">
+          <div className="flex-1 overflow-y-auto overscroll-x-none overscroll-y-contain px-4 sm:px-6 lg:px-8 py-6 pb-44 sm:pb-32 relative z-10">
             <Suspense fallback={<LazyFallback />}>
               <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>

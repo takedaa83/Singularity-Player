@@ -1,0 +1,131 @@
+{
+  "SING-SW38": {
+    "id": "SING-SW38",
+    "hostId": "client_rhfbdesje",
+    "createdAt": 1786993815176,
+    "lastActiveAt": 1786993835747,
+    "state": {
+      "currentTrack": {
+        "id": "yt-hsxufO5sIQs",
+        "title": "Naino Ne Baandhi",
+        "artist": "Yasser Desai & Arko",
+        "album": "Arko",
+        "duration": 242,
+        "coverArtUrl": "https://yt3.googleusercontent.com/dV3P7w03H6ZLFyPPM1p12rD7m16EkCKiSRaQwYfTDHacO7OHCzRsCGa8xvlYdwgsNg8RH6azwFf9wKVq=w544-h544-l90-rj",
+        "source": "youtube",
+        "streamUrl": "/api/yt/stream/hsxufO5sIQs",
+        "videoId": "hsxufO5sIQs",
+        "popularity": 0.95,
+        "addedAt": 1786993321024,
+        "isAutoQueued": true,
+        "queuedBy": "auto"
+      },
+      "currentTime": 0,
+      "isPlaying": true,
+      "queue": [
+        {
+          "id": "yt-vyJTAnlRHVc",
+          "title": "Nazm Nazm",
+          "artist": "Arko",
+          "album": "Bareilly Ki Barfi (Original Motion Picture Soundtrack)",
+          "duration": 227,
+          "coverArtUrl": "https://yt3.googleusercontent.com/g2AGjwYvDCbuW90ulLrFEJCQlR9XWPGVTeJA3YFWKOrEQ4b1lar35ST22tRvrZUBe11viZpRWP3vLWPk=w544-h544-l90-rj",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/vyJTAnlRHVc",
+          "videoId": "vyJTAnlRHVc",
+          "popularity": 0.6,
+          "addedAt": 1786993256468,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        },
+        {
+          "id": "yt-0HoQoPuNjAs",
+          "title": "Mere Sohneya (From \"Kabir Singh\")",
+          "artist": "Sachet Tandon, Parampara Thakur, & Sachet-Parampara",
+          "album": "Parampara Thakur",
+          "duration": 194,
+          "coverArtUrl": "https://yt3.googleusercontent.com/Gf5eaH9nxxJBRZBWp7PctPpcNpyKCMvu6im3TB0cPM3hS4TmY2h9Oxvli4CpBzPMs78tT-RrKjBsbO6g=w544-h544-l90-rj",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/0HoQoPuNjAs",
+          "videoId": "0HoQoPuNjAs",
+          "popularity": 0.86,
+          "addedAt": 1786993321024,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        },
+        {
+          "id": "yt-hsxufO5sIQs",
+          "title": "Naino Ne Baandhi",
+          "artist": "Yasser Desai & Arko",
+          "album": "Arko",
+          "duration": 242,
+          "coverArtUrl": "https://yt3.googleusercontent.com/dV3P7w03H6ZLFyPPM1p12rD7m16EkCKiSRaQwYfTDHacO7OHCzRsCGa8xvlYdwgsNg8RH6azwFf9wKVq=w544-h544-l90-rj",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/hsxufO5sIQs",
+          "videoId": "hsxufO5sIQs",
+          "popularity": 0.95,
+          "addedAt": 1786993321024,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        },
+        {
+          "id": "yt-D78UzqpxIQU",
+          "title": "Jogi",
+          "artist": "Yasser Desai, Aakanksha Sharma",
+          "album": "Single",
+          "duration": 0,
+          "coverArtUrl": "https://yt3.googleusercontent.com/NaKxmIOL_JN9696V1XlJOTlIhWeLHWAmGsw5mN4Zpyw1nJS4zm7dIaxadgpy2GsfpvitBtvxM_CgEFs=w120-h120-l90-rj",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/D78UzqpxIQU",
+          "videoId": "D78UzqpxIQU",
+          "popularity": 0.85,
+          "addedAt": 1786993321292,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        },
+        {
+          "id": "yt-ii9KLQoV78I",
+          "title": "Hawayein (From \"Jab Harry Met Sejal\")",
+          "artist": "Pritam, Arijit Singh",
+          "album": "Single",
+          "duration": 0,
+          "coverArtUrl": "https://yt3.googleusercontent.com/S-A1H940pKO854h157hHNY_Z_n1wRHJT-81NkgO6axWxaNPNcMxNx69r88oiJ_aT5_D-sZAqVS1_s2l5=w120-h120-l90-rj",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/ii9KLQoV78I",
+          "videoId": "ii9KLQoV78I",
+          "popularity": 0.85,
+          "addedAt": 1786993321292,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        },
+        {
+          "id": "yt-LFOX869pkdA",
+          "title": "Nazm Nazm | Bareilly Ki Barfi | Pee Loo |  Cover by Xubaan",
+          "artist": "Xubaan",
+          "album": "Single",
+          "duration": 0,
+          "coverArtUrl": "https://i.ytimg.com/vi/LFOX869pkdA/hqdefault.jpg?sqp=-oaymwEWCJADEOEBIAQqCggAEOADGC0guwJIWg&rs=AMzJL3mSuG8kkSl_9UlKfyCXYTjZ_AvLfQ",
+          "source": "youtube",
+          "streamUrl": "/api/yt/stream/LFOX869pkdA",
+          "videoId": "LFOX869pkdA",
+          "popularity": 0.85,
+          "addedAt": 1786993321292,
+          "isAutoQueued": true,
+          "queuedBy": "auto"
+        }
+      ],
+      "activeQueueIndex": 2,
+      "updatedAt": 1786993815176
+    },
+    "listeners": {
+      "client_rhfbdesje": {
+        "name": "Music Explorer",
+        "lastSeen": 1786993835192
+      },
+      "client_jdcr0vg3x": {
+        "name": "Music Explorer",
+        "lastSeen": 1786993835747
+      }
+    }
+  }
+}

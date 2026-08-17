@@ -1532,10 +1532,11 @@ export const HomePage: React.FC<HomePageProps> = ({
             mb: 1,
             zIndex: 1,
             borderRadius: { xs: `${tokens.radius.xl}px`, md: `${tokens.radius['2xl']}px` },
-            background: 'rgba(255, 255, 255, 0.02)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255, 255, 255, 0.04)',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%)',
+            backdropFilter: 'blur(32px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(32px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.10)',
+            boxShadow: '0 24px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.18)',
           }}
         >
           {/* Organic Background Blobs — driven by album art ambient colors */}
