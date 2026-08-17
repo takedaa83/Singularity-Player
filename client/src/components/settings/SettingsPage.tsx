@@ -32,6 +32,7 @@ import {
   Cpu,
   Activity,
   Zap,
+  AlertTriangle,
 } from 'lucide-react';
 import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
@@ -349,6 +350,71 @@ export const SettingsPage: React.FC = () => {
       } catch (err) {
         toast('Failed to reset settings: ' + (err as Error).message, 'error');
       }
+    }
+  }, [toast]);
+
+  const handleResetAllUserData = useCallback(async () => {
+    const confirmed = window.confirm(
+      '⚠️ FACTORY RESET ENTIRE USER DATA ⚠️\n\n' +
+      'This action will permanently delete:\n' +
+      '• All downloaded and imported local library tracks\n' +
+      '• All custom playlists and favorite songs\n' +
+      '• Entire listening history, play sessions, and analytics\n' +
+      '• Search history and recommendation profile\n' +
+      '• Custom themes, equalizers, and user settings\n\n' +
+      'Are you completely sure you want to reset everything and start as a fresh user?'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // 1. Stop audio playback and clear queue
+      const playerStore = usePlayerStore.getState();
+      playerStore.setPlaying(false);
+      playerStore.clearQueue();
+
+      // 2. Clear all object stores in IndexedDB
+      try {
+        const db = await initDB();
+        const storeNames = ['tracks', 'playlists', 'favorites', 'history', 'playSessions', 'searchHistory', 'settings'] as const;
+        const tx = db.transaction(storeNames, 'readwrite');
+        for (const s of storeNames) {
+          await tx.objectStore(s).clear();
+        }
+        await tx.done;
+      } catch (idbErr) {
+        console.warn('[Reset] IndexedDB transaction clear failed, deleting database directly:', idbErr);
+        indexedDB.deleteDatabase('professional_music_downloader_db');
+      }
+
+      // 3. Clear all browser storage
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (storageErr) {
+        console.warn('[Reset] Storage clear error:', storageErr);
+      }
+
+      // 4. Clear browser Cache Storage if available
+      if ('caches' in window) {
+        try {
+          const cacheKeys = await caches.keys();
+          for (const key of cacheKeys) {
+            await caches.delete(key);
+          }
+        } catch (cacheErr) {
+          console.warn('[Reset] Cache storage clear error:', cacheErr);
+        }
+      }
+
+      toast('All user data wiped! Starting as a fresh user...', 'success');
+
+      // 5. Clean redirect & reload to root
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } catch (err) {
+      toast('Failed to reset user data: ' + (err as Error).message, 'error');
     }
   }, [toast]);
 
@@ -842,6 +908,28 @@ export const SettingsPage: React.FC = () => {
           >
             Import Library
           </Button>
+          <Button
+            variant="outlined"
+            startIcon={<RotateCcw size={16} />}
+            onClick={handleResetAllUserData}
+            sx={{
+              gridColumn: { xs: 'span 1', sm: 'span 2' },
+              borderColor: `${tokens.colors.error}60`,
+              color: tokens.colors.error,
+              borderRadius: `${tokens.radius.lg}px`,
+              py: 1.5,
+              fontWeight: 600,
+              justifyContent: 'flex-start',
+              backgroundColor: `${tokens.colors.error}0a`,
+              '&:hover': {
+                borderColor: tokens.colors.error,
+                color: '#fff',
+                backgroundColor: tokens.colors.error,
+              },
+            }}
+          >
+            Reset Entire User Data (Fresh Start)
+          </Button>
         </Box>
       </SettingSection>
 
@@ -1024,6 +1112,58 @@ export const SettingsPage: React.FC = () => {
               <Typography variant="caption" sx={{ color: tokens.colors.textTertiary, display: 'block' }}>Neural Cache</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.prefetchedTrackCount} Pre-Cached</Typography>
             </Box>
+          </Box>
+        </Box>
+      </SettingSection>
+
+      {/* ── Danger Zone: Reset Profile ─────────────────────────────── */}
+      <SettingSection
+        icon={AlertTriangle}
+        title="Danger Zone • Reset Entire User Data"
+        iconColor={tokens.colors.error}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="body2" sx={{ color: tokens.colors.textSecondary }}>
+            Permanently delete all downloaded tracks, playlists, favorites, listening history, play analytics, search history, custom equalizers, and user settings to make you a completely fresh user.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              startIcon={<Trash2 size={16} />}
+              onClick={handleResetAllUserData}
+              sx={{
+                bgcolor: tokens.colors.error,
+                color: '#fff',
+                fontWeight: 700,
+                borderRadius: `${tokens.radius.lg}px`,
+                px: 3,
+                py: 1.2,
+                boxShadow: `0 4px 14px ${tokens.colors.error}40`,
+                '&:hover': {
+                  bgcolor: '#dc2626',
+                },
+              }}
+            >
+              Reset Entire User Data (Fresh Start)
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<RotateCcw size={16} />}
+              onClick={handleResetSettings}
+              sx={{
+                borderColor: tokens.colors.surfaceBorder,
+                color: tokens.colors.textSecondary,
+                borderRadius: `${tokens.radius.lg}px`,
+                px: 2.5,
+                py: 1.2,
+                '&:hover': {
+                  borderColor: tokens.colors.warning,
+                  color: tokens.colors.warning,
+                },
+              }}
+            >
+              Reset Settings Only
+            </Button>
           </Box>
         </Box>
       </SettingSection>
