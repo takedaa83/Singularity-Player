@@ -176,13 +176,26 @@ const appleTokenManager = new AppleTokenManager();
 
 function cleanSearchString(str: string): string {
   return str
+    .replace(/\s*\(from\s+["'].*?["']\)/gi, '')
+    .replace(/\s*\(from\s+.*?\)/gi, '')
+    .replace(/\s*\[from\s+.*?\]/gi, '')
+    .replace(/\s*-\s*from\s+.*?$/gi, '')
     .replace(/\s*\(feat\..*?\)/gi, '')
     .replace(/\s*\(ft\..*?\)/gi, '')
     .replace(/\s*feat\..*/gi, '')
     .replace(/\s*ft\..*/gi, '')
     .replace(/\s*\(.*?official.*?\)/gi, '')
     .replace(/\s*\[.*?official.*?\]/gi, '')
+    .replace(/\s*\(.*?video.*?\)/gi, '')
+    .replace(/\s*\[.*?video.*?\]/gi, '')
+    .replace(/\s*\(.*?audio.*?\)/gi, '')
+    .replace(/\s*\[.*?audio.*?\]/gi, '')
+    .replace(/\s*\(.*?lyrics?.*?\)/gi, '')
+    .replace(/\s*\[.*?lyrics?.*?\]/gi, '')
+    .replace(/\s*\(full\s+song.*?\)/gi, '')
+    .replace(/\s*\(remaster(ed)?.*?\)/gi, '')
     .replace(/\s*【.*?】/g, '')
+    .replace(/\s*\|\s*.*$/g, '') // strip pipe suffixes like "| T-Series"
     .trim();
 }
 

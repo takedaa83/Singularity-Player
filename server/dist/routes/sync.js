@@ -110,14 +110,52 @@ router.get('/status', async (req, res) => {
     }
 });
 const activeRooms = new Map();
+const ROOMS_FILE = path.join(DATA_DIR, 'active_rooms.json');
+function saveRoomsToDisk() {
+    try {
+        const obj = {};
+        for (const [id, r] of activeRooms.entries()) {
+            obj[id] = r;
+        }
+        fs.writeFileSync(ROOMS_FILE, JSON.stringify(obj, null, 2), 'utf-8');
+    }
+    catch (e) {
+        console.warn('[Sync Route] Failed to save active rooms to disk:', e);
+    }
+}
+function loadRoomsFromDisk() {
+    try {
+        if (fs.existsSync(ROOMS_FILE)) {
+            const content = fs.readFileSync(ROOMS_FILE, 'utf-8');
+            const obj = JSON.parse(content);
+            const now = Date.now();
+            for (const [id, r] of Object.entries(obj)) {
+                if (now - r.lastActiveAt < 4 * 60 * 60 * 1000) {
+                    activeRooms.set(id, r);
+                }
+            }
+            if (activeRooms.size > 0) {
+                console.log(`[Sync Route] Restored ${activeRooms.size} active rooms from disk storage 🔄`);
+            }
+        }
+    }
+    catch (e) {
+        console.warn('[Sync Route] Failed to load active rooms from disk:', e);
+    }
+}
+loadRoomsFromDisk();
 // Clean up stale rooms older than 4 hours
 setInterval(() => {
     const now = Date.now();
+    let changed = false;
     for (const [roomId, room] of activeRooms.entries()) {
         if (now - room.lastActiveAt > 4 * 60 * 60 * 1000) {
             activeRooms.delete(roomId);
+            changed = true;
         }
     }
+    if (changed)
+        saveRoomsToDisk();
 }, 15 * 60 * 1000);
 // POST /api/sync/room/create
 router.post('/room/create', (req, res) => {
@@ -151,6 +189,7 @@ router.post('/room/create', (req, res) => {
         }
     };
     activeRooms.set(roomId, room);
+    saveRoomsToDisk();
     res.json({ success: true, roomId, room });
 });
 // POST /api/sync/room/join
@@ -169,6 +208,7 @@ router.post('/room/join', (req, res) => {
     const now = Date.now();
     room.lastActiveAt = now;
     room.listeners[clientId] = { name: clientName || 'Listener', lastSeen: now };
+    saveRoomsToDisk();
     res.json({
         success: true,
         roomId: cleanRoomId,
@@ -208,6 +248,7 @@ router.post('/room/:roomId/state', (req, res) => {
         activeQueueIndex: typeof activeQueueIndex === 'number' ? activeQueueIndex : room.state.activeQueueIndex,
         updatedAt: now,
     };
+    saveRoomsToDisk();
     res.json({ success: true, updatedAt: now });
 });
 // GET /api/sync/room/:roomId/poll (Listener polling & synchronization)

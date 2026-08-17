@@ -59,6 +59,14 @@ const DB_VERSION = 3;
 let dbPromise: Promise<IDBPDatabase<MusicDB>> | null = null;
 
 export const initDB = (): Promise<IDBPDatabase<MusicDB>> => {
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then((persisted) => {
+      if (persisted) {
+        console.log('[Storage Engine] Browser granted persistent IndexedDB storage 🛡️');
+      }
+    }).catch(() => {});
+  }
+
   if (!dbPromise) {
     dbPromise = openDB<MusicDB>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion, _newVersion, transaction) {
