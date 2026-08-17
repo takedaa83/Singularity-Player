@@ -181,6 +181,9 @@ class AppleTokenManager {
 const appleTokenManager = new AppleTokenManager();
 function cleanSearchString(str) {
     return str
+        .replace(/\s*\|\|.*$/g, '') // strip double pipe suffixes like "|| Cover || Kabir Singh"
+        .replace(/\s*\|\s*.*$/g, '') // strip single pipe suffixes like "| T-Series"
+        .replace(/\s*-\s*cover.*$/gi, '')
         .replace(/\s*\(from\s+["'].*?["']\)/gi, '')
         .replace(/\s*\(from\s+.*?\)/gi, '')
         .replace(/\s*\[from\s+.*?\]/gi, '')
@@ -199,8 +202,13 @@ function cleanSearchString(str) {
         .replace(/\s*\[.*?lyrics?.*?\]/gi, '')
         .replace(/\s*\(full\s+song.*?\)/gi, '')
         .replace(/\s*\(remaster(ed)?.*?\)/gi, '')
+        .replace(/\s*\(cover\)/gi, '')
+        .replace(/\s*\[cover\]/gi, '')
+        .replace(/\s*\(live.*?\)/gi, '')
+        .replace(/\s*\[live.*?\]/gi, '')
+        .replace(/\s*\(slowed\s*(\+|\&)?\s*reverb\)/gi, '')
+        .replace(/\s*\(sped\s*up\)/gi, '')
         .replace(/\s*【.*?】/g, '')
-        .replace(/\s*\|\s*.*$/g, '') // strip pipe suffixes like "| T-Series"
         .trim();
 }
 function formatLrcMs(timeMs) {
@@ -765,7 +773,9 @@ async function fetchBetterLyrics(trackName, artistName, duration) {
     }
     return null;
 }
-async function fetchLyrics(trackName, artistName, albumName, duration) {
+async function fetchLyrics(rawTrackName, rawArtistName, albumName, duration) {
+    const trackName = cleanSearchString(rawTrackName) || rawTrackName;
+    const artistName = cleanSearchString(rawArtistName) || rawArtistName;
     // 1. Check in-memory cache
     const cached = lyricsCache.get(trackName, artistName);
     if (cached !== undefined)
