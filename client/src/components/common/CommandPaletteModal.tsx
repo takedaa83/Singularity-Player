@@ -48,6 +48,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
   const nextTrack = usePlayerStore((s) => s.nextTrack);
   const prevTrack = usePlayerStore((s) => s.prevTrack);
   const toggleMute = usePlayerStore((s) => s.toggleMute);
+  const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
   const theme = useSettingsStore((s) => s.settings.theme);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
 
@@ -87,6 +88,34 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({
       icon: <Sliders className="w-4 h-4 text-amber-400" />,
       action: () => { toggleMute(); onClose(); },
       shortcut: 'M'
+    },
+    {
+      id: 'sleep-15',
+      title: 'Set Sleep Timer: 15 Minutes (Gentle Fade-Out)',
+      category: 'Actions',
+      icon: <Moon className="w-4 h-4 text-amber-400" />,
+      action: () => { setSleepTimer(15); onClose(); }
+    },
+    {
+      id: 'sleep-30',
+      title: 'Set Sleep Timer: 30 Minutes (Gentle Fade-Out)',
+      category: 'Actions',
+      icon: <Moon className="w-4 h-4 text-amber-400" />,
+      action: () => { setSleepTimer(30); onClose(); }
+    },
+    {
+      id: 'sleep-60',
+      title: 'Set Sleep Timer: 60 Minutes (Gentle Fade-Out)',
+      category: 'Actions',
+      icon: <Moon className="w-4 h-4 text-amber-400" />,
+      action: () => { setSleepTimer(60); onClose(); }
+    },
+    {
+      id: 'sleep-cancel',
+      title: 'Cancel Sleep Timer',
+      category: 'Actions',
+      icon: <Moon className="w-4 h-4 text-neutral-400" />,
+      action: () => { setSleepTimer(null); onClose(); }
     },
     {
       id: 'ai-stems',

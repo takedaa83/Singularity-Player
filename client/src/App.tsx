@@ -218,21 +218,48 @@ export const App: React.FC = () => {
   // Keyboard shortcuts — seek is now stable (useCallback-memoized)
   useKeyboardShortcuts(seek, () => setShowCommandPalette(true));
 
-  // Sleep Timer Auto-Pause Engine
+  // Gentle Exponential Decibel Fade-Out Sleep Timer Engine
   const sleepTimerEndTimestamp = usePlayerStore((s) => s.sleepTimerEndTimestamp);
   const setPlaying = usePlayerStore((s) => s.setPlaying);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+  const volume = usePlayerStore((s) => s.volume);
+  const setVolume = usePlayerStore((s) => s.setVolume);
+  const initialVolumeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!sleepTimerEndTimestamp) return;
-    const interval = setInterval(() => {
-      if (Date.now() >= sleepTimerEndTimestamp) {
-        setPlaying(false);
-        setSleepTimer(null);
+    if (!sleepTimerEndTimestamp) {
+      if (initialVolumeRef.current !== null) {
+        setVolume(initialVolumeRef.current);
+        initialVolumeRef.current = null;
       }
-    }, 1000);
+      return;
+    }
+
+    if (initialVolumeRef.current === null) {
+      initialVolumeRef.current = volume;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const remainingMs = sleepTimerEndTimestamp - now;
+
+      if (remainingMs <= 0) {
+        setPlaying(false);
+        if (initialVolumeRef.current !== null) {
+          setVolume(initialVolumeRef.current);
+          initialVolumeRef.current = null;
+        }
+        setSleepTimer(null);
+      } else if (remainingMs <= 20000 && initialVolumeRef.current !== null) {
+        // Smooth exponential decibel fade-out during final 20 seconds
+        const ratio = Math.max(0, remainingMs / 20000);
+        const fadedVolume = initialVolumeRef.current * Math.pow(ratio, 1.5);
+        setVolume(Math.max(0.01, fadedVolume));
+      }
+    }, 500);
+
     return () => clearInterval(interval);
-  }, [sleepTimerEndTimestamp, setPlaying, setSleepTimer]);
+  }, [sleepTimerEndTimestamp, setPlaying, setSleepTimer, setVolume]);
 
 
 

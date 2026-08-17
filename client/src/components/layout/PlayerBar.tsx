@@ -17,7 +17,9 @@ import {
   Sparkles,
   Heart,
   PictureInPicture,
-  Compass
+  Compass,
+  Moon,
+  Clock
 } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { togglePictureInPictureMiniPlayer } from '../../utils/miniPlayerPiP';
@@ -184,6 +186,25 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
   const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
   const setRepeat = usePlayerStore((s) => s.setRepeat);
   const setPlaybackSpeed = usePlayerStore((s) => s.setPlaybackSpeed);
+  const sleepTimerMinutes = usePlayerStore((s) => s.sleepTimerMinutes);
+  const sleepTimerEndTimestamp = usePlayerStore((s) => s.sleepTimerEndTimestamp);
+  const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
+
+  const [sleepTimeStr, setSleepTimeStr] = useState<string>('');
+
+  useEffect(() => {
+    if (!sleepTimerEndTimestamp) {
+      setSleepTimeStr('');
+      return;
+    }
+    const update = () => {
+      const remainingSec = Math.max(0, Math.ceil((sleepTimerEndTimestamp - Date.now()) / 1000));
+      setSleepTimeStr(formatTimeDisplay(remainingSec));
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [sleepTimerEndTimestamp]);
 
   const [showSettingsPopover, setShowSettingsPopover] = useState(false);
   const [isMobilePlayerOpen, setIsMobilePlayerOpen] = useState(false);
@@ -509,9 +530,50 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({
                       </button>
                     ))}
                   </div>
+
+                  <div className="h-px bg-white/5 my-1" />
+
+                  {/* Sleep Timer Selector */}
+                  <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold px-3 py-1 flex justify-between items-center">
+                    <span className="flex items-center gap-1.5"><Moon className="w-3 h-3 text-amber-400" /> Sleep Timer</span>
+                    {sleepTimeStr && <span className="font-mono text-amber-400 text-[10px]">{sleepTimeStr}</span>}
+                  </div>
+                  <div className="grid grid-cols-5 gap-1 px-1 mt-0.5">
+                    {[
+                      { label: 'Off', val: null },
+                      { label: '15m', val: 15 },
+                      { label: '30m', val: 30 },
+                      { label: '45m', val: 45 },
+                      { label: '60m', val: 60 },
+                    ].map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => setSleepTimer(opt.val)}
+                        className={`py-1 rounded text-center text-[10px] font-mono transition-all duration-150 ${
+                          (opt.val === null && !sleepTimerMinutes) || sleepTimerMinutes === opt.val
+                            ? 'bg-amber-500/30 text-amber-300 font-bold border border-amber-500/50'
+                            : 'hover:bg-neutral-800 text-neutral-400'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Active Sleep Timer Countdown Badge */}
+            {sleepTimerEndTimestamp && (
+              <button
+                onClick={() => setSleepTimer(null)}
+                className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono hover:bg-amber-500/30 transition-all shadow-sm"
+                title="Click to cancel Sleep Timer"
+              >
+                <Moon className="w-3 h-3 text-amber-400 animate-pulse" />
+                <span>{sleepTimeStr}</span>
+              </button>
+            )}
 
             {/* Lyrics */}
             <button
