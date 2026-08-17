@@ -47,6 +47,9 @@ export interface Track {
   lyrics?: string | null;       // cached plain text lyrics
   syncedLyrics?: string | null; // cached LRC format lyrics
   replayGain?: number | null;   // ReplayGain track gain in dB
+  // Queue metadata
+  isAutoQueued?: boolean;       // true if track was generated via smart radio/autoplay
+  queuedBy?: 'user' | 'auto' | 'system'; // identifies queue provenance for smart eviction
 }
 
 // ─── Playlists ────────────────────────────────────────────────────────

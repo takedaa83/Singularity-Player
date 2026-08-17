@@ -222,56 +222,76 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       addToQueue: (track) => {
-        const { queue, currentTrack } = get();
-        // Prevent exact ID duplicates or alternate duplicate versions (remixes, lofi, etc.) of already queued songs
-        if (queue.some(t => t.id === track.id || isDuplicateTrack(t, track))) return;
-        const newQueue = [...queue, track];
+        const { queue, currentTrack, activeQueueIndex, autoplay } = get();
+        const userTrack: Track = { ...track, isAutoQueued: false, queuedBy: 'user' };
+
         if (!currentTrack) {
           set({
-            queue: newQueue,
-            currentTrack: track,
+            queue: [userTrack],
+            currentTrack: userTrack,
             activeQueueIndex: 0,
             isPlaying: false
           });
-        } else {
-          set({ queue: newQueue });
+          return;
+        }
+
+        // Prevent duplicate of current or already manually queued tracks
+        if (queue.some(t => (!t.isAutoQueued && t.queuedBy !== 'auto') && (t.id === track.id || isDuplicateTrack(t, track)))) {
+          return;
+        }
+
+        // Keep played tracks & current track intact
+        const head = queue.slice(0, activeQueueIndex + 1);
+        // Retain only previous manual user tracks in upcoming, evicting stale auto-queue items
+        const upcomingManual = queue.slice(activeQueueIndex + 1).filter(t => 
+          !t.isAutoQueued && t.queuedBy !== 'auto' && t.id !== userTrack.id && !isDuplicateTrack(t, userTrack)
+        );
+
+        const newQueue = [...head, ...upcomingManual, userTrack];
+        set({ queue: newQueue });
+        prefetchNextQueuedTrack(newQueue, activeQueueIndex, get().shuffle, get().repeat);
+
+        // Regenerate fresh recommendations based on the new user track
+        if (autoplay) {
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(userTrack, { forceReanchor: true });
+          });
         }
       },
 
       playNext: (track) => {
-        const { queue, currentTrack } = get();
-        
-        // Remove track or duplicate versions from queue if already present to prevent duplicates
-        const updatedQueue = queue.filter(t => t.id !== track.id && !isDuplicateTrack(t, track));
-        
+        const { queue, currentTrack, activeQueueIndex, autoplay } = get();
+        const userTrack: Track = { ...track, isAutoQueued: false, queuedBy: 'user' };
+
         if (!currentTrack) {
-          // If nothing is playing, play immediately
           set({
-            queue: [track, ...updatedQueue],
-            currentTrack: track,
+            queue: [userTrack],
+            currentTrack: userTrack,
             activeQueueIndex: 0,
             isPlaying: true
           });
-          prefetchNextQueuedTrack([track, ...updatedQueue], 0, get().shuffle, get().repeat);
+          prefetchNextQueuedTrack([userTrack], 0, get().shuffle, get().repeat);
           return;
         }
-        
-        // Find current track index in the updated queue
-        const currIndex = updatedQueue.findIndex(t => t.id === currentTrack.id);
-        const insertIndex = currIndex !== -1 ? currIndex + 1 : 0;
-        
-        // Insert track next
-        updatedQueue.splice(insertIndex, 0, track);
-        
-        // Recalculate new active queue index
-        const newActiveIndex = updatedQueue.findIndex(t => t.id === currentTrack.id);
-        
-        set({
-          queue: updatedQueue,
-          activeQueueIndex: newActiveIndex >= 0 ? newActiveIndex : 0
-        });
-        
-        prefetchNextQueuedTrack(updatedQueue, newActiveIndex >= 0 ? newActiveIndex : 0, get().shuffle, get().repeat);
+
+        // Keep played tracks & current track intact
+        const head = queue.slice(0, activeQueueIndex + 1);
+        // Retain only manual user tracks in upcoming, evicting stale auto-queue items
+        const upcomingManual = queue.slice(activeQueueIndex + 1).filter(t => 
+          !t.isAutoQueued && t.queuedBy !== 'auto' && t.id !== userTrack.id && !isDuplicateTrack(t, userTrack)
+        );
+
+        // Insert user track immediately next
+        const newQueue = [...head, userTrack, ...upcomingManual];
+        set({ queue: newQueue });
+        prefetchNextQueuedTrack(newQueue, activeQueueIndex, get().shuffle, get().repeat);
+
+        // Regenerate fresh recommendations based on the new user track
+        if (autoplay) {
+          import('../services/smartQueueService').then(({ SmartQueueService }) => {
+            SmartQueueService.triggerAutoQueue(userTrack, { forceReanchor: true });
+          });
+        }
       },
 
       setQueue: (newQueue, startIndex = 0) => {
@@ -492,12 +512,25 @@ export const usePlayerStore = create<PlayerState>()(
       setSpatialAudioEnabled: (enabled) => set({ spatialAudioEnabled: enabled }),
       setSpatialAudioConfig: (config) => set({ spatialAudioConfig: config }),
 
-      clearQueue: () => set({
-        queue: [],
-        activeQueueIndex: -1,
-        currentTrack: null,
-        isPlaying: false
-      }),
+      clearQueue: () => {
+        const { currentTrack, isPlaying } = get();
+        if (currentTrack) {
+          // Keep current track playing uninterrupted at index 0, clearing all other items
+          set({
+            queue: [currentTrack],
+            activeQueueIndex: 0,
+            originalQueue: [currentTrack],
+          });
+        } else {
+          set({
+            queue: [],
+            activeQueueIndex: -1,
+            originalQueue: [],
+            currentTrack: null,
+            isPlaying: false
+          });
+        }
+      },
 
       removeFromQueue: (index) => {
         const { queue, activeQueueIndex } = get();

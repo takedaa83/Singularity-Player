@@ -31,10 +31,11 @@ export const SMART_QUEUE_CONFIG = {
   MAX_ARTIST_PER_BATCH: 2,
   MIN_TRACK_DURATION_SEC: 60,
   MAX_TRACK_DURATION_SEC: 900,
-  RECENT_HISTORY_WINDOW_MS: 2 * 60 * 60 * 1000, // 2 hours
+  RECENT_HISTORY_WINDOW_MS: 7 * 24 * 60 * 60 * 1000, // 7 days history check for frequency penalties
   SKIP_SESSION_WINDOW_MS: 30 * 24 * 60 * 60 * 1000, // 30 days
   MAX_SKIPS_THRESHOLD: 2,
   FALLBACK_LIBRARY_LIMIT: 20,
+  TEMPERATURE: 0.55, // Boltzmann exploration temperature (0.5 - 0.6 = sweet spot for pleasing harmony + zero static repetition)
 };
 
 const QUALITY_BLACKLIST_PATTERNS = [
@@ -71,28 +72,111 @@ export function passesQualityFilter(track: Track): boolean {
   return true;
 }
 
+// In-session track exposure tracker (prevents loop repetition during active continuous listening)
+const sessionExposureCounts = new Map<string, number>();
+
+/**
+ * Stochastic Boltzmann / Softmax Temperature Sampler without replacement.
+ * Uses probability weights derived from acoustic affinity, popularity, and penalty scores.
+ * Guarantees that playing Song A in different sessions produces varied, ear-pleasing tracks.
+ */
+function sampleWithTemperature(
+  scoredCandidates: Array<{ track: Track; score: number }>,
+  targetCount: number,
+  temperature: number = SMART_QUEUE_CONFIG.TEMPERATURE,
+  maxPerArtist: number = SMART_QUEUE_CONFIG.MAX_ARTIST_PER_BATCH
+): Track[] {
+  if (scoredCandidates.length === 0) return [];
+
+  const pool = [...scoredCandidates];
+  const selected: Track[] = [];
+  const artistCounts = new Map<string, number>();
+
+  while (selected.length < targetCount && pool.length > 0) {
+    // 1. Filter candidates violating artist cap
+    let eligibleIndices: number[] = [];
+    for (let i = 0; i < pool.length; i++) {
+      const artist = (pool[i].track.artist || '').toLowerCase().trim();
+      const count = artistCounts.get(artist) || 0;
+      if (count < maxPerArtist) {
+        eligibleIndices.push(i);
+      }
+    }
+
+    if (eligibleIndices.length === 0) {
+      // Relax artist cap if needed to fill batch
+      if (maxPerArtist < 3) {
+        maxPerArtist++;
+        continue;
+      }
+      break;
+    }
+
+    // 2. Numerical stability: compute softmax relative to maxScore
+    let maxScore = -Infinity;
+    for (const idx of eligibleIndices) {
+      if (pool[idx].score > maxScore) maxScore = pool[idx].score;
+    }
+
+    const expWeights: number[] = [];
+    let sumWeights = 0;
+    for (const idx of eligibleIndices) {
+      const w = Math.exp((pool[idx].score - maxScore) / Math.max(0.1, temperature));
+      expWeights.push(w);
+      sumWeights += w;
+    }
+
+    // 3. Roulette wheel selection
+    let randomVal = Math.random() * sumWeights;
+    let chosenEligibleIdx = 0;
+    for (let j = 0; j < expWeights.length; j++) {
+      randomVal -= expWeights[j];
+      if (randomVal <= 0) {
+        chosenEligibleIdx = j;
+        break;
+      }
+    }
+
+    const chosenPoolIdx = eligibleIndices[chosenEligibleIdx];
+    const chosen = pool[chosenPoolIdx].track;
+    selected.push(chosen);
+
+    const artist = (chosen.artist || '').toLowerCase().trim();
+    artistCounts.set(artist, (artistCounts.get(artist) || 0) + 1);
+
+    // Track session exposure
+    sessionExposureCounts.set(chosen.id, (sessionExposureCounts.get(chosen.id) || 0) + 1);
+
+    // Remove chosen from candidate pool
+    pool.splice(chosenPoolIdx, 1);
+  }
+
+  return selected;
+}
+
 let inFlightPromise: Promise<void> | null = null;
 
 export const SmartQueueService = {
   /**
-   * Thread-safe, Concurrent-Safe Auto-Queue Engine:
+   * Thread-safe, Concurrent-Safe Auto-Queue Engine (YouTube Music Logic):
    * - In-flight re-entrancy lock prevents duplicate background runs.
-   * - Anchor drift check cancels stale commits if user skips.
-   * - Genuine DB favorite lookup interleaves actual personal tracks.
-   * - Intra-batch deduplication & progressive artist saturation caps.
-   * - Atomic IndexedDB transaction batching & functional Zustand state updates.
+   * - Boltzmann temperature sampling (tau = 0.55) eliminates deterministic repetition.
+   * - Session exposure and historical frequency penalty ensures continuous freshness.
+   * - Tags auto-queued tracks with `isAutoQueued: true` for clean eviction on user actions.
+   * - Responds immediately to `forceReanchor` when user manually enqueues new songs.
    */
   async triggerAutoQueue(
-    currentTrack: Track,
+    anchorTrack: Track,
+    options: { forceReanchor?: boolean } = {},
     deps = { store: usePlayerStore, getDb: initDB, apiClient: api }
   ): Promise<void> {
-    if (inFlightPromise) {
+    if (inFlightPromise && !options.forceReanchor) {
       return inFlightPromise;
     }
 
     inFlightPromise = (async () => {
       try {
-        await this._executeAutoQueue(currentTrack, deps);
+        await this._executeAutoQueue(anchorTrack, options, deps);
       } finally {
         inFlightPromise = null;
       }
@@ -102,30 +186,26 @@ export const SmartQueueService = {
   },
 
   async _executeAutoQueue(
-    currentTrack: Track,
+    anchorTrack: Track,
+    options: { forceReanchor?: boolean } = {},
     deps: { store: typeof usePlayerStore; getDb: typeof initDB; apiClient: typeof api }
   ): Promise<void> {
     const playerStoreState = deps.store.getState();
     if (playerStoreState.queue.length >= SMART_QUEUE_CONFIG.MAX_QUEUE_THRESHOLD) return;
 
-    const initialTrackId = currentTrack.id;
-
-    // Reseed Anchor: If queue has > 2 tracks, anchor on the tail track for natural session evolution
-    const anchorTrack =
-      playerStoreState.queue.length > 2
-        ? playerStoreState.queue[playerStoreState.queue.length - 1]
-        : currentTrack;
+    const initialTrackId = anchorTrack.id;
     const videoId =
       anchorTrack.videoId ||
       (anchorTrack.id.startsWith('yt-') ? anchorTrack.id.replace('yt-', '') : undefined);
 
     console.log(
-      `[SmartQueueEngine] Fetching radio queue (Anchor: "${anchorTrack.artist} - ${anchorTrack.title}")`
+      `[SmartQueueEngine] Fetching YouTube Music radio candidates (Anchor: "${anchorTrack.artist} - ${anchorTrack.title}")`
     );
 
     const db = await deps.getDb();
     let radioResults: Track[] = [];
 
+    // Primary: Query YouTube Music Radio Continuation Graph
     try {
       const results = await deps.apiClient.ytRadio(videoId, anchorTrack.title, anchorTrack.artist);
       if (results && results.length > 0) {
@@ -137,38 +217,46 @@ export const SmartQueueService = {
       console.warn('[SmartQueueEngine] YouTube Radio endpoint error, attempting fallback:', err);
     }
 
-    // Fallback A: Search artist top hits
-    if (radioResults.length === 0 && anchorTrack.artist) {
+    // Secondary: Search artist mix / acoustic cluster if radio results are sparse
+    if (radioResults.length < 15 && anchorTrack.artist) {
       try {
-        const hits = await deps.apiClient.search(`${anchorTrack.artist} top hits`);
-          radioResults = hits
-            .map((item: any): Track => ({
-              id: `yt-${item.videoId}`,
-              title: item.title,
-              artist: item.artist,
-              album: item.album || 'Single',
-              genre: '',
-              year: null,
-              trackNumber: null,
-              duration: item.duration || 200,
-              bitrate: null,
-              sampleRate: null,
-              fileSize: 0,
-              mimeType: 'audio/mp4',
-              coverArtUrl: item.coverArtUrl || null,
-              source: 'youtube',
-              streamUrl: `/api/yt/stream/${item.videoId}`,
-              filePath: null,
-              videoId: item.videoId,
-              addedAt: Date.now(),
-            }))
-            .filter(passesQualityFilter);
+        const hits = await deps.apiClient.search(`${anchorTrack.artist} ${anchorTrack.genre || 'mix'}`);
+        const parsedHits = hits
+          .map((item: any): Track => ({
+            id: `yt-${item.videoId}`,
+            title: item.title,
+            artist: item.artist,
+            album: item.album || 'Single',
+            genre: anchorTrack.genre || '',
+            year: null,
+            trackNumber: null,
+            duration: item.duration || 200,
+            bitrate: null,
+            sampleRate: null,
+            fileSize: 0,
+            mimeType: 'audio/mp4',
+            coverArtUrl: item.coverArtUrl || null,
+            source: 'youtube',
+            streamUrl: `/api/yt/stream/${item.videoId}`,
+            filePath: null,
+            videoId: item.videoId,
+            popularity: 0.82,
+            addedAt: Date.now(),
+          }))
+          .filter(passesQualityFilter);
+
+        // Merge without duplicates
+        for (const hit of parsedHits) {
+          if (!radioResults.some((r) => r.id === hit.id || isDuplicateTrack(r, hit))) {
+            radioResults.push(hit);
+          }
+        }
       } catch (e) {
-        console.warn('[SmartQueueEngine] Fallback artist search failed:', e);
+        console.warn('[SmartQueueEngine] Fallback artist mix search failed:', e);
       }
     }
 
-    // Fallback B: Local IndexedDB Bounded Query (top recent/favorite tracks limit)
+    // Tertiary: Local IndexedDB Bounded Query if offline or no network results
     if (radioResults.length === 0) {
       const localTracks = await db.getAll('tracks');
       radioResults = localTracks
@@ -182,25 +270,33 @@ export const SmartQueueService = {
     }
 
     // ─── ANCHOR DRIFT CANCELLATION GUARD ─────────────────────────────────────
-    // If the user skipped tracks or changed currentTrack while async fetches ran, abort stale commit!
-    const liveCurrentTrack = deps.store.getState().currentTrack;
-    if (liveCurrentTrack && liveCurrentTrack.id !== initialTrackId) {
-      console.log(
-        '[SmartQueueEngine] Playback state changed during fetch. Aborting stale auto-queue insertion.'
-      );
-      return;
+    // If not forced and the user skipped tracks while async fetches ran, abort stale commit!
+    if (!options.forceReanchor) {
+      const liveCurrentTrack = deps.store.getState().currentTrack;
+      if (liveCurrentTrack && liveCurrentTrack.id !== initialTrackId) {
+        console.log(
+          '[SmartQueueEngine] Playback state changed during fetch. Aborting stale auto-queue insertion.'
+        );
+        return;
+      }
     }
 
-    // ─── HISTORY & SKIP FILTERING ───────────────────────────────────────────
-    const twoHoursAgo = Date.now() - SMART_QUEUE_CONFIG.RECENT_HISTORY_WINDOW_MS;
+    // ─── HISTORY, SKIPS & FREQUENCY LOOKUPS ───────────────────────────────────
+    const historyStartTime = Date.now() - SMART_QUEUE_CONFIG.RECENT_HISTORY_WINDOW_MS;
     const thirtyDaysAgo = Date.now() - SMART_QUEUE_CONFIG.SKIP_SESSION_WINDOW_MS;
 
     const recentHistory = await db.getAllFromIndex(
       'history',
       'playedAt',
-      IDBKeyRange.lowerBound(twoHoursAgo)
+      IDBKeyRange.lowerBound(historyStartTime)
     );
-    const recentlyPlayedIds = new Set<string>(recentHistory.map((e) => e.trackId));
+    const historyPlayCounts = new Map<string, number>();
+    const historyLastPlayed = new Map<string, number>();
+    for (const entry of recentHistory) {
+      historyPlayCounts.set(entry.trackId, (historyPlayCounts.get(entry.trackId) || 0) + 1);
+      const prev = historyLastPlayed.get(entry.trackId) || 0;
+      if (entry.playedAt > prev) historyLastPlayed.set(entry.trackId, entry.playedAt);
+    }
 
     const recentSessions = await db.getAllFromIndex(
       'playSessions',
@@ -211,15 +307,15 @@ export const SmartQueueService = {
       recentSessions.filter((s) => s.skipped).map((s) => s.trackId)
     );
 
-    const liveQueue = deps.store.getState().queue;
+    const liveState = deps.store.getState();
+    const liveQueue = liveState.queue;
     const queueIds = new Set<string>(liveQueue.map((t) => t.id));
 
+    // Exclude current track and immediate duplicates from candidates
     const cleanCandidates = radioResults.filter((track) => {
-      if (track.id === currentTrack.id) return false;
+      if (track.id === anchorTrack.id) return false;
       if (queueIds.has(track.id)) return false;
-      if (recentlyPlayedIds.has(track.id)) return false;
-      if (skippedTrackIds.has(track.id)) return false;
-      if (isDuplicateTrack(track, currentTrack)) return false;
+      if (isDuplicateTrack(track, anchorTrack)) return false;
       if (liveQueue.some((q) => isDuplicateTrack(q, track))) return false;
       if (track.skipCount && track.skipCount >= SMART_QUEUE_CONFIG.MAX_SKIPS_THRESHOLD) return false;
       return true;
@@ -227,76 +323,79 @@ export const SmartQueueService = {
 
     if (cleanCandidates.length === 0) return;
 
-    // ─── HONEST PERSONALIZATION: REAL DB FAVORITES INTERLEAVING ────────────
+    // ─── FAVORITES LOOKUP FOR AFFINITY BOOST ────────────────────────────────
     const favorites = await db.getAll('favorites');
     const favoriteTrackIds = new Set(favorites.map((f) => f.trackId));
 
-    const favTrackDocs = await Promise.all(
-      Array.from(favoriteTrackIds).map((fId) => db.get('tracks', fId))
+    // ─── BOLTZMANN TEMPERATURE SCORING ENGINE ──────────────────────────────
+    const now = Date.now();
+    const anchorArtist = (anchorTrack.artist || '').toLowerCase().trim();
+
+    const scoredCandidates = cleanCandidates.map((track) => {
+      let score = (track.popularity || 0.85) * 1.5;
+
+      // Artist affinity / collaborator bonus
+      const candArtist = (track.artist || '').toLowerCase().trim();
+      if (candArtist && anchorArtist && (candArtist.includes(anchorArtist) || anchorArtist.includes(candArtist))) {
+        score += 0.35;
+      }
+
+      // User favorite boost
+      if (favoriteTrackIds.has(track.id)) {
+        score += 0.40;
+      }
+
+      // 1. Session Exposure Penalty (Prevents identical auto-queue repetition)
+      const sessionExposures = sessionExposureCounts.get(track.id) || 0;
+      if (sessionExposures > 0) {
+        score -= sessionExposures * 0.45;
+      }
+
+      // 2. Play History Frequency Penalty
+      const playCount = historyPlayCounts.get(track.id) || 0;
+      if (playCount > 0) {
+        score -= Math.log2(1 + playCount) * 0.30;
+      }
+
+      // 3. Recency Decay Penalty (Played in last 2 hours vs last 24h)
+      const lastPlayed = historyLastPlayed.get(track.id);
+      if (lastPlayed) {
+        const hoursAgo = (now - lastPlayed) / (1000 * 60 * 60);
+        if (hoursAgo < 2) score -= 0.80;
+        else if (hoursAgo < 24) score -= 0.40;
+        else if (hoursAgo < 72) score -= 0.20;
+      }
+
+      // 4. Skip penalty
+      if (skippedTrackIds.has(track.id)) {
+        score -= 0.70;
+      }
+
+      return {
+        track,
+        score: Math.max(0.05, score)
+      };
+    });
+
+    // Sample 5 tracks using Boltzmann temperature distribution
+    const sampledTracks = sampleWithTemperature(
+      scoredCandidates,
+      SMART_QUEUE_CONFIG.BATCH_TARGET_COUNT,
+      SMART_QUEUE_CONFIG.TEMPERATURE,
+      SMART_QUEUE_CONFIG.MAX_ARTIST_PER_BATCH
     );
-    const validPersonalFavs = favTrackDocs.filter(
-      (t): t is Track =>
-        !!t &&
-        passesQualityFilter(t) &&
-        !queueIds.has(t.id) &&
-        !recentlyPlayedIds.has(t.id) &&
-        !isDuplicateTrack(t, currentTrack) &&
-        !liveQueue.some((q) => isDuplicateTrack(q, t))
-    );
 
-    // ─── SELECTION WITH INTRA-BATCH DEDUP & SATURATION ─────────────────────
-    const finalQueueTracks: Track[] = [];
-    const artistCountsInBatch = new Map<string, number>();
+    if (sampledTracks.length === 0) return;
 
-    // Helper: Checks if candidate is valid against current batch
-    const canSelectCandidate = (candidate: Track, maxPerArtist: number) => {
-      if (finalQueueTracks.some((t) => t.id === candidate.id || isDuplicateTrack(t, candidate))) {
-        return false;
-      }
-      const artistName = (candidate.artist || '').toLowerCase().trim();
-      const currentCount = artistCountsInBatch.get(artistName) || 0;
-      return currentCount < maxPerArtist;
-    };
-
-    // Primary Pass: Max 2 tracks per artist
-    for (const candidate of cleanCandidates) {
-      if (finalQueueTracks.length >= SMART_QUEUE_CONFIG.BATCH_TARGET_COUNT) break;
-
-      if (canSelectCandidate(candidate, SMART_QUEUE_CONFIG.MAX_ARTIST_PER_BATCH)) {
-        finalQueueTracks.push(candidate);
-        const artistName = (candidate.artist || '').toLowerCase().trim();
-        artistCountsInBatch.set(artistName, (artistCountsInBatch.get(artistName) || 0) + 1);
-
-        // Interleave 1 genuine personal favorite track into slot 3 if available
-        if (finalQueueTracks.length === 2 && validPersonalFavs.length > 0) {
-          const matchingFav = validPersonalFavs.find((fav) =>
-            canSelectCandidate(fav, SMART_QUEUE_CONFIG.MAX_ARTIST_PER_BATCH)
-          );
-          if (matchingFav) {
-            finalQueueTracks.push(matchingFav);
-            const favArtist = (matchingFav.artist || '').toLowerCase().trim();
-            artistCountsInBatch.set(favArtist, (artistCountsInBatch.get(favArtist) || 0) + 1);
-          }
-        }
-      }
-    }
-
-    // Secondary Progressive Relaxation (if batch < 5, relax artist limit from 2 to 3)
-    if (finalQueueTracks.length < SMART_QUEUE_CONFIG.BATCH_TARGET_COUNT) {
-      for (const candidate of cleanCandidates) {
-        if (finalQueueTracks.length >= SMART_QUEUE_CONFIG.BATCH_TARGET_COUNT) break;
-        if (canSelectCandidate(candidate, 3)) {
-          finalQueueTracks.push(candidate);
-          const artistName = (candidate.artist || '').toLowerCase().trim();
-          artistCountsInBatch.set(artistName, (artistCountsInBatch.get(artistName) || 0) + 1);
-        }
-      }
-    }
-
-    if (finalQueueTracks.length === 0) return;
+    // Tag all chosen items as auto-queued
+    const finalQueueTracks: Track[] = sampledTracks.map((t) => ({
+      ...t,
+      isAutoQueued: true,
+      queuedBy: 'auto',
+    }));
 
     console.log(
-      `[SmartQueueEngine] Committing ${finalQueueTracks.length} auto-queue tracks:`,
+      `[SmartQueueEngine] Committing ${finalQueueTracks.length} fresh dynamic auto-queue tracks (tau=${SMART_QUEUE_CONFIG.TEMPERATURE}):`,
       finalQueueTracks.map((t) => `${t.artist} - ${t.title}`)
     );
 
@@ -308,10 +407,20 @@ export const SmartQueueService = {
       console.warn('[SmartQueueEngine] DB track put failed silently:', dbErr);
     }
 
-    // ─── FUNCTIONAL STATE UPDATE (PREVENTS LOST WRITES) ─────────────────────
-    deps.store.setState((state) => ({
-      queue: [...state.queue, ...finalQueueTracks],
-    }));
+    // ─── FUNCTIONAL STATE UPDATE WITH CLEAN EVICTION ────────────────────────
+    deps.store.setState((state) => {
+      const activeIdx = state.activeQueueIndex;
+      // Head: all played tracks up to and including the current active track
+      const head = state.queue.slice(0, activeIdx + 1);
+      // Upcoming: keep any manual user-added tracks, evict old auto-queued tracks
+      const upcomingManual = state.queue
+        .slice(activeIdx + 1)
+        .filter((t) => !t.isAutoQueued && t.queuedBy !== 'auto');
+
+      return {
+        queue: [...head, ...upcomingManual, ...finalQueueTracks],
+      };
+    });
 
     // ─── STREAM PREFETCHING ──────────────────────────────────────────────────
     const upcomingVideoIds = finalQueueTracks
