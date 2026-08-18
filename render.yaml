@@ -1,15 +1,20 @@
-# Render Blueprint configuration for Singularity Player backend
+# Render Blueprint configuration for Singularity Player (Full-Stack Monorepo)
 services:
   - type: web
-    name: singularity-player-backend
+    name: singularity-player
     env: docker
-    dockerfilePath: server/Dockerfile
-    dockerContext: server
+    dockerfilePath: Dockerfile
+    dockerContext: .
     plan: free
     envVars:
       - key: PORT
-        value: 3001
+        value: 8000
       - key: NODE_ENV
         value: production
       - key: ALLOWED_ORIGINS
-        value: "*" # Allow all origins by default (recommended for mobile/web accessibility)
+        value: "*"
+      - key: PROXY_URL
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+
