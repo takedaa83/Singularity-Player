@@ -815,7 +815,12 @@ function runYtDlpPooled(args, timeoutMs) {
                 poolHandle.release();
             }
         };
-        const child = (0, child_process_1.execFile)(exports.YT_DLP_PATH, args, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+        const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+        const finalArgs = [...args];
+        if (proxy && !finalArgs.includes('--proxy')) {
+            finalArgs.push('--proxy', proxy);
+        }
+        const child = (0, child_process_1.execFile)(exports.YT_DLP_PATH, finalArgs, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
             release();
             if (error) {
                 reject(Object.assign(error, { stdout, stderr }));
@@ -950,6 +955,10 @@ async function spawnAudioStream(videoId, quality = 'high') {
     const cookieFilePath = (0, youtubeAuth_1.getCookieFilePath)();
     if (cookieFilePath) {
         args.push('--cookies', cookieFilePath);
+    }
+    const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    if (proxy && !args.includes('--proxy')) {
+        args.push('--proxy', proxy);
     }
     args.push('-o', '-', ytUrl);
     await exports.ytDlpReady;
