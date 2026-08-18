@@ -38,17 +38,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.YTDLP_PROXY;
-if (proxyUrl) {
-    try {
-        const { ProxyAgent, setGlobalDispatcher } = require('undici');
-        setGlobalDispatcher(new ProxyAgent(proxyUrl));
-        console.log(`[Proxy] Global HTTP/HTTPS dispatcher routed through proxy`);
-    }
-    catch (err) {
-        console.warn(`[Proxy] Note: Global undici ProxyAgent could not be initialized: ${err.message}`);
-    }
-}
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));

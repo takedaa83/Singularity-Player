@@ -211,7 +211,27 @@ const clients: Record<string, InnerTubeClient> = {
   }
 };
 
-async function requestInnerTube(endpoint: string, clientKey: string, payload: any, extraParams: string = "", forceDomain: string | null = null, timeoutMs: number = 10000): Promise<any> {
+let youtubeDispatcher: any = null;
+function getYoutubeDispatcher() {
+  const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.YTDLP_PROXY;
+  if (!proxyUrl) return undefined;
+  if (!youtubeDispatcher) {
+    try {
+      const { ProxyAgent } = require('undici');
+      youtubeDispatcher = new ProxyAgent(proxyUrl);
+    } catch {}
+  }
+  return youtubeDispatcher;
+}
+
+export async function requestInnerTube(
+  endpoint: string,
+  clientKey: string,
+  payload: any,
+  extraParams: string = "",
+  forceDomain: string | null = null,
+  timeoutMs: number = 10000
+): Promise<any> {
   const client = clients[clientKey];
   if (!client) {
     throw new Error(`Unknown InnerTube client: ${clientKey}`);
@@ -251,11 +271,10 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent": client.userAgent,
-    "X-Goog-Api-Format-Version": "1",
     "X-YouTube-Client-Name": client.clientId,
     "X-YouTube-Client-Version": client.clientVersion,
-    "X-Origin": client.origin,
-    "Referer": client.referer
+    "Origin": client.origin,
+    "Referer": client.referer,
   };
 
   try {
@@ -263,9 +282,7 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
     if (visitorId) {
       headers["X-Goog-Visitor-Id"] = visitorId;
     }
-  } catch (err: any) {
-    // Ignore visitorId errors
-  }
+  } catch (err: any) {}
 
   const cookieHeader = getCookieHeader();
   if (client.loginSupported && cookieHeader) {
@@ -280,13 +297,33 @@ async function requestInnerTube(endpoint: string, clientKey: string, payload: an
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
+  const dispatcher = getYoutubeDispatcher();
+  const fetchOptions: any = {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    signal: controller.signal
+  };
+  if (dispatcher) {
+    fetchOptions.dispatcher = dispatcher;
+  }
+
   try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal
-    });
+    let res: any;
+    try {
+      res = await fetch(url, fetchOptions);
+    } catch (fetchErr: any) {
+      if (dispatcher) {
+        res = await fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+      } else {
+        throw fetchErr;
+      }
+    }
 
     clearTimeout(timeout);
 

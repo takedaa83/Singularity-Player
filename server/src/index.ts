@@ -1,17 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.YTDLP_PROXY;
-if (proxyUrl) {
-  try {
-    const { ProxyAgent, setGlobalDispatcher } = require('undici');
-    setGlobalDispatcher(new ProxyAgent(proxyUrl));
-    console.log(`[Proxy] Global HTTP/HTTPS dispatcher routed through proxy`);
-  } catch (err: any) {
-    console.warn(`[Proxy] Note: Global undici ProxyAgent could not be initialized: ${err.message}`);
-  }
-}
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

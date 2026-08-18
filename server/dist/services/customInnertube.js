@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.requestInnerTube = requestInnerTube;
 exports.parseMusicListItem = parseMusicListItem;
 exports.customSearch = customSearch;
 exports.customPlayer = customPlayer;
@@ -198,6 +199,20 @@ const clients = {
         loginSupported: false
     }
 };
+let youtubeDispatcher = null;
+function getYoutubeDispatcher() {
+    const proxyUrl = process.env.PROXY_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.YTDLP_PROXY;
+    if (!proxyUrl)
+        return undefined;
+    if (!youtubeDispatcher) {
+        try {
+            const { ProxyAgent } = require('undici');
+            youtubeDispatcher = new ProxyAgent(proxyUrl);
+        }
+        catch { }
+    }
+    return youtubeDispatcher;
+}
 async function requestInnerTube(endpoint, clientKey, payload, extraParams = "", forceDomain = null, timeoutMs = 10000) {
     const client = clients[clientKey];
     if (!client) {
@@ -236,11 +251,10 @@ async function requestInnerTube(endpoint, clientKey, payload, extraParams = "", 
     const headers = {
         "Content-Type": "application/json",
         "User-Agent": client.userAgent,
-        "X-Goog-Api-Format-Version": "1",
         "X-YouTube-Client-Name": client.clientId,
         "X-YouTube-Client-Version": client.clientVersion,
-        "X-Origin": client.origin,
-        "Referer": client.referer
+        "Origin": client.origin,
+        "Referer": client.referer,
     };
     try {
         const visitorId = await getVisitorData();
@@ -248,9 +262,7 @@ async function requestInnerTube(endpoint, clientKey, payload, extraParams = "", 
             headers["X-Goog-Visitor-Id"] = visitorId;
         }
     }
-    catch (err) {
-        // Ignore visitorId errors
-    }
+    catch (err) { }
     const cookieHeader = (0, youtubeAuth_1.getCookieHeader)();
     if (client.loginSupported && cookieHeader) {
         headers["Cookie"] = cookieHeader;
@@ -262,13 +274,34 @@ async function requestInnerTube(endpoint, clientKey, payload, extraParams = "", 
     }
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const dispatcher = getYoutubeDispatcher();
+    const fetchOptions = {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+    };
+    if (dispatcher) {
+        fetchOptions.dispatcher = dispatcher;
+    }
     try {
-        const res = await fetch(url, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(body),
-            signal: controller.signal
-        });
+        let res;
+        try {
+            res = await fetch(url, fetchOptions);
+        }
+        catch (fetchErr) {
+            if (dispatcher) {
+                res = await fetch(url, {
+                    method: "POST",
+                    headers,
+                    body: JSON.stringify(body),
+                    signal: controller.signal
+                });
+            }
+            else {
+                throw fetchErr;
+            }
+        }
         clearTimeout(timeout);
         if (!res.ok) {
             throw new Error(`InnerTube request failed: ${res.status} ${await res.text()}`);

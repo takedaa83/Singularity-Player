@@ -864,8 +864,15 @@ async function getAudioStreamUrl(videoId, quality = 'high', bypassCache = false)
                     streamUrlCache.set(cacheKey, { data: customResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
                     return customResult;
                 }
-                // Tier 2: Direct local yt-dlp extraction fallback
-                console.log(`[youtubeService] InnerTube extraction failed for ${videoId}, falling back directly to local yt-dlp...`);
+                // Tier 2: Multi-source proxy instances racing (Invidious / Cobalt / Piped)
+                console.log(`[youtubeService] InnerTube extraction failed for ${videoId}, trying fallback instances...`);
+                const proxyResult = await extractUrlWithProxy(videoId, quality);
+                if (proxyResult) {
+                    streamUrlCache.set(cacheKey, { data: proxyResult, expiry: Date.now() + STREAM_URL_CACHE_TTL, lastAccessed: Date.now() });
+                    return proxyResult;
+                }
+                // Tier 3: Direct local yt-dlp extraction fallback
+                console.log(`[youtubeService] Proxy instances failed for ${videoId}, falling back directly to local yt-dlp...`);
                 const ytUrl = `https://www.youtube.com/watch?v=${videoId}`;
                 const formatSelector = getYtDlpFormatSelector(quality);
                 const args = [
