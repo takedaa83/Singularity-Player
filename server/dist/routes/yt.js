@@ -644,11 +644,30 @@ async function streamViaPipe(videoId, res, req, quality = 'high') {
     try {
         const { stream, process: child } = await (0, youtubeService_1.spawnAudioStream)(videoId, quality);
         poolHandle.registerProcess(child);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Content-Type', 'audio/mp4');
-        res.setHeader('Cache-Control', 'public, max-age=1800');
-        res.setHeader('Transfer-Encoding', 'chunked');
-        stream.pipe(res);
+        let headersSent = false;
+        stream.once('data', (chunk) => {
+            if (!headersSent && !res.headersSent) {
+                headersSent = true;
+                const sniffed = sniffAudioMimeType(chunk) || 'audio/webm';
+                res.writeHead(200, {
+                    'Access-Control-Allow-Origin': '*',
+                    'Content-Type': sniffed,
+                    'Cache-Control': 'public, max-age=1800',
+                    'Transfer-Encoding': 'chunked',
+                });
+            }
+            res.write(chunk);
+        });
+        stream.on('data', (chunk) => {
+            if (headersSent) {
+                res.write(chunk);
+            }
+        });
+        stream.on('end', () => {
+            if (!res.writableEnded)
+                res.end();
+            release();
+        });
         stream.on('error', (err) => {
             console.error('[YT Route] Pipe stream error:', err);
             if (!res.writableEnded)
