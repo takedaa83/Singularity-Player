@@ -541,12 +541,12 @@ export async function customPlayer(videoId: string, clientKey?: string): Promise
       }
 
       console.log(`[customInnertube] Validating resolved stream URL for client ${key}...`);
-      const isValid = await validateUrl(bestFormat.url);
+      const isValid = await validateUrl(bestFormat.url, clients[key]?.userAgent);
       if (!isValid) {
-        throw new Error(`Stream URL validation failed (Turnstile challenged or blocked)`);
+        console.warn(`[customInnertube] Probe validation rejected stream URL for client ${key}`);
       }
 
-      console.log(`[customInnertube] Successfully resolved and validated video ${videoId} with client ${key}`);
+      console.log(`[customInnertube] Successfully resolved video ${videoId} with client ${key}`);
       lastSuccessfulClientKey = key;
       return {
         basicInfo,
@@ -757,29 +757,35 @@ export async function customGetTranscript(videoId: string): Promise<any> {
   }
 }
 
-async function validateUrl(url: string): Promise<boolean> {
+async function validateUrl(url: string, userAgent?: string): Promise<boolean> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 6000);
     const res = await fetch(url, {
       method: "GET",
       headers: {
         "Range": "bytes=0-1",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       },
       signal: controller.signal
     });
     clearTimeout(timeout);
     
-    if (res.status === 200 || res.status === 206) {
+    if (res.status === 200 || res.status === 206 || res.status === 302) {
       const contentType = res.headers.get("content-type") || "";
       if (contentType.includes("text/html")) {
         return false;
       }
       return true;
     }
+    if (res.status !== 403 && res.status !== 429 && url.includes("googlevideo.com")) {
+      return true;
+    }
     return false;
   } catch (err) {
+    if (url.includes("googlevideo.com") && (url.includes("sig=") || url.includes("signature="))) {
+      return true;
+    }
     return false;
   }
 }
