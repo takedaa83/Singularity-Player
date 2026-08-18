@@ -928,7 +928,7 @@ function runYtDlpPooled(args: string[], timeoutMs: number): Promise<{ stdout: st
       }
     };
 
-    const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    const proxy = process.env.PROXY_URL || process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     const finalArgs = [...args];
     if (proxy && !finalArgs.includes('--proxy')) {
       finalArgs.push('--proxy', proxy);
@@ -1090,7 +1090,7 @@ export async function spawnAudioStream(videoId: string, quality: 'high' | 'mediu
   if (cookieFilePath) {
     args.push('--cookies', cookieFilePath);
   }
-  const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  const proxy = process.env.PROXY_URL || process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
   if (proxy && !args.includes('--proxy')) {
     args.push('--proxy', proxy);
   }

@@ -815,7 +815,7 @@ function runYtDlpPooled(args, timeoutMs) {
                 poolHandle.release();
             }
         };
-        const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+        const proxy = process.env.PROXY_URL || process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
         const finalArgs = [...args];
         if (proxy && !finalArgs.includes('--proxy')) {
             finalArgs.push('--proxy', proxy);
@@ -956,7 +956,7 @@ async function spawnAudioStream(videoId, quality = 'high') {
     if (cookieFilePath) {
         args.push('--cookies', cookieFilePath);
     }
-    const proxy = process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    const proxy = process.env.PROXY_URL || process.env.YTDLP_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     if (proxy && !args.includes('--proxy')) {
         args.push('--proxy', proxy);
     }
