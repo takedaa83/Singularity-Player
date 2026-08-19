@@ -9,7 +9,7 @@ import { QueuePanel } from './components/player/QueuePanel';
 import { LyricsPanel } from './components/player/LyricsPanel';
 import { Equalizer } from './components/player/Equalizer';
 import { ToastContainer } from './components/ui/Toast';
-import { useAudioEngine } from './hooks/useAudioEngine';
+import { useAudioEngine, timeStore } from './hooks/useAudioEngine';
 import { useAmbientColor } from './hooks/useAmbientColor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePlayerStore } from './stores/playerStore';
@@ -223,9 +223,6 @@ export const App: React.FC = () => {
   const setPlaying = usePlayerStore((s) => s.setPlaying);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
   const volume = usePlayerStore((s) => s.volume);
-  const setVolume = usePlayerStore((s) => s.setVolume);
-  const initialVolumeRef = useRef<number | null>(null);
-
   useEffect(() => {
     if (!sleepTimerEndTimestamp) {
       if (initialVolumeRef.current !== null) {
@@ -260,6 +257,52 @@ export const App: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [sleepTimerEndTimestamp, setPlaying, setSleepTimer, setVolume]);
+
+  // ─── Electron Desktop IPC Synchronization ────────────────────────────
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.electronAPI) return;
+
+    // 1. Listen for hardware/global media keys & tray control events
+    const unsubscribeMedia = window.electronAPI.onMediaControl((action) => {
+      const state = usePlayerStore.getState();
+      switch (action) {
+        case 'play-pause':
+          state.togglePlay();
+          break;
+        case 'next':
+          state.nextTrack();
+          break;
+        case 'previous':
+          state.previousTrack();
+          break;
+        case 'toggle-miniplayer':
+          window.electronAPI?.toggleMiniPlayer();
+          break;
+      }
+    });
+
+    return unsubscribeMedia;
+  }, []);
+
+  // 2. Broadcast playback changes to Electron (Taskbar, Tray, Discord RPC, OBS)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.electronAPI) return;
+
+    const dur = currentTrack?.duration || timeStore.getDuration() || 0;
+    const curTime = timeStore.getCurrentTime() || 0;
+
+    window.electronAPI.sendPlayerState({
+      title: currentTrack?.title || '',
+      artist: currentTrack?.artist || '',
+      album: currentTrack?.album || '',
+      coverUrl: currentTrack?.coverArtUrl || currentTrack?.coverUrl || null,
+      isPlaying,
+      progress: curTime,
+      duration: dur
+    });
+  }, [currentTrack, isPlaying]);
 
 
 

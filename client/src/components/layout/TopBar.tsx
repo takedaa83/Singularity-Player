@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { IconButton, Tooltip, Badge, Box } from '@mui/material';
-import { Sun, Moon, UploadCloud, Menu, Download, Sparkles } from 'lucide-react';
+import { Sun, Moon, UploadCloud, Menu, Download, Sparkles, Minus, Square, Copy, X, PictureInPicture2 } from 'lucide-react';
 import { SearchInput } from '../search/SearchInput';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -25,6 +25,19 @@ export const TopBar: React.FC<TopBarProps> = ({
   const updateSetting = useSettingsStore((s) => s.updateSetting);
   const activeDownloadCount = useDownloadStore((s) => s.queue.filter(d => d.status === 'active').length);
 
+  const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    if (isElectron && window.electronAPI) {
+      window.electronAPI.isMaximized().then(setIsMaximized);
+      const unsubscribe = window.electronAPI.onMaximizeChange((max) => {
+        setIsMaximized(max);
+      });
+      return unsubscribe;
+    }
+  }, [isElectron]);
+
   const handleThemeToggle = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     updateSetting('theme', nextTheme);
@@ -32,10 +45,11 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header
-      className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 backdrop-blur-2xl bg-black/40 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+      style={isElectron ? ({ WebkitAppRegion: 'drag' } as any) : undefined}
+      className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 backdrop-blur-2xl bg-black/40 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.25)] select-none"
     >
       {/* Left balancing box (Menu button on mobile, empty on desktop) */}
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }} style={{ WebkitAppRegion: 'no-drag' } as any}>
         {onMenuClick && (
           <IconButton
             onClick={onMenuClick}
@@ -48,7 +62,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       </Box>
 
       {/* Centered Search Field with Cmd+K Badge */}
-      <Box sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
+      <Box 
+        sx={{ flex: '0 1 auto', width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}
+        style={{ WebkitAppRegion: 'no-drag' } as any}
+      >
         <SearchInput onSearch={onSearch} initialValue={searchQuery} />
         <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md border border-white/10 bg-white/5 text-[10px] font-mono text-slate-400 shrink-0">
           ⌘K
@@ -56,7 +73,35 @@ export const TopBar: React.FC<TopBarProps> = ({
       </Box>
 
       {/* Right Action Buttons */}
-      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: { xs: 1, sm: 1.5 } }}>
+      <Box 
+        sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: { xs: 1, sm: 1.5 } }}
+        style={{ WebkitAppRegion: 'no-drag' } as any}
+      >
+        {/* Desktop Mini-Player Trigger */}
+        {isElectron && (
+          <Tooltip title="Floating Mini-Player (Ctrl+Shift+M)">
+            <IconButton
+              onClick={() => window.electronAPI?.toggleMiniPlayer()}
+              aria-label="Toggle Mini-Player"
+              sx={{
+                p: 1,
+                borderRadius: '12px',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-secondary)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  borderColor: 'rgba(255, 255, 255, 0.15)',
+                  color: '#fff',
+                },
+              }}
+            >
+              <PictureInPicture2 className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+        )}
+
         {/* Download indicator */}
         {activeDownloadCount > 0 && (
           <Tooltip title={`${activeDownloadCount} download${activeDownloadCount > 1 ? 's' : ''} active`}>
@@ -118,8 +163,36 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           </IconButton>
         </Tooltip>
+
+        {/* Native Electron Window Controls (Minimize / Maximize / Close) */}
+        {isElectron && (
+          <div className="flex items-center gap-1 ml-2 pl-3 border-l border-white/10">
+            <button
+              onClick={() => window.electronAPI?.minimize()}
+              title="Minimize"
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => window.electronAPI?.maximize()}
+              title={isMaximized ? 'Restore' : 'Maximize'}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            >
+              {isMaximized ? <Copy className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+            </button>
+            <button
+              onClick={() => window.electronAPI?.close()}
+              title="Close to Tray"
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-500/80 hover:text-white text-slate-400 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </Box>
     </header>
   );
 };
 export default TopBar;
+

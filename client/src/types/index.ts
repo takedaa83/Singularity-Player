@@ -222,3 +222,36 @@ export const EQ_PRESETS: EQPreset[] = [
   { name: 'classical',  label: 'Classical',  bands: [4, 3, 1, 0, -1, -1, 0, 2, 3, 5] },
   { name: 'nightcore',  label: 'Nightcore',  bands: [-2, 0, 2, 4, 5, 5, 3, 1, -1, -2] },
 ];
+
+// ─── Desktop Electron API ─────────────────────────────────────────────
+
+export interface ElectronPlayerState {
+  title: string;
+  artist: string;
+  album?: string;
+  coverUrl?: string | null;
+  isPlaying: boolean;
+  progress: number;
+  duration: number;
+}
+
+export interface ElectronAPI {
+  isElectron: boolean;
+  platform: string;
+  minimize: () => void;
+  maximize: () => void;
+  close: () => void;
+  isMaximized: () => Promise<boolean>;
+  onMaximizeChange: (callback: (isMax: boolean) => void) => () => void;
+  sendPlayerState: (state: ElectronPlayerState) => void;
+  onMediaControl: (callback: (action: 'play-pause' | 'next' | 'previous' | 'toggle-miniplayer') => void) => () => void;
+  toggleMiniPlayer: () => void;
+  openDirectoryPicker: () => Promise<string | null>;
+}
+
+declare global {
+  interface Window {
+    electronAPI?: ElectronAPI;
+  }
+}
+

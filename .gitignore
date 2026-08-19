@@ -6,6 +6,9 @@ test_dl.m4a
 
 # Build outputs
 server/dist
+client/dist
+dist-electron
+dist
 
 # Uploaded user data (audio files, cover art)
 server/uploads

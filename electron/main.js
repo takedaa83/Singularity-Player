@@ -1,0 +1,438 @@
+const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, dialog, nativeImage } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const http = require('http');
+const { fork } = require('child_process');
+const { DiscordRpcClient } = require('./discordRpc');
+
+// Ensure Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+let mainWindow = null;
+let miniPlayerWindow = null;
+let tray = null;
+let serverProcess = null;
+let discordRpc = null;
+let currentTrackState = {
+  title: '',
+  artist: '',
+  album: '',
+  coverUrl: '',
+  isPlaying: false,
+  progress: 0,
+  duration: 0
+};
+
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+const PORT = process.env.PORT || 8000;
+const SERVER_URL = isDev && process.env.VITE_DEV_SERVER ? 'http://localhost:5173' : `http://localhost:${PORT}`;
+
+/**
+ * Initializes and starts the embedded Express server in production.
+ */
+function startInternalServer() {
+  return new Promise((resolve) => {
+    // Check if server is already running on port
+    const checkHealth = () => {
+      const req = http.get(`http://localhost:${PORT}/api/health`, (res) => {
+        if (res.statusCode === 200) {
+          resolve(true);
+        } else {
+          setTimeout(checkHealth, 300);
+        }
+      });
+      req.on('error', () => {
+        setTimeout(checkHealth, 300);
+      });
+      req.end();
+    };
+
+    const serverScript = path.join(__dirname, '..', 'server', 'dist', 'index.js');
+    if (fs.existsSync(serverScript)) {
+      console.log(`[Electron Main] Spawning background server from ${serverScript}`);
+      serverProcess = fork(serverScript, [], {
+        env: {
+          ...process.env,
+          PORT: String(PORT),
+          NODE_ENV: 'production',
+          ELECTRON_RUN_AS_NODE: '1'
+        },
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc']
+      });
+
+      serverProcess.stdout?.on('data', (d) => console.log(`[Server stdout] ${d.toString().trim()}`));
+      serverProcess.stderr?.on('data', (d) => console.error(`[Server stderr] ${d.toString().trim()}`));
+
+      serverProcess.on('exit', (code) => {
+        console.log(`[Server] Exited with code ${code}`);
+      });
+    }
+
+    checkHealth();
+  });
+}
+
+/**
+ * Creates the primary Frameless BrowserWindow.
+ */
+function createMainWindow() {
+  const iconPath = path.join(__dirname, '..', 'client', 'public', 'favicon.svg');
+
+  mainWindow = new BrowserWindow({
+    width: 1360,
+    height: 860,
+    minWidth: 980,
+    minHeight: 620,
+    frame: false,
+    titleBarStyle: 'hidden',
+    backgroundColor: '#0a0a0c',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+      webSecurity: false // Enables local audio file streaming
+    }
+  });
+
+  mainWindow.loadURL(SERVER_URL);
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.focus();
+    setupThumbarButtons();
+  });
+
+  // Notify renderer on maximize / unmaximize
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window:maximize-change', true);
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window:maximize-change', false);
+  });
+
+  // Minimize to tray on close
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+/**
+ * Creates the optional floating Mini-Player.
+ */
+function toggleMiniPlayerWindow() {
+  if (miniPlayerWindow) {
+    if (miniPlayerWindow.isVisible()) {
+      miniPlayerWindow.hide();
+    } else {
+      miniPlayerWindow.show();
+    }
+    return;
+  }
+
+  miniPlayerWindow = new BrowserWindow({
+    width: 360,
+    height: 140,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    backgroundColor: '#0f0f13',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  miniPlayerWindow.loadURL(`${SERVER_URL}/#miniplayer`);
+
+  miniPlayerWindow.on('closed', () => {
+    miniPlayerWindow = null;
+  });
+}
+
+/**
+ * Creates and updates the System Tray icon and context menu.
+ */
+function setupSystemTray() {
+  const iconPath = path.join(__dirname, '..', 'client', 'public', 'favicon.svg');
+  if (!fs.existsSync(iconPath)) return;
+
+  const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+  tray = new Tray(trayIcon);
+  tray.setToolTip('Singularity Music Player');
+
+  updateTrayMenu();
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        mainWindow.focus();
+      } else {
+        mainWindow.show();
+      }
+    }
+  });
+
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+
+  const trackLabel = currentTrackState.title 
+    ? `${currentTrackState.title} - ${currentTrackState.artist || 'Unknown'}`
+    : 'No Track Playing';
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: trackLabel, enabled: false },
+    { type: 'separator' },
+    {
+      label: currentTrackState.isPlaying ? '⏸ Pause' : '▶ Play',
+      click: () => sendMediaControl('play-pause')
+    },
+    {
+      label: '⏭ Next Track',
+      click: () => sendMediaControl('next')
+    },
+    {
+      label: '⏮ Previous Track',
+      click: () => sendMediaControl('previous')
+    },
+    { type: 'separator' },
+    {
+      label: '🪟 Toggle Mini-Player',
+      click: () => toggleMiniPlayerWindow()
+    },
+    {
+      label: '✨ Open Singularity Player',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '❌ Quit',
+      click: () => {
+        app.isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setContextMenu(contextMenu);
+}
+
+/**
+ * Registers Windows Taskbar Thumbnail (Thumbar) buttons.
+ */
+function setupThumbarButtons() {
+  if (process.platform !== 'win32' || !mainWindow) return;
+
+  try {
+    const isPlaying = currentTrackState.isPlaying;
+    const playPauseIcon = nativeImage.createFromPath(
+      path.join(__dirname, '..', 'client', 'public', 'favicon.svg')
+    ).resize({ width: 16, height: 16 });
+
+    mainWindow.setThumbarButtons([
+      {
+        tooltip: 'Previous Track',
+        icon: playPauseIcon,
+        click: () => sendMediaControl('previous')
+      },
+      {
+        tooltip: isPlaying ? 'Pause' : 'Play',
+        icon: playPauseIcon,
+        click: () => sendMediaControl('play-pause')
+      },
+      {
+        tooltip: 'Next Track',
+        icon: playPauseIcon,
+        click: () => sendMediaControl('next')
+      }
+    ]);
+  } catch (err) {
+    // Gracefully ignore thumbar errors on non-supported platforms
+  }
+}
+
+/**
+ * Registers Global OS Media Keys & Shortcuts.
+ */
+function registerGlobalShortcuts() {
+  // Global Media Keys
+  globalShortcut.register('MediaPlayPause', () => sendMediaControl('play-pause'));
+  globalShortcut.register('MediaNextTrack', () => sendMediaControl('next'));
+  globalShortcut.register('MediaPreviousTrack', () => sendMediaControl('previous'));
+  globalShortcut.register('MediaStop', () => sendMediaControl('play-pause'));
+
+  // Productivity Global Hotkeys
+  globalShortcut.register('CommandOrControl+Alt+Space', () => sendMediaControl('play-pause'));
+  globalShortcut.register('CommandOrControl+Alt+Right', () => sendMediaControl('next'));
+  globalShortcut.register('CommandOrControl+Alt+Left', () => sendMediaControl('previous'));
+  globalShortcut.register('CommandOrControl+Shift+M', () => toggleMiniPlayerWindow());
+}
+
+function sendMediaControl(action) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('player:control', action);
+  }
+}
+
+/**
+ * Exports Now Playing data for OBS Studio / Streamlabs widgets.
+ */
+function exportObsNowPlaying(track) {
+  try {
+    const obsDir = path.join(app.getPath('userData'), 'obs');
+    if (!fs.existsSync(obsDir)) {
+      fs.mkdirSync(obsDir, { recursive: true });
+    }
+
+    const textContent = track.title 
+      ? `${track.title} - ${track.artist}`
+      : '';
+    fs.writeFileSync(path.join(obsDir, 'now_playing.txt'), textContent, 'utf8');
+    fs.writeFileSync(path.join(obsDir, 'now_playing.json'), JSON.stringify(track, null, 2), 'utf8');
+  } catch (err) {
+    // Ignore OBS file export errors
+  }
+}
+
+// ----------------------------------------------------
+// IPC Event Listeners from React Frontend
+// ----------------------------------------------------
+
+ipcMain.on('window:minimize', () => {
+  if (mainWindow) mainWindow.minimize();
+});
+
+ipcMain.on('window:maximize', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.on('window:close', () => {
+  if (mainWindow) mainWindow.close();
+});
+
+ipcMain.handle('window:isMaximized', () => {
+  return mainWindow ? mainWindow.isMaximized() : false;
+});
+
+ipcMain.on('miniplayer:toggle', () => {
+  toggleMiniPlayerWindow();
+});
+
+ipcMain.handle('dialog:open-directory', async () => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'dontAddToRecent'],
+    title: 'Select Local Music Folder'
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  return result.filePaths[0];
+});
+
+ipcMain.on('player:state-update', (_, state) => {
+  currentTrackState = { ...currentTrackState, ...state };
+
+  // 1. Update Windows Taskbar Progress
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (state.duration && state.duration > 0) {
+      const progressRatio = Math.min(Math.max((state.progress || 0) / state.duration, 0), 1);
+      mainWindow.setProgressBar(state.isPlaying ? progressRatio : -1);
+    } else {
+      mainWindow.setProgressBar(-1);
+    }
+  }
+
+  // 2. Update System Tray
+  updateTrayMenu();
+
+  // 3. Update Discord Rich Presence
+  if (discordRpc) {
+    if (state.title) {
+      discordRpc.setActivity(currentTrackState);
+    } else {
+      discordRpc.clearActivity();
+    }
+  }
+
+  // 4. Update OBS Streamer Export
+  exportObsNowPlaying(currentTrackState);
+});
+
+// ----------------------------------------------------
+// App Lifecycle
+// ----------------------------------------------------
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    if (!mainWindow.isVisible()) mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
+app.whenReady().then(async () => {
+  // Start server if needed
+  if (!isDev) {
+    await startInternalServer();
+  }
+
+  createMainWindow();
+  setupSystemTray();
+  registerGlobalShortcuts();
+
+  // Initialize Discord RPC
+  try {
+    discordRpc = new DiscordRpcClient('1341052185292410971'); // Singularity Discord App ID
+    discordRpc.connect();
+  } catch (err) {
+    console.warn('[Discord RPC] Initialization skipped:', err.message);
+  }
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+  if (discordRpc) discordRpc.destroy();
+  if (serverProcess) {
+    try {
+      serverProcess.kill();
+    } catch {}
+  }
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
