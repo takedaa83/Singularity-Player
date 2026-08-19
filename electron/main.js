@@ -35,43 +35,18 @@ const SERVER_URL = isDev && process.env.VITE_DEV_SERVER ? 'http://localhost:5173
  */
 function startInternalServer() {
   return new Promise((resolve) => {
-    // Check if server is already running on port
-    const checkHealth = () => {
-      const req = http.get(`http://localhost:${PORT}/api/health`, (res) => {
-        if (res.statusCode === 200) {
-          resolve(true);
-        } else {
-          setTimeout(checkHealth, 300);
-        }
-      });
-      req.on('error', () => {
-        setTimeout(checkHealth, 300);
-      });
-      req.end();
-    };
-
-    const serverScript = path.join(__dirname, '..', 'server', 'dist', 'index.js');
-    if (fs.existsSync(serverScript)) {
-      console.log(`[Electron Main] Spawning background server from ${serverScript}`);
-      serverProcess = fork(serverScript, [], {
-        env: {
-          ...process.env,
-          PORT: String(PORT),
-          NODE_ENV: 'production',
-          ELECTRON_RUN_AS_NODE: '1'
-        },
-        stdio: ['ignore', 'pipe', 'pipe', 'ipc']
-      });
-
-      serverProcess.stdout?.on('data', (d) => console.log(`[Server stdout] ${d.toString().trim()}`));
-      serverProcess.stderr?.on('data', (d) => console.error(`[Server stderr] ${d.toString().trim()}`));
-
-      serverProcess.on('exit', (code) => {
-        console.log(`[Server] Exited with code ${code}`);
-      });
+    try {
+      process.env.PORT = String(PORT);
+      process.env.NODE_ENV = 'production';
+      const serverPath = path.join(__dirname, '..', 'server', 'dist', 'index.js');
+      if (fs.existsSync(serverPath)) {
+        require(serverPath);
+        console.log('[Electron Main] Embedded Express server started in-process');
+      }
+    } catch (err) {
+      console.error('[Electron Main] In-process server startup error:', err);
     }
-
-    checkHealth();
+    resolve(true);
   });
 }
 
@@ -90,17 +65,28 @@ function createMainWindow() {
     titleBarStyle: 'hidden',
     backgroundColor: '#0a0a0c',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
-    show: false,
+    show: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      webSecurity: false // Enables local audio file streaming
+      webSecurity: false
     }
   });
 
-  mainWindow.loadURL(SERVER_URL);
+  const loadApp = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    mainWindow.loadURL(SERVER_URL).catch(() => {
+      setTimeout(loadApp, 300);
+    });
+  };
+
+  loadApp();
+
+  mainWindow.webContents.on('did-fail-load', () => {
+    setTimeout(loadApp, 500);
+  });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
