@@ -1,7 +1,7 @@
 import { Component, ReactNode, StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ThemeProvider, CssBaseline } from '@mui/material'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import { getMuiTheme } from './theme/muiTheme'
 import { useSettingsStore } from './stores/settingsStore'
 import './index.css'
@@ -58,52 +58,51 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map(key => caches.delete(key)));
+        await Promise.all(keys.map(k => caches.delete(k)));
       }
       if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map(r => r.unregister()));
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
       }
       localStorage.clear();
       sessionStorage.clear();
-    } catch (e) {
-      console.warn('Failed to clear cache:', e);
+      window.location.reload();
+    } catch {
+      window.location.reload();
     }
-    window.location.reload();
   };
 
   render() {
     if (this.state.hasError) {
       return (
         <div style={{
-          minHeight: '100vh',
+          height: '100vh',
+          width: '100vw',
           backgroundColor: '#070707',
-          color: '#fff',
+          color: '#ffffff',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '24px',
-          textAlign: 'center',
-          fontFamily: 'sans-serif'
+          fontFamily: 'system-ui, sans-serif',
+          padding: '20px',
+          boxSizing: 'border-box'
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>Something went wrong loading the app</h2>
-          <p style={{ fontSize: '13px', color: '#a3a3a3', maxWidth: '400px', marginBottom: '20px' }}>
-            {this.state.error?.message || 'A script or asset failed to load.'}
-          </p>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '8px' }}>Something went wrong loading the app</h2>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '24px' }}>{this.state.error?.message || 'An unexpected error occurred.'}</p>
           <button
             onClick={this.handleClearCacheAndReload}
             style={{
-              padding: '12px 24px',
+              padding: '10px 20px',
               backgroundColor: '#f59e0b',
-              color: '#000',
-              fontWeight: 'bold',
-              borderRadius: '12px',
+              color: '#000000',
               border: 'none',
+              borderRadius: '8px',
+              fontWeight: 'bold',
               cursor: 'pointer'
             }}
           >
-            Clear Cache & Reload
+            Clear Cache &amp; Reload
           </button>
         </div>
       );
@@ -152,9 +151,9 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <DynamicThemeProvider>
         <CssBaseline />
-        <BrowserRouter>
+        <HashRouter>
           <App />
-        </BrowserRouter>
+        </HashRouter>
       </DynamicThemeProvider>
     </ErrorBoundary>
   </StrictMode>,

@@ -224,6 +224,10 @@ if (clientDistPath) {
       }
     }
   }));
+  app.use('/assets', express.static(path.join(clientDistPath, 'assets'), {
+    maxAge: '1y',
+    immutable: true
+  }));
   app.get('*', (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.path.startsWith('/api')) return next();
     // Do not serve index.html for missing static files/chunks

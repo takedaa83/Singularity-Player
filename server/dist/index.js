@@ -230,6 +230,10 @@ if (clientDistPath) {
             }
         }
     }));
+    app.use('/assets', express_1.default.static(path.join(clientDistPath, 'assets'), {
+        maxAge: '1y',
+        immutable: true
+    }));
     app.get('*', (req, res, next) => {
         if (req.path.startsWith('/api'))
             return next();
