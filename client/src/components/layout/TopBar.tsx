@@ -48,8 +48,8 @@ export const TopBar: React.FC<TopBarProps> = ({
       style={isElectron ? ({ WebkitAppRegion: 'drag' } as any) : undefined}
       className="h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 sm:gap-6 shrink-0 z-20 backdrop-blur-2xl bg-black/40 border-b border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.25)] select-none"
     >
-      {/* Left balancing box (Menu button on mobile, empty on desktop) */}
-      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }} style={{ WebkitAppRegion: 'no-drag' } as any}>
+      {/* Left balancing box (Menu button on mobile, Brand on desktop) */}
+      <Box sx={{ flex: 1, display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 1.5 }} style={{ WebkitAppRegion: 'no-drag' } as any}>
         {onMenuClick && (
           <IconButton
             onClick={onMenuClick}
@@ -58,6 +58,18 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             <Menu className="w-5 h-5" />
           </IconButton>
+        )}
+        {isElectron && (
+          <div className="hidden lg:flex items-center gap-2 select-none pointer-events-none opacity-90">
+            <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-[#fa2d55] to-[#ec4899] flex items-center justify-center shadow-[0_0_10px_rgba(250,45,85,0.4)]">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18V5l12-2v13"></path>
+                <circle cx="6" cy="18" r="3"></circle>
+                <circle cx="18" cy="16" r="3"></circle>
+              </svg>
+            </div>
+            <span className="text-[11.5px] font-extrabold tracking-tight text-white/90">SINGULARITY</span>
+          </div>
         )}
       </Box>
 

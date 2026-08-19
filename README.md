@@ -1,20 +1,21 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v3.0.0--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
-  <img src="https://img.shields.io/badge/Architecture-Master--DSP-10b981?style=for-the-badge&logo=speedtest&logoColor=white" alt="DSP Architecture" />
-  <img src="https://img.shields.io/badge/Design-Titanium%20Obsidian-0a0b0f?style=for-the-badge&logo=figma&logoColor=white" alt="Design System" />
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-3b82f6?style=for-the-badge&logo=linux&logoColor=white" alt="Platform Badge" />
+  <img src="https://img.shields.io/badge/Release-v1.5.0--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
+  <img src="https://img.shields.io/badge/Desktop-Native%20Windows%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Native" />
+  <img src="https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord RPC" />
+  <img src="https://img.shields.io/badge/DSP-Master--Engine%20v3.0-10b981?style=for-the-badge&logo=speedtest&logoColor=white" alt="DSP Architecture" />
+  <img src="https://img.shields.io/badge/UI-Titanium%20Obsidian-0a0b0f?style=for-the-badge&logo=figma&logoColor=white" alt="Design System" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
-<h1 align="center">🌌 Singularity Player</h1>
+<h1 align="center">🌌 Singularity Player (v1.5.0 Flagship)</h1>
 
 <p align="center">
-  <strong>The Enterprise-Grade, Audiophile Music Streaming & Intelligence Platform</strong><br/>
-  Powered by the custom <strong>Singularity Master Engine v3.0</strong>, sub-millisecond Better Lyrics syllable interpolation, real-time 4-channel Linkwitz-Riley stem demixing, YIN autocorrelation auto-tune, continuous EBU R128 LUFS loudness staging, and the luxury <strong>Titanium Obsidian & Radiant Rose</strong> design system.
+  <strong>The Enterprise-Grade, Audiophile Music Streaming, Desktop & Intelligence Platform</strong><br/>
+  Powered by the custom <strong>Singularity Master Engine v3.0</strong>, Native Windows Desktop & Electron architecture, Discord Rich Presence, sub-millisecond Better Lyrics syllable interpolation, real-time 4-channel Linkwitz-Riley stem demixing, continuous EBU R128 LUFS loudness staging, and the luxury <strong>Titanium Obsidian & Radiant Rose</strong> design system.
 </p>
 
 <p align="center">
-  <em>Search any song across global networks. Stream in lossless fidelity. Demix stems in real-time. Experience frame-perfect syllable lyrics. All local, private, and zero subscription fees.</em>
+  <em>Search any song across global networks. Stream in lossless fidelity. Demix stems in real-time. Broadcast to Discord. Inspect live system telemetry. All local, private, and zero subscription fees.</em>
 </p>
 
 ---
@@ -22,13 +23,13 @@
 ## 🧭 Table of Contents
 
 1. [Architectural Master Pillars](#-architectural-master-pillars)
-2. [Singularity Master Engine v3.0](#-singularity-master-engine-v30-flagship-edition)
-3. [Sub-Millisecond Lyrics Highlighting Engine](#-sub-millisecond-lyrics-highlighting-engine)
-4. [Titanium Obsidian & Radiant Rose Design System](#-titanium-obsidian--radiant-rose-design-system)
-5. [Singularity AI Playlist Studio & DJ Harmonic Matrix](#-singularity-ai-playlist-studio--dj-harmonic-matrix)
+2. [Native Desktop Application (Windows)](#-native-desktop-application-windows)
+3. [Singularity Master Engine v3.0](#-singularity-master-engine-v30-flagship-edition)
+4. [Live Developer & Diagnostic Console](#-live-developer--diagnostic-system-console)
+5. [Sub-Millisecond Lyrics Highlighting Engine](#-sub-millisecond-lyrics-highlighting-engine)
 6. [Audiophile DSP & Stems Pipeline](#-audiophile-dsp--stems-pipeline)
-7. [Complete Feature Matrix](#-complete-feature-matrix)
-8. [Getting Started & Installation](#-getting-started--installation)
+7. [Desktop vs Web Feature Matrix](#-desktop-vs-web-feature-matrix)
+8. [Installation & Getting Started](#-installation--getting-started)
 9. [Keyboard Shortcuts](#-keyboard-shortcuts)
 10. [License & Ethics](#-license--ethics)
 
@@ -40,22 +41,35 @@ Singularity Player is engineered with the rigor of industry-leading software tea
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SINGULARITY PLAYER v3.0                           │
+│                           SINGULARITY PLAYER v1.5.0                         │
 ├──────────────────────────────┬──────────────────────────────────────────────┤
-│  🎨 PRESENTATION & STAGE     │  🌌 DSP & INTELLIGENCE ENGINE                │
-│  • Titanium Obsidian Canvas  │  • Zero-Allocation Ring-Buffer Spectral FFT  │
-│  • Frosted Glass (40px blur) │  • 7-Band Parametric Energy Metering         │
-│  • Radiant Rose (#fa2d55)    │  • Transient & Beat Onset Detection          │
-│  • Fluid Easing (0.16,1,0.3) │  • Continuous K-Weighted LUFS Auto-Matching  │
-│  • Sub-Pixel Gradient Masks  │  • Predictive Multi-Track Neural Caching     │
+│  🖥️ DESKTOP NATIVE (ELECTRON) │  🌌 DSP & INTELLIGENCE ENGINE                │
+│  • Discord Rich Presence RPC │  • Zero-Allocation Ring-Buffer Spectral FFT  │
+│  • Background System Tray    │  • 7-Band Parametric Energy Metering         │
+│  • Global OS Media Keys      │  • Transient & Beat Onset Detection          │
+│  • Floating Mini-Player (PiP)│  • Continuous K-Weighted LUFS Auto-Matching  │
+│  • OBS Studio Overlay Engine │  • Predictive Multi-Track Neural Caching     │
 ├──────────────────────────────┼──────────────────────────────────────────────┤
-│  🎤 SYLLABLE LYRICS PIPELINE │  🎛️ REAL-TIME STEM DEMIXING & FX             │
-│  • Better Lyrics Tier-1 API  │  • 4-Channel Linkwitz-Riley Crossovers       │
-│  • Apple Music TTML Parser   │  • YIN Pitch Autocorrelation Auto-Tune       │
-│  • Background Harmonies (BG) │  • 10-Band Parametric Studio Equalizer       │
-│  • Romaji & Hangul Phonetics │  • 3D Binaural Spatial Audio Panner          │
+│  🎨 PRESENTATION & STAGE     │  🎛️ REAL-TIME STEM DEMIXING & FX             │
+│  • Titanium Obsidian Canvas  │  • 4-Channel Linkwitz-Riley Crossovers       │
+│  • Frosted Glass (40px blur) │  • YIN Pitch Autocorrelation Auto-Tune       │
+│  • Radiant Rose (#fa2d55)    │  • 10-Band Parametric Studio Equalizer       │
+│  • Fluid Easing (0.16,1,0.3) │  • 3D Binaural Spatial Audio Panner          │
+│  • Sub-Pixel Gradient Masks  │  • Live Diagnostic Terminal Console          │
 └──────────────────────────────┴──────────────────────────────────────────────┘
 ```
+
+---
+
+## 🖥️ Native Desktop Application (Windows)
+
+Singularity Player now runs as a **high-performance, standalone 64-bit Windows desktop application** with deep operating system integration:
+
+* **🎮 Discord Rich Presence (RPC)**: Automatically displays your currently playing track, artist, album art, elapsed time, and total duration on your Discord profile in real time via local IPC pipes (`\\.\pipe\discord-ipc-0`).
+* **📌 Background System Tray**: Keep music playing seamlessly in the background. Minimize to tray, control playback, skip tracks, and adjust volume without cluttering your taskbar.
+* **⌨️ Global OS Media Keys**: Control playback (`Play/Pause`, `Next`, `Previous`, `Mute`) globally across Windows even while playing games or working in fullscreen applications.
+* **🪟 Picture-in-Picture Mini-Player**: Detach a floating, always-on-top glass mini-player (`Ctrl + Shift + M`) for quick track control and visual feedback.
+* **🎥 OBS Studio Stream Integration**: Broadcast real-time track metadata and dynamic animated now-playing widgets to OBS Studio or streaming software via the local overlay server.
 
 ---
 
@@ -69,7 +83,7 @@ Under the hood, all audio streaming, signal analysis, telemetry, and queue cachi
   $$\text{Sub-Bass (20–60Hz)} \;\vert\; \text{Bass (60–250Hz)} \;\vert\; \text{Low-Mid} \;\vert\; \text{Mid} \;\vert\; \text{High-Mid} \;\vert\; \text{Presence} \;\vert\; \text{Brilliance (8–20kHz)}$$
 
 ### 2. 🎯 Real-Time Transient & Beat Onset Detector
-- Implements dynamic 43-sample history variance analysis targeting sub-bass energy spikes ($\le 180\text{Hz}$):
+- Dynamic 43-sample history variance analysis targeting sub-bass energy spikes ($\le 180\text{Hz}$):
   $$\text{Instant Energy} > \overline{E}_{\text{history}} \times 1.38 \implies \text{Beat Event}$$
 
 ### 3. 🎚️ Continuous LUFS Loudness Auto-Matching
@@ -82,9 +96,21 @@ Under the hood, all audio streaming, signal analysis, telemetry, and queue cachi
 
 ---
 
-## 🎤 Sub-Millisecond Lyrics Highlighting Engine
+## 💻 Live Developer & Diagnostic System Console
 
-Singularity Player features an advanced lyrics synchronization engine inspired by Apple Music and Better Lyrics:
+Access a full terminal inside the **Settings** view to monitor system health and run diagnostics:
+
+* **Real-time Log Stream**: Rolling buffer of 1,500 events capturing audio engine state, stream resolution, and Discord RPC events.
+* **Instant Category Filters**: `All Logs`, `Audio & DSP`, `Network & API`, `Server Engine`, `Desktop & Discord`, and `Database & Cache`.
+* **Diagnostic Actions**:
+  - 📡 **Ping Server**: Probes backend `/api/health` and logs round-trip latency in milliseconds.
+  - 🎵 **Test DSP Audio**: Validates WebAudio Context, sample rate, gain stages, and render FPS.
+  - 📋 **Copy to Clipboard**: Copies formatted logs with ISO timestamps.
+  - 💾 **Export `.log`**: Generates a downloadable diagnostic report (`singularity_diagnostics.log`).
+
+---
+
+## 🎤 Sub-Millisecond Lyrics Highlighting Engine
 
 * **Syllable-by-Syllable Precision**: Evaluates exact word timing progression continuously without artificial step delays:
   $$\text{Progress} = \text{clamp}\left(0, \frac{\text{currentTime} - \text{word.start}}{\text{word.end} - \text{word.start}}, 1\right)$$
@@ -95,106 +121,58 @@ Singularity Player features an advanced lyrics synchronization engine inspired b
 
 ---
 
-## 🎨 Titanium Obsidian & Radiant Rose Design System
-
-A cohesive, luxury design system built to eliminate visual clutter and establish aesthetic harmony:
-
-* **Canvas Palette**:
-  - **Base Canvas**: Deep Titanium Obsidian (`#0a0b0f`)
-  - **Elevated Surfaces**: Frosted Titanium Glass (`#12141a` / `#191c24` / `#222631`)
-  - **Signature Accent**: **Radiant Rose (`#fa2d55`)** — crisp contrast, luxury neon glow
-* **Architectural Glassmorphism**:
-  - `.glass-panel`: Silky `backdrop-filter: blur(32px) saturate(190%)` with top specular 1px borders (`inset 0 1px 0 0 rgba(255, 255, 255, 0.10)`).
-  - `.glass-panel-strong`: `backdrop-filter: blur(40px) saturate(210%)` with deep box-shadows (`0 28px 70px rgba(0, 0, 0, 0.85)`).
-* **Velvety Smooth Fluid Animations**:
-  - Replaced snappy spring jumps with **`cubic-bezier(0.16, 1, 0.3, 1)`** easing curves across page transitions (`0.46s`), lyrics lines (`0.62s`), and drawers (`0.48s`).
-
----
-
-## 🧠 Singularity AI Playlist Studio & DJ Harmonic Matrix
-
-Curate bespoke track selections with natural language intelligence and acoustic mathematics:
-
-* **💬 Conversational Refinement**: Stack iterative prompts (*"Make it more upbeat"*, *"Add dark indie synthwave"*) without losing locked tracks.
-* **🔒 Per-Track Song Locking**: Pin favorite tracks while regenerating surrounding selections.
-* **🎧 DJ Camelot Harmonic Mixing**:
-  `Track A ──── [BPM +2 | Camelot 8A → 8B (Harmonic) | Energy +6%] ────► Track B`
-* **🕸️ Multi-Node Cosine Vector Graph**: Interactive topological network mapping track affinity vectors across Tempo, Danceability, Energy, and Valence.
-
----
-
 ## 🎛️ Audiophile DSP & Stems Pipeline
 
-* **4-Channel Stem Demixing**: Real-time Linkwitz-Riley 4th-order filter crossover isolation of **Vocals**, **Drums**, **Bass**, and **Melody** with instant Karaoke mutes.
-* **YIN Pitch Autocorrelation**: Studio-grade pitch estimation and chromatic/modal scale quantization.
-* **10-Band Parametric Equalizer**: 32Hz, 64Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz with studio presets.
-* **Procedural Ambience Synthesizer**: Binaural Rain, Ocean Surf, Forest Wind, and Brown Noise generator.
-* **Picture-in-Picture (PiP) Floating Mini-Player**: Native browser-level video canvas mini-player with interactive album art and playback controls.
+1. **Linkwitz-Riley 4th Order Crossovers ($24\text{ dB/octave}$)**: Phase-aligned 4-channel frequency splitting separating Vocals, Bass, Drums, and Melody in real-time.
+2. **YIN Pitch Autocorrelation & Auto-Tune**: Sub-harmonic pitch extraction correcting vocal pitch deviation to the nearest chromatic scale degree.
+3. **10-Band Parametric Studio Equalizer**: Precision graphic filters with customized audiophile presets (Acoustic, Bass Boost, Club, Electronic, Vocal Boost, Flat).
+4. **3D Binaural Spatial Audio**: WebAudio PannerNode positioning sound sources in simulated 3D acoustic environments.
 
 ---
 
-## 📊 Complete Feature Matrix
+## 📊 Desktop vs Web Feature Matrix
 
-| Feature | Description | Status |
-| :--- | :--- | :---: |
-| **Singularity Master Engine v3.0** | Real-time zero-allocation DSP, beat detection, LUFS matching | ✅ Production |
-| **Listen Together (Room Sync)** | Real-time synchronized playback rooms with sub-50ms clock drift compensation | ✅ Production |
-| **Better Lyrics + TTML Engine** | Sub-millisecond syllable-by-syllable word highlighting | ✅ Production |
-| **Titanium Obsidian UI** | Deep slate frosted glass with Radiant Rose accent | ✅ Production |
-| **Battery Saver & Performance Mode** | Adaptive blur shader optimization & background FFT throttling | ✅ Production |
-| **Velvety Fluid Transitions** | Apple-grade cubic-bezier fluid motion across all sheets & pages | ✅ Production |
-| **AI Stem Separation** | Linkwitz-Riley 4-channel demixing (Vocals/Drums/Bass/Melody) | ✅ Production |
-| **YIN Auto-Tune** | Fundamental frequency pitch autocorrelation & scale quantizer | ✅ Production |
-| **AI Playlist Studio** | Natural language conversational curation + DJ Camelot flow | ✅ Production |
-| **Shazam Audio Identifier** | Microphone FFT constellation hashing for real-time track identification | ✅ Production |
-| **Batch Offline Downloads** | Concurrent multithreaded MP3 downloader with ID3 tag writing | ✅ Production |
-| **Spotify Library Importer** | Instant playlist and liked songs migration via public API | ✅ Production |
+| Feature | Desktop App (.exe) | Web Player (Browser) |
+| :--- | :---: | :---: |
+| **Discord Rich Presence (RPC)** | ✅ **Native** | ❌ (Browser Sandbox) |
+| **System Tray Background Playback** | ✅ **Native** | ❌ |
+| **Global OS Media Keys (In-Game)** | ✅ **Native** | ⚠️ (Browser Active Only) |
+| **Floating Mini-Player Window** | ✅ **Always-on-Top** | ⚠️ (Standard PiP) |
+| **Zero-Configuration In-Process Server** | ✅ **Built-in** | ⚠️ (Requires Server Host) |
+| **Lossless Audio Streaming & DSP** | ✅ **Full Engine** | ✅ **Full Engine** |
+| **Syllable-by-Syllable Lyrics** | ✅ **Full Engine** | ✅ **Full Engine** |
+| **Real-Time Stem Demixing & FX** | ✅ **Full Engine** | ✅ **Full Engine** |
+| **Live Developer Diagnostic Console** | ✅ **Full Engine** | ✅ **Full Engine** |
+| **IndexedDB Offline Music Storage** | ✅ **Persistent** | ✅ **Persistent** |
 
 ---
 
-## 🚀 Getting Started & Installation
+## 🚀 Installation & Getting Started
 
-### Prerequisites
-- **Node.js**: `>= 18.0.0`
-- **npm** or **pnpm** / **yarn**
+### 📦 Option 1: Native Windows Desktop Executables (Recommended)
+1. **Installer**: Double-click **`Singularity Player Setup 1.5.0.exe`** to install Singularity Player to your Windows Start Menu and Desktop.
+2. **Portable**: Double-click **`Singularity Player Portable.exe`** for zero-install, instant portable playback anywhere.
 
-### 1. Clone the Repository
+### 🛠️ Option 2: 1-Click Interactive Batch Launcher
+Double-click **`Start Singularity Player.bat`** in the repository root and choose:
+* `[1]` Launch Native Desktop App
+* `[2]` Start Local Web Player + Server
+* `[3]` Build Windows Installer Executables (.exe)
+
+### 💻 Option 3: Developer Setup (Node.js 18+)
 ```bash
-git clone https://github.com/takedaa83/Singularity-Player---private.git
-cd "Singularity-Player---private"
-```
+# 1. Clone the repository
+git clone https://github.com/takedaa83/Singularity-Player.git
+cd Singularity-Player
 
-### 2. Install Dependencies
-```bash
-# Install server dependencies
-cd server
+# 2. Install all dependencies
 npm install
 
-# Install client dependencies
-cd ../client
-npm install
-```
-
-### 3. Run Development Environment
-```bash
-# Terminal 1: Start Backend API & Stream Server
-cd server
+# 3. Start development server & Electron app
 npm run dev
 
-# Terminal 2: Start Frontend Application
-cd client
-npm run dev
-```
-
-### 4. Build for Production
-```bash
-# Build Server
-cd server
-npm run build
-
-# Build Client
-cd ../client
-npm run build
+# 4. Package standalone Windows executables
+npm run dist:win
 ```
 
 ---
@@ -203,23 +181,21 @@ npm run build
 
 | Shortcut | Action |
 | :--- | :--- |
-| `Cmd + K` / `Ctrl + K` / `/` | Open Raycast Command Palette |
-| `Space` | Play / Pause Playback |
-| `Arrow Left` / `Arrow Right` | Seek Backward / Forward 5s |
-| `Arrow Up` / `Arrow Down` | Adjust Volume Up / Down 5% |
-| `M` | Toggle Mute |
-| `N` | Skip to Next Track |
-| `P` | Jump to Previous Track |
-| `L` | Toggle Lyrics View (Side / Fullscreen) |
-| `Q` | Open Play Queue Drawer |
-| `E` | Open 10-Band Studio Equalizer |
+| **`Space`** | Play / Pause |
+| **`J` / `←`** | Seek Backward 5 Seconds |
+| **`L` / `→`** | Seek Forward 5 Seconds |
+| **`K`** | Toggle Play / Pause |
+| **`Shift + N`** | Next Track |
+| **`Shift + P`** | Previous Track |
+| **`↑` / `↓`** | Adjust Volume $\pm 5\%$ |
+| **`M`** | Toggle Mute |
+| **`F`** | Toggle Fullscreen Mode |
+| **`Ctrl + K` / `⌘K`** | Open Command Palette / Global Search |
+| **`Ctrl + Shift + M`** | Toggle Floating Mini-Player (Desktop) |
+| **`F12`** | Toggle Developer Tools (Desktop) |
 
 ---
 
 ## 📜 License & Ethics
 
-Singularity Player is licensed under the **MIT License**. Built with passion for open-source digital signal processing, modern web standards, and high-fidelity audio engineering.
-
-<p align="center">
-  Made with 💖 by the Singularity Engineering Team
-</p>
+Singularity Player is distributed under the **MIT License**. It does not store user data remotely, tracks zero analytics, requires no user account or subscription, and is designed purely for private, local audiophile music enjoyment.
