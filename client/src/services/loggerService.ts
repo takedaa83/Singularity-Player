@@ -60,6 +60,32 @@ class LoggerService {
     if (this.isHooked || typeof window === 'undefined') return;
     this.isHooked = true;
 
+    const formatArgument = (arg: any): string => {
+      if (arg === null) return 'null';
+      if (arg === undefined) return 'undefined';
+      if (arg instanceof Error) {
+        return `${arg.name}: ${arg.message}${arg.stack ? `\n${arg.stack}` : ''}`;
+      }
+      if (typeof arg === 'object') {
+        try {
+          // If object contains error property or message
+          if (arg.message || arg.error || arg.status) {
+            return JSON.stringify(arg, null, 2);
+          }
+          const str = JSON.stringify(arg, (k, v) => {
+            if (v instanceof Error) {
+              return { name: v.name, message: v.message, stack: v.stack };
+            }
+            return v;
+          });
+          return str === '{}' ? Object.prototype.toString.call(arg) : str;
+        } catch {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    };
+
     const capture = (level: LogLevel, originalFn: Function, args: any[]) => {
       // Always execute original console function
       originalFn.apply(console, args);
@@ -73,12 +99,12 @@ class LoggerService {
           const match = firstArg.match(/^\[(.*?)\]/);
           if (match) {
             tag = match[1];
-            message = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+            message = args.map(formatArgument).join(' ');
           } else {
-            message = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+            message = args.map(formatArgument).join(' ');
           }
         } else {
-          message = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+          message = args.map(formatArgument).join(' ');
         }
 
         const category = this.detectCategory(tag + ' ' + message);

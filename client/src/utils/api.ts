@@ -11,9 +11,20 @@ let _customUrlValidated = false;
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    const custom = localStorage.getItem('singularity_server_url');
+    // If running in Desktop Electron mode, ALWAYS prioritize the local in-process server
+    const isElectron = !!(window as any).electronAPI?.isElectron;
+    if (isElectron) {
+      if (window.location.origin && window.location.origin.startsWith('http')) {
+        return window.location.origin.replace(/\/$/, '');
+      }
+      return 'http://localhost:8000';
+    }
 
-    if (custom && custom.trim()) {
+    const custom = localStorage.getItem('singularity_server_url');
+    // If custom URL is a dead Render server, clear it
+    if (custom && custom.includes('singularity-player-backend-av2k.onrender.com')) {
+      localStorage.removeItem('singularity_server_url');
+    } else if (custom && custom.trim()) {
       const trimmed = custom.trim().replace(/\/$/, '');
       return trimmed;
     }
@@ -40,7 +51,7 @@ export async function validateAndRepairBaseUrl(): Promise<void> {
   const trimmed = custom.trim().replace(/\/$/, '');
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(`${trimmed}/api/health`, { signal: controller.signal });
     clearTimeout(timeout);
     if (res.ok) return; // healthy, keep using it
