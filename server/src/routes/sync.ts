@@ -3,15 +3,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 
+import { getSyncDataDir } from '../utils/paths';
+
 const router = Router();
 
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DATA_DIR = getSyncDataDir();
 const SYNC_FILE = path.join(DATA_DIR, 'library_sync.json');
-
-// Ensure data folder exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 
 // POST /api/sync/push
 router.post('/push', async (req: Request, res: Response) => {

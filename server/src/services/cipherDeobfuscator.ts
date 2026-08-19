@@ -1,14 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
+import { getCacheDir } from '../utils/paths';
 
-const CACHE_DIR = path.resolve(__dirname, '..', '..', '.cache', 'cipher');
+const CACHE_DIR = getCacheDir('cipher');
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-
-// Ensure cache directory exists
-if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-}
 
 interface HardcodedPlayerConfig {
   sigFuncName?: string;

@@ -7,12 +7,11 @@ import fs from 'fs';
 import { spawn } from 'child_process';
 import { Readable } from 'stream';
 
+import { getCacheDir } from '../utils/paths';
+
 const router = Router();
 
-const CACHE_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'tracks', 'cache');
-if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
-}
+const CACHE_DIR = getCacheDir('tracks_cache');
 
 const activeCacheDownloads = new Map<string, Promise<string>>();
 

@@ -26,22 +26,17 @@ import { preWarmClient, ensureYtDlpBinary } from './services/youtubeService';
 import { checkCookieHealth } from './services/customInnertube';
 import { ytdlpPool } from './services/processPool';
 
+import { getUploadsDir } from './utils/paths';
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Trust reverse proxy (Render) for correct rate limiting IP validation
 app.set('trust proxy', 1);
 
-// Ensure uploads folders exist
-const uploadsTracksDir = path.join(__dirname, '..', 'uploads', 'tracks');
-const uploadsCoversDir = path.join(__dirname, '..', 'uploads', 'covers');
-
-if (!fs.existsSync(uploadsTracksDir)) {
-  fs.mkdirSync(uploadsTracksDir, { recursive: true });
-}
-if (!fs.existsSync(uploadsCoversDir)) {
-  fs.mkdirSync(uploadsCoversDir, { recursive: true });
-}
+// Ensure uploads folders exist safely
+const uploadsTracksDir = getUploadsDir('tracks');
+const uploadsCoversDir = getUploadsDir('covers');
 
 // Middlewares
 app.use(helmet({

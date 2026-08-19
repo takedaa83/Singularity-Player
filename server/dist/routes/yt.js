@@ -11,11 +11,9 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const child_process_1 = require("child_process");
 const stream_1 = require("stream");
+const paths_1 = require("../utils/paths");
 const router = (0, express_1.Router)();
-const CACHE_DIR = path_1.default.resolve(__dirname, '..', '..', 'uploads', 'tracks', 'cache');
-if (!fs_1.default.existsSync(CACHE_DIR)) {
-    fs_1.default.mkdirSync(CACHE_DIR, { recursive: true });
-}
+const CACHE_DIR = (0, paths_1.getCacheDir)('tracks_cache');
 const activeCacheDownloads = new Map();
 /**
  * Sanitize a filename for use in Content-Disposition headers.

@@ -10,12 +10,9 @@ exports.forceReloadPlayer = forceReloadPlayer;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const vm_1 = __importDefault(require("vm"));
-const CACHE_DIR = path_1.default.resolve(__dirname, '..', '..', '.cache', 'cipher');
+const paths_1 = require("../utils/paths");
+const CACHE_DIR = (0, paths_1.getCacheDir)('cipher');
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
-// Ensure cache directory exists
-if (!fs_1.default.existsSync(CACHE_DIR)) {
-    fs_1.default.mkdirSync(CACHE_DIR, { recursive: true });
-}
 const KNOWN_PLAYER_CONFIGS = {
     "74edf1a3": {
         sigFuncName: "JI",

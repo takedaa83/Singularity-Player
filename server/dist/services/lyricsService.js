@@ -40,11 +40,10 @@ const crypto = __importStar(require("crypto"));
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const youtubeService_1 = require("./youtubeService");
-const LYRICS_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'lyrics');
+const paths_1 = require("../utils/paths");
+const LYRICS_DIR = (0, paths_1.getLyricsDir)();
 function ensureLyricsDir() {
-    if (!fs.existsSync(LYRICS_DIR)) {
-        fs.mkdirSync(LYRICS_DIR, { recursive: true });
-    }
+    // Handled safely by getLyricsDir()
 }
 function getLyricsFileHash(track, artist) {
     return crypto

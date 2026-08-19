@@ -5,13 +5,12 @@ import * as fs from 'fs';
 import * as crypto from 'crypto';
 import { MetadataService } from '../services/metadataService';
 
+import { getUploadsDir } from '../utils/paths';
+
 const router = Router();
 
 // Ensure upload folders exist
-const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'tracks');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const uploadDir = getUploadsDir('tracks');
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({

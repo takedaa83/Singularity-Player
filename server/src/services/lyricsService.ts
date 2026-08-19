@@ -18,12 +18,12 @@ export interface LyricsResult {
   duration: number;
 }
 
-const LYRICS_DIR = path.resolve(__dirname, '..', '..', 'uploads', 'lyrics');
+import { getLyricsDir } from '../utils/paths';
+
+const LYRICS_DIR = getLyricsDir();
 
 function ensureLyricsDir() {
-  if (!fs.existsSync(LYRICS_DIR)) {
-    fs.mkdirSync(LYRICS_DIR, { recursive: true });
-  }
+  // Handled safely by getLyricsDir()
 }
 
 function getLyricsFileHash(track: string, artist: string): string {

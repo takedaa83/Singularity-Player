@@ -39,15 +39,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const multer_1 = __importDefault(require("multer"));
 const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
 const crypto = __importStar(require("crypto"));
 const metadataService_1 = require("../services/metadataService");
+const paths_1 = require("../utils/paths");
 const router = (0, express_1.Router)();
 // Ensure upload folders exist
-const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'tracks');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const uploadDir = (0, paths_1.getUploadsDir)('tracks');
 // Multer Storage Configuration
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {

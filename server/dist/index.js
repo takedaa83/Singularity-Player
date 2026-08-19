@@ -61,19 +61,14 @@ const localScanner_1 = __importDefault(require("./routes/localScanner"));
 const youtubeService_1 = require("./services/youtubeService");
 const customInnertube_1 = require("./services/customInnertube");
 const processPool_1 = require("./services/processPool");
+const paths_1 = require("./utils/paths");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8000;
 // Trust reverse proxy (Render) for correct rate limiting IP validation
 app.set('trust proxy', 1);
-// Ensure uploads folders exist
-const uploadsTracksDir = path.join(__dirname, '..', 'uploads', 'tracks');
-const uploadsCoversDir = path.join(__dirname, '..', 'uploads', 'covers');
-if (!fs.existsSync(uploadsTracksDir)) {
-    fs.mkdirSync(uploadsTracksDir, { recursive: true });
-}
-if (!fs.existsSync(uploadsCoversDir)) {
-    fs.mkdirSync(uploadsCoversDir, { recursive: true });
-}
+// Ensure uploads folders exist safely
+const uploadsTracksDir = (0, paths_1.getUploadsDir)('tracks');
+const uploadsCoversDir = (0, paths_1.getUploadsDir)('covers');
 // Middlewares
 app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: false,

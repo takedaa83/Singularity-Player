@@ -38,10 +38,24 @@ function startInternalServer() {
     try {
       process.env.PORT = String(PORT);
       process.env.NODE_ENV = 'production';
-      const serverPath = path.join(__dirname, '..', 'server', 'dist', 'index.js');
-      if (fs.existsSync(serverPath)) {
+      const writableDataDir = path.join(app.getPath('userData'), 'server_data');
+      process.env.SINGULARITY_DATA_DIR = writableDataDir;
+      if (!fs.existsSync(writableDataDir)) {
+        fs.mkdirSync(writableDataDir, { recursive: true });
+      }
+
+      const candidates = [
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'server', 'dist', 'index.js'),
+        path.join(__dirname, '..', 'server', 'dist', 'index.js'),
+        path.join(__dirname.replace('app.asar', 'app.asar.unpacked'), '..', 'server', 'dist', 'index.js'),
+      ];
+
+      const serverPath = candidates.find((p) => fs.existsSync(p));
+      if (serverPath) {
+        console.log('[Electron Main] Loading embedded Express server from:', serverPath);
         require(serverPath);
-        console.log('[Electron Main] Embedded Express server required.');
+      } else {
+        console.warn('[Electron Main] Could not find server/dist/index.js in candidates:', candidates);
       }
     } catch (err) {
       console.error('[Electron Main] Server require error:', err);
@@ -53,13 +67,15 @@ function startInternalServer() {
       const req = http.get(`http://localhost:${PORT}/api/health`, (res) => {
         if (res.statusCode === 200) {
           clearInterval(interval);
+          console.log(`[Electron Main] Express server health check PASSED on port ${PORT}`);
           resolve(true);
         }
       });
       req.on('error', () => {});
       req.setTimeout(200, () => req.destroy());
-      if (count > 30) {
+      if (count > 50) {
         clearInterval(interval);
+        console.warn('[Electron Main] Express health check timed out after 5s');
         resolve(false);
       }
     }, 100);
@@ -91,10 +107,15 @@ function createMainWindow() {
     }
   });
 
-  mainWindow.loadURL(SERVER_URL).catch(() => {
-    console.warn('[Electron Main] loadURL failed, falling back to local file');
-    const indexPath = path.join(__dirname, '..', 'client', 'dist', 'index.html');
-    if (fs.existsSync(indexPath)) {
+  mainWindow.loadURL(SERVER_URL).catch((err) => {
+    console.warn('[Electron Main] loadURL failed, falling back to local file:', err);
+    const candidates = [
+      path.join(process.resourcesPath, 'app.asar.unpacked', 'client', 'dist', 'index.html'),
+      path.join(__dirname, '..', 'client', 'dist', 'index.html'),
+      path.join(__dirname.replace('app.asar', 'app.asar.unpacked'), '..', 'client', 'dist', 'index.html'),
+    ];
+    const indexPath = candidates.find((p) => fs.existsSync(p));
+    if (indexPath) {
       mainWindow.loadFile(indexPath);
     }
   });

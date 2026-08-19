@@ -37,13 +37,10 @@ const express_1 = require("express");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const fsPromises = __importStar(require("fs/promises"));
+const paths_1 = require("../utils/paths");
 const router = (0, express_1.Router)();
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
+const DATA_DIR = (0, paths_1.getSyncDataDir)();
 const SYNC_FILE = path.join(DATA_DIR, 'library_sync.json');
-// Ensure data folder exists
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 // POST /api/sync/push
 router.post('/push', async (req, res) => {
     const data = req.body;

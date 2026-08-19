@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import { ytdlpPool } from './processPool';
 import { customSearch, customPlayer, customGetRelated, customGetTranscript } from './customInnertube';
 import { getCookieFilePath, getCookieHeader } from './youtubeAuth';
+import { getBinDir } from '../utils/paths';
 
 const execFileAsync = promisify(execFile);
 
@@ -182,10 +183,7 @@ export async function ensureYtDlpBinary(): Promise<string> {
     return termuxPath;
   }
 
-  const binDir = path.resolve(__dirname, '..', '..', 'bin');
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
-  }
+  const binDir = getBinDir();
 
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';

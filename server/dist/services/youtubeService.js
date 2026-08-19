@@ -30,6 +30,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const processPool_1 = require("./processPool");
 const customInnertube_1 = require("./customInnertube");
 const youtubeAuth_1 = require("./youtubeAuth");
+const paths_1 = require("../utils/paths");
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 // Strict YouTube video ID validation: exactly 11 alphanumeric / dash / underscore chars
 const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
@@ -169,10 +170,7 @@ async function ensureYtDlpBinary() {
         exports.YT_DLP_PATH = termuxPath;
         return termuxPath;
     }
-    const binDir = path_1.default.resolve(__dirname, '..', '..', 'bin');
-    if (!fs_1.default.existsSync(binDir)) {
-        fs_1.default.mkdirSync(binDir, { recursive: true });
-    }
+    const binDir = (0, paths_1.getBinDir)();
     const isWindows = process.platform === 'win32';
     const isMac = process.platform === 'darwin';
     const isAndroid = process.platform === 'android';
