@@ -223,6 +223,9 @@ export const App: React.FC = () => {
   const setPlaying = usePlayerStore((s) => s.setPlaying);
   const setSleepTimer = usePlayerStore((s) => s.setSleepTimer);
   const volume = usePlayerStore((s) => s.volume);
+  const setVolume = usePlayerStore((s) => s.setVolume);
+  const initialVolumeRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!sleepTimerEndTimestamp) {
       if (initialVolumeRef.current !== null) {
