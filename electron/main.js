@@ -41,12 +41,28 @@ function startInternalServer() {
       const serverPath = path.join(__dirname, '..', 'server', 'dist', 'index.js');
       if (fs.existsSync(serverPath)) {
         require(serverPath);
-        console.log('[Electron Main] Embedded Express server started in-process');
+        console.log('[Electron Main] Embedded Express server required.');
       }
     } catch (err) {
-      console.error('[Electron Main] In-process server startup error:', err);
+      console.error('[Electron Main] Server require error:', err);
     }
-    resolve(true);
+
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      const req = http.get(`http://localhost:${PORT}/api/health`, (res) => {
+        if (res.statusCode === 200) {
+          clearInterval(interval);
+          resolve(true);
+        }
+      });
+      req.on('error', () => {});
+      req.setTimeout(200, () => req.destroy());
+      if (count > 30) {
+        clearInterval(interval);
+        resolve(false);
+      }
+    }, 100);
   });
 }
 
@@ -75,17 +91,20 @@ function createMainWindow() {
     }
   });
 
-  const loadApp = () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    mainWindow.loadURL(SERVER_URL).catch(() => {
-      setTimeout(loadApp, 300);
-    });
-  };
+  mainWindow.loadURL(SERVER_URL).catch(() => {
+    console.warn('[Electron Main] loadURL failed, falling back to local file');
+    const indexPath = path.join(__dirname, '..', 'client', 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      mainWindow.loadFile(indexPath);
+    }
+  });
 
-  loadApp();
-
-  mainWindow.webContents.on('did-fail-load', () => {
-    setTimeout(loadApp, 500);
+  // Enable F12 / Ctrl+Shift+I for DevTools inspection
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+      mainWindow.webContents.toggleDevTools();
+      event.preventDefault();
+    }
   });
 
   mainWindow.once('ready-to-show', () => {

@@ -201,8 +201,10 @@ app.get('/api/proxy-image', (req, res) => {
 const possibleClientPaths = [
   path.resolve(__dirname, '../../client/dist'),
   path.resolve(__dirname, '../client/dist'),
+  path.resolve(__dirname, '../../../client/dist'),
   path.resolve(process.cwd(), '../client/dist'),
   path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), 'resources/app.asar/client/dist'),
 ];
 
 const clientDistPath = possibleClientPaths.find(p => fs.existsSync(p));
