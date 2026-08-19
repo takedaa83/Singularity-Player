@@ -50,6 +50,11 @@
       "server/data/**/*",
       "package.json"
     ],
+    "asarUnpack": [
+      "client/dist/**/*",
+      "server/dist/**/*",
+      "server/data/**/*"
+    ],
     "win": {
       "target": [
         "nsis",

@@ -206,11 +206,13 @@ app.get('/api/proxy-image', (req, res) => {
 });
 // Serve frontend static build if present (allows friends to open full app directly from link)
 const possibleClientPaths = [
+    path.resolve(__dirname.replace('app.asar', 'app.asar.unpacked'), '../../client/dist'),
     path.resolve(__dirname, '../../client/dist'),
     path.resolve(__dirname, '../client/dist'),
     path.resolve(__dirname, '../../../client/dist'),
     path.resolve(process.cwd(), '../client/dist'),
     path.resolve(process.cwd(), 'client/dist'),
+    path.resolve(process.cwd(), 'resources/app.asar.unpacked/client/dist'),
     path.resolve(process.cwd(), 'resources/app.asar/client/dist'),
 ];
 const clientDistPath = possibleClientPaths.find(p => fs.existsSync(p));

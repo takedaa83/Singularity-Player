@@ -7,6 +7,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const apiTarget = env.VITE_API_URL || 'http://localhost:3001';
 
   return {
+    base: './',
     plugins: [react(), tailwindcss()],
     server: {
       port: 5173,
