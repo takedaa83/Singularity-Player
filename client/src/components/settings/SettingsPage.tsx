@@ -33,6 +33,7 @@ import {
   Activity,
   Zap,
   AlertTriangle,
+  Terminal,
 } from 'lucide-react';
 import { tokens } from '../../theme/muiTheme';
 import { EQ_PRESETS, UserSettings } from '../../types';
@@ -44,6 +45,7 @@ import { useToast } from '../../hooks/useToast';
 import { api, getApiBaseUrl, setApiBaseUrl } from '../../utils/api';
 import { initDB } from '../../lib/db';
 import { singularityEngine, EngineTelemetry } from '../../services/singularityEngine';
+import { SystemConsole } from './SystemConsole';
 
 // ─── Accent Color Palette ────────────────────────────────────────────
 
@@ -1113,6 +1115,20 @@ export const SettingsPage: React.FC = () => {
               <Typography variant="body2" sx={{ fontWeight: 700, color: tokens.colors.textPrimary }}>{telemetry.prefetchedTrackCount} Pre-Cached</Typography>
             </Box>
           </Box>
+        </Box>
+      </SettingSection>
+
+      {/* ── Developer & System Diagnostic Console ─────────────────── */}
+      <SettingSection
+        icon={Terminal}
+        title="Live Developer & Diagnostic Console"
+        iconColor={tokens.colors.accent.cyan}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Typography variant="body2" sx={{ color: tokens.colors.textSecondary }}>
+            Real-time live system output, audio engine telemetry, network diagnostics, and background events. Useful for debugging streams, YouTube resolvers, and Discord RPC.
+          </Typography>
+          <SystemConsole />
         </Box>
       </SettingSection>
 
