@@ -147,7 +147,7 @@ function closeSplashAndShowMain() {
     }
   });
 
-  // Safety timeout — if the renderer never responds, force close after 2s
+  // Safety timeout — if the renderer never responds, force close after 2.5s
   setTimeout(() => {
     if (splashWindow && !splashWindow.isDestroyed()) {
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -157,7 +157,7 @@ function closeSplashAndShowMain() {
       splashWindow.destroy();
       splashWindow = null;
     }
-  }, 2000);
+  }, 2500);
 }
 
 /**
@@ -212,8 +212,8 @@ function createMainWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    // Majestic splash display duration for smooth intro experience
-    const MINIMUM_SPLASH_MS = 4600;
+    // Give the cinematic splash room to breathe
+    const MINIMUM_SPLASH_MS = 6200;
     const elapsed = Date.now() - splashStartTime;
     const remaining = Math.max(0, MINIMUM_SPLASH_MS - elapsed);
     setTimeout(() => {

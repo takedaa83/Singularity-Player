@@ -86594,7 +86594,7 @@ var execAsync = (0, import_util2.promisify)(import_child_process4.exec);
 var router11 = (0, import_express11.Router)();
 var REPO_OWNER = "takedaa83";
 var REPO_NAME = "Singularity-Player";
-var CURRENT_VERSION = "2.0.1";
+var CURRENT_VERSION = "2.0.2";
 var cachedStatus = null;
 var CACHE_TTL_MS3 = 30 * 1e3;
 function getWorkspaceRoot() {

@@ -190,26 +190,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <button
         onClick={() => { setActiveView(id); setSelectedPlaylistId(null); }}
         aria-label={`Navigate to ${label}`}
-        className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2.5'} rounded-xl text-sm font-semibold transition-all relative group ${
+        className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center py-2.5 px-0' : 'gap-3 px-3 py-2.5'} rounded-xl text-[13px] font-medium transition-all duration-200 relative group active:scale-[0.98] ${
           active
-            ? 'bg-white/10 text-white font-bold shadow-sm'
-            : 'text-slate-400 hover:text-white hover:bg-white/5'
+            ? 'text-white font-semibold'
+            : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
         }`}
+        style={active ? {
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        } : {
+          border: '1px solid transparent',
+        }}
       >
         <Icon
           className={`w-[18px] h-[18px] shrink-0 transition-all duration-300 ${
             active 
               ? 'text-primary opacity-100 scale-105' 
-              : 'text-slate-400 group-hover:text-white opacity-80 group-hover:opacity-100 group-hover:scale-105'
+              : 'text-slate-400 group-hover:text-white opacity-75 group-hover:opacity-100 group-hover:scale-105'
           }`}
+          style={active ? {
+            filter: 'drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.5))',
+          } : undefined}
         />
-        {!sidebarCollapsed && <span className="transition-colors">{label}</span>}
+        {!sidebarCollapsed && <span className="transition-colors tracking-wide">{label}</span>}
         {active && (
           <motion.div
             layoutId="sidebar-indicator"
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary shadow-[0_0_12px_var(--primary)]"
-            style={{ height: 18 }}
-            transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-primary"
+            style={{
+              height: 20,
+              boxShadow: '0 0 12px rgba(var(--primary-rgb), 0.8), 0 0 20px rgba(var(--primary-rgb), 0.4)',
+            }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           />
         )}
       </button>
@@ -228,25 +241,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`h-full flex flex-col justify-between py-4 px-3 text-white shrink-0 z-10 transition-all duration-300 glass-panel border-y-0 border-l-0 ${sidebarCollapsed ? 'w-[72px]' : 'w-60'}`}
+      className={`h-full flex flex-col justify-between py-5 text-white shrink-0 z-10 transition-all duration-300 ${sidebarCollapsed ? 'w-[72px] px-2.5' : 'w-[252px] px-3.5'}`}
+      style={{
+        background: 'linear-gradient(180deg, rgba(14, 16, 22, 0.95) 0%, rgba(10, 11, 15, 0.98) 100%)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+        boxShadow: 'inset -1px 0 0 0 rgba(255,255,255,0.03)',
+      }}
     >
-      <div className="flex flex-col gap-6 overflow-y-auto pr-1" style={{ scrollbarWidth: 'none' }}>
-        {/* Branding */}
-        <div className={`flex items-center ${sidebarCollapsed ? 'flex-col justify-center gap-4' : 'justify-between px-2'} pt-1`}>
-          <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-1 overflow-y-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+        {/* ── Branding ── */}
+        <div className={`flex items-center ${sidebarCollapsed ? 'flex-col justify-center gap-3' : 'justify-between'} mb-5`}>
+          <div className={`flex items-center ${sidebarCollapsed ? 'flex-col' : 'gap-3'}`}>
             <div
-              className="p-2.5 rounded-xl shadow-[0_0_20px_rgba(250,45,85,0.35)] flex items-center justify-center bg-primary"
+              className="relative p-2.5 rounded-2xl flex items-center justify-center bg-primary shrink-0"
+              style={{
+                boxShadow: '0 4px 20px rgba(var(--primary-rgb), 0.3), 0 0 0 1px rgba(255,255,255,0.08)',
+              }}
             >
               <Music className="w-5 h-5 text-white" />
+              {/* Subtle reflection */}
+              <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%)', pointerEvents: 'none' }} />
             </div>
             {!sidebarCollapsed && (
-              <div>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '0.08em', fontSize: 13, color: '#ffffff' }}>
-                  SINGULARITY
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'var(--text-tertiary)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.15em' }}>
-                  AUDIO PLATFORM
-                </Typography>
+              <div className="flex flex-col">
+                <span className="text-[13px] font-extrabold tracking-[0.08em] text-white leading-tight">SINGULARITY</span>
+                <span className="text-[9px] font-medium tracking-[0.18em] leading-tight" style={{ color: 'rgba(148, 163, 184, 0.5)' }}>AUDIO PLATFORM</span>
               </div>
             )}
           </div>
@@ -256,26 +275,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size="small"
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             sx={{ 
-              color: 'var(--text-tertiary)', 
-              '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' },
-              mt: sidebarCollapsed ? 1 : 0
+              color: 'rgba(148,163,184,0.4)',
+              width: 28, height: 28,
+              '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' },
+              mt: sidebarCollapsed ? 0 : 0,
             }}
           >
-            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {sidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
           </IconButton>
         </div>
 
-        {/* Upload & Spotify Buttons */}
-        <Box sx={{ px: sidebarCollapsed ? 0 : 1, mt: 1, mb: 0.5, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+        {/* ── Upload & Import ── */}
+        <div className={`flex flex-col ${sidebarCollapsed ? 'items-center' : ''} gap-1.5 mb-5`}>
           {sidebarCollapsed ? (
             <>
               <Tooltip title="Upload Music" placement="right" arrow>
                 <button
                   onClick={onUploadClick}
                   aria-label="Upload music"
-                  className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl active:scale-95 transition-all text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(var(--primary-rgb), 0.25) 0%, rgba(var(--primary-rgb), 0.1) 100%)',
+                    border: '1px solid rgba(var(--primary-rgb), 0.2)',
+                    boxShadow: '0 2px 8px rgba(var(--primary-rgb), 0.15)',
+                  }}
                 >
-                  <Upload className="w-[18px] h-[18px]" />
+                  <Upload className="w-[17px] h-[17px]" />
                 </button>
               </Tooltip>
               {onOpenSpotifyImport && (
@@ -283,9 +308,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     onClick={onOpenSpotifyImport}
                     aria-label="Import Spotify Playlist"
-                    className="w-10 h-10 flex items-center justify-center rounded-full active:scale-95 transition-all shadow-md bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl active:scale-95 transition-all text-slate-400 hover:text-white"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
                   >
-                    <ListMusic className="w-[18px] h-[18px]" />
+                    <ListMusic className="w-[17px] h-[17px]" />
                   </button>
                 </Tooltip>
               )}
@@ -295,9 +324,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onUploadClick}
                 aria-label="Upload music"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm active:scale-95 transition-all shadow-md bg-white/10 hover:bg-white/20 text-white border border-white/10 hover:border-white/20 backdrop-blur-md"
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-semibold text-[13px] active:scale-[0.97] transition-all text-white"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(var(--primary-rgb), 0.2) 0%, rgba(var(--primary-rgb), 0.08) 100%)',
+                  border: '1px solid rgba(var(--primary-rgb), 0.18)',
+                  boxShadow: '0 2px 12px rgba(var(--primary-rgb), 0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+                }}
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-4 h-4 opacity-90" />
                 <span>Upload Music</span>
               </button>
 
@@ -305,42 +339,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onOpenSpotifyImport}
                   aria-label="Import Spotify Playlist"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-bold text-xs active:scale-95 transition-all shadow-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 backdrop-blur-md"
+                  className="w-full flex items-center justify-center gap-2.5 px-4 py-2 rounded-xl font-medium text-[12px] active:scale-[0.97] transition-all text-slate-400 hover:text-slate-200"
+                  style={{
+                    background: 'rgba(255,255,255,0.025)',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                  }}
                 >
-                  <ListMusic className="w-4 h-4" />
+                  <ListMusic className="w-3.5 h-3.5" />
                   <span>Import Spotify Link</span>
                 </button>
               )}
             </>
           )}
-        </Box>
+        </div>
 
-        {/* Main Navigation */}
-        <nav className="flex flex-col gap-0.5">
+        {/* ── Main Navigation ── */}
+        <nav className="flex flex-col gap-0.5 mb-1">
           {!sidebarCollapsed && (
-            <Typography
-              variant="caption"
-              sx={{ px: 1, mb: 1, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-            >
-              Menu
-            </Typography>
+            <div className="flex items-center gap-2 px-2 mb-2">
+              <span className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: 'rgba(148,163,184,0.35)' }}>Navigate</span>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)' }} />
+            </div>
           )}
           {mainNav.map((item) => (
             <NavButton key={item.id} {...item} />
           ))}
         </nav>
 
-        <Divider sx={{ borderColor: 'var(--border-primary)', mx: sidebarCollapsed ? 0.5 : 1 }} />
-
-        {/* AI Studio Section */}
-        <nav className="flex flex-col gap-0.5">
+        {/* ── AI Studio Section ── */}
+        <div className="my-2">
           {!sidebarCollapsed && (
-            <Typography
-              variant="caption"
-              sx={{ px: 1, mb: 1, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 700 }}
-            >
-              AI Studio & Sound
-            </Typography>
+            <div className="flex items-center gap-2 px-2 mb-2">
+              <span className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: 'rgba(148,163,184,0.35)' }}>AI Studio</span>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(168,85,247,0.15) 0%, transparent 100%)' }} />
+            </div>
           )}
           {onOpenAiPlaylistStudio && (
             sidebarCollapsed ? (
@@ -348,38 +380,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onOpenAiPlaylistStudio}
                   aria-label="AI Playlist Studio"
-                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5"
+                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all text-slate-300 hover:text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(139,92,246,0.04) 100%)',
+                    border: '1px solid rgba(168,85,247,0.12)',
+                  }}
                 >
-                  <Sparkles className="w-[18px] h-[18px] shrink-0" />
+                  <Sparkles className="w-[18px] h-[18px] shrink-0 text-purple-400" />
                 </button>
               </Tooltip>
             ) : (
               <button
                 onClick={onOpenAiPlaylistStudio}
                 aria-label="AI Playlist Studio"
-                className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold transition-all bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10"
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all group hover:scale-[1.01]"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(139,92,246,0.03) 100%)',
+                  border: '1px solid rgba(168,85,247,0.1)',
+                  color: 'rgba(216,180,254,0.9)',
+                  boxShadow: '0 2px 12px rgba(168,85,247,0.06)',
+                }}
               >
                 <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-[18px] h-[18px] shrink-0 text-primary" />
+                  <Sparkles className="w-[17px] h-[17px] shrink-0 text-purple-400" />
                   <span>AI Playlist Studio</span>
                 </div>
-                <span className="text-[10px] font-mono bg-primary/20 px-1.5 py-0.5 rounded text-primary font-bold">Studio</span>
+                <span className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168,85,247,0.2) 0%, rgba(139,92,246,0.1) 100%)',
+                    color: 'rgba(192,132,252,0.9)',
+                    border: '1px solid rgba(168,85,247,0.15)',
+                  }}
+                >Studio</span>
               </button>
             )
           )}
-        </nav>
+        </div>
 
-        <Divider sx={{ borderColor: tokens.colors.surfaceBorder, mx: sidebarCollapsed ? 0.5 : 1 }} />
-
-        {/* Tools */}
-        <nav className="flex flex-col gap-0.5">
+        {/* ── Tools ── */}
+        <nav className="flex flex-col gap-0.5 mb-1">
           {!sidebarCollapsed && (
-            <Typography
-              variant="caption"
-              sx={{ px: 1, mb: 1, color: tokens.colors.textTertiary, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-            >
-              Tools
-            </Typography>
+            <div className="flex items-center gap-2 px-2 mb-2">
+              <span className="text-[10px] font-semibold tracking-[0.14em] uppercase" style={{ color: 'rgba(148,163,184,0.35)' }}>Tools</span>
+              <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, transparent 100%)' }} />
+            </div>
           )}
           {toolsNav.map((item) => (
             <NavButton key={item.id} {...item} />
@@ -390,18 +434,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={onOpenListenTogether}
                   aria-label="Listen Together"
-                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  className="w-full flex items-center justify-center py-2.5 px-0 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
                 >
-                  <Radio className="w-[18px] h-[18px] shrink-0 text-primary" />
+                  <Radio className="w-[18px] h-[18px] shrink-0 text-primary opacity-80" />
                 </button>
               </Tooltip>
             ) : (
               <button
                 onClick={onOpenListenTogether}
                 aria-label="Listen Together"
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold text-slate-400 hover:text-white hover:bg-white/[0.04] transition-all"
               >
-                <Radio className="w-[18px] h-[18px] shrink-0 text-primary" />
+                <Radio className="w-[18px] h-[18px] shrink-0 text-primary opacity-80" />
                 <span>Listen Together</span>
               </button>
             )
@@ -412,8 +456,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setShowEqualizer(!showEqualizer)}
                 aria-label="Toggle equalizer"
                 className={`w-full flex items-center justify-center py-2.5 px-0 rounded-xl transition-all ${
-                  showEqualizer ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  showEqualizer ? 'text-primary' : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
                 }`}
+                style={showEqualizer ? {
+                  background: 'rgba(var(--primary-rgb), 0.08)',
+                  boxShadow: '0 0 12px rgba(var(--primary-rgb), 0.08)',
+                } : undefined}
               >
                 <Sliders className="w-[18px] h-[18px] shrink-0" />
               </button>
@@ -422,9 +470,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => setShowEqualizer(!showEqualizer)}
               aria-label="Toggle equalizer"
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                showEqualizer ? 'bg-primary/15 text-primary' : 'text-slate-400 hover:text-white hover:bg-white/5'
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
+                showEqualizer ? 'text-primary' : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
               }`}
+              style={showEqualizer ? {
+                background: 'rgba(var(--primary-rgb), 0.08)',
+                boxShadow: '0 0 12px rgba(var(--primary-rgb), 0.08)',
+              } : undefined}
             >
               <Sliders className="w-[18px] h-[18px] shrink-0" />
               <span>Equalizer</span>
@@ -434,33 +486,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {!sidebarCollapsed && (
           <>
-            <Divider sx={{ borderColor: 'var(--border-primary)', mx: 1 }} />
-            
-            {/* Playlists */}
-            <div className="flex flex-col gap-0.5">
-              <div className="flex justify-between items-center px-1 mb-1">
+            {/* ── Playlists ── */}
+            <div className="flex flex-col gap-0.5 mt-1">
+              <div className="flex justify-between items-center px-2 mb-1.5">
                 <button
                   onClick={() => setPlaylistsExpanded(!playlistsExpanded)}
-                  className="flex items-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
+                  className="flex items-center gap-1.5 transition-colors group"
                   aria-label={playlistsExpanded ? 'Collapse playlists' : 'Expand playlists'}
                 >
-                  {playlistsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                  <Typography
-                    variant="caption"
-                    sx={{ color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10, fontWeight: 600 }}
-                  >
+                  {playlistsExpanded
+                    ? <ChevronDown className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                    : <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                  }
+                  <span className="text-[10px] font-semibold tracking-[0.14em] uppercase group-hover:text-slate-300 transition-colors" style={{ color: 'rgba(148,163,184,0.35)' }}>
                     Playlists ({playlists.length})
-                  </Typography>
+                  </span>
                 </button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   {onOpenAiPlaylistStudio && (
-                    <Tooltip title="Open AI Playlist Studio" arrow>
+                    <Tooltip title="AI Generate" arrow>
                       <button
                         onClick={onOpenAiPlaylistStudio}
                         aria-label="Open AI Playlist Studio"
-                        className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[10px] font-bold border border-white/10 hover:bg-white/15 transition-all flex items-center gap-1"
+                        className="flex items-center gap-1 px-1.5 py-1 rounded-md transition-all hover:scale-105"
+                        style={{
+                          background: 'rgba(168,85,247,0.08)',
+                          border: '1px solid rgba(168,85,247,0.1)',
+                          color: 'rgba(192,132,252,0.7)',
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          letterSpacing: '0.04em',
+                        }}
                       >
-                        <Sparkles className="w-2.5 h-2.5 text-primary" /> AI
+                        <Sparkles className="w-2.5 h-2.5" /> AI
                       </button>
                     </Tooltip>
                   )}
@@ -469,7 +527,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       size="small"
                       onClick={() => setShowPlaylistInput(!showPlaylistInput)}
                       aria-label="Create playlist"
-                      sx={{ p: 0.5, color: tokens.colors.textTertiary, '&:hover': { color: tokens.colors.textPrimary } }}
+                      sx={{ p: 0.4, color: 'rgba(148,163,184,0.35)', '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.06)' } }}
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </IconButton>
@@ -492,10 +550,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       value={newPlaylistName}
                       onChange={(e) => setNewPlaylistName(e.target.value)}
                       placeholder="Playlist name..."
-                      className="w-full px-3 py-1.5 rounded-lg text-xs text-white placeholder-neutral-600 focus:outline-none focus:ring-1"
+                      className="w-full px-3 py-2 rounded-lg text-xs text-white placeholder-neutral-600 focus:outline-none transition-all"
                       style={{
-                        backgroundColor: tokens.colors.background,
-                        border: `1px solid ${tokens.colors.surfaceBorder}`,
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 0 0 0 rgba(var(--primary-rgb), 0)',
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(var(--primary-rgb), 0.3)';
+                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(var(--primary-rgb), 0.08)';
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.boxShadow = '0 0 0 0 rgba(var(--primary-rgb), 0)';
                       }}
                     />
                   </motion.form>
@@ -512,9 +579,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     style={{ scrollbarWidth: 'thin' }}
                   >
                     {playlists.length === 0 ? (
-                      <Typography variant="caption" sx={{ px: 2, py: 1, color: tokens.colors.textTertiary, fontStyle: 'italic', fontSize: 11 }}>
+                      <p className="px-3 py-2 text-[11px] italic" style={{ color: 'rgba(148,163,184,0.3)' }}>
                         No playlists yet
-                      </Typography>
+                      </p>
                     ) : (
                       playlists.map(pl => (
                         <button
@@ -522,14 +589,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           onClick={() => {
                             setSelectedPlaylistId(pl.id);
                           }}
-                          className="w-full group flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          className="w-full group flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-white/[0.04]"
                           style={{
                             backgroundColor: selectedPlaylistId === pl.id
-                              ? `${tokens.colors.primary}12`
+                              ? 'rgba(var(--primary-rgb), 0.07)'
                               : 'transparent',
                             color: selectedPlaylistId === pl.id
-                              ? tokens.colors.textPrimary
-                              : tokens.colors.textSecondary,
+                              ? '#ffffff'
+                              : 'rgba(148,163,184,0.7)',
                           }}
                         >
                           <div className="flex items-center gap-2 truncate">
@@ -538,7 +605,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </div>
                           <Trash2
                             onClick={(e: any) => handleDeletePlaylist(pl.id, e)}
-                            className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 cursor-pointer"
+                            className="w-3 h-3 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 ml-1 cursor-pointer"
                             style={{ color: tokens.colors.error }}
                           />
                         </button>
@@ -552,65 +619,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer: Backup/Restore */}
+      {/* ── Footer: Backup/Restore ── */}
       {sidebarCollapsed ? (
-        <div className="flex flex-col gap-2.5 items-center pt-3 border-t border-white/5">
+        <div className="flex flex-col gap-2 items-center pt-3 mt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <Tooltip title="Backup" placement="right" arrow>
             <button
               onClick={handleBackup}
               aria-label="Export library backup"
-              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-lg transition-all hover:bg-white/[0.04]"
               style={{
-                backgroundColor: tokens.colors.surfaceVariant,
-                color: tokens.colors.textSecondary,
-                border: `1px solid ${tokens.colors.surfaceBorder}`,
+                color: 'rgba(148,163,184,0.4)',
+                border: '1px solid rgba(255,255,255,0.04)',
               }}
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
           
           <Tooltip title="Restore" placement="right" arrow>
             <label
-              className="w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center rounded-lg transition-all cursor-pointer hover:bg-white/[0.04]"
               style={{
-                backgroundColor: tokens.colors.surfaceVariant,
-                color: tokens.colors.textSecondary,
-                border: `1px solid ${tokens.colors.surfaceBorder}`,
+                color: 'rgba(148,163,184,0.4)',
+                border: '1px solid rgba(255,255,255,0.04)',
               }}
               aria-label="Import library backup"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="w-3.5 h-3.5" />
               <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
             </label>
           </Tooltip>
         </div>
       ) : (
-        <div className="pt-3 mt-2 border-t border-white/5">
+        <div className="pt-3 mt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={handleBackup}
               aria-label="Export library backup"
-              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-all hover:bg-white/[0.04]"
               style={{
-                backgroundColor: tokens.colors.surfaceVariant,
-                color: tokens.colors.textSecondary,
-                border: `1px solid ${tokens.colors.surfaceBorder}`,
+                color: 'rgba(148,163,184,0.4)',
+                border: '1px solid rgba(255,255,255,0.04)',
               }}
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3 h-3" />
               Backup
             </button>
             <label
-              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[10px] font-medium transition-all cursor-pointer hover:bg-white/[0.04]"
               style={{
-                backgroundColor: tokens.colors.surfaceVariant,
-                color: tokens.colors.textSecondary,
-                border: `1px solid ${tokens.colors.surfaceBorder}`,
+                color: 'rgba(148,163,184,0.4)',
+                border: '1px solid rgba(255,255,255,0.04)',
               }}
               aria-label="Import library backup"
             >
-              <Upload className="w-3.5 h-3.5" />
+              <Upload className="w-3 h-3" />
               Restore
               <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
             </label>

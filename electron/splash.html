@@ -21,11 +21,11 @@
     overflow: hidden;
     background: #08070d;
     border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
       0 32px 80px rgba(0, 0, 0, 0.95),
-      0 0 60px rgba(139, 92, 246, 0.2),
-      0 0 100px rgba(250, 45, 85, 0.12);
+      0 0 60px rgba(139, 92, 246, 0.10),
+      0 0 100px rgba(250, 45, 85, 0.06);
     -webkit-app-region: drag;
     user-select: none;
     -webkit-font-smoothing: antialiased;
@@ -46,9 +46,15 @@
     height: 100%;
     z-index: 1;
     padding: 36px;
+    opacity: 0;
+    animation: splash-fade-in 1.2s ease-out forwards;
   }
 
-  /* ── Ambient Background Glows ── */
+  @keyframes splash-fade-in {
+    to { opacity: 1; }
+  }
+
+  /* ── Ambient Background Glows (softer, slower) ── */
   .ambient {
     position: absolute;
     inset: 0;
@@ -60,55 +66,59 @@
   .ambient-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(75px);
+    filter: blur(90px);
     opacity: 0;
     will-change: transform, opacity;
   }
 
   .orb-1 {
-    width: 380px; height: 380px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.42) 0%, transparent 70%);
-    top: 15%; left: 20%;
-    animation: orb-drift-1 9s ease-in-out infinite, orb-appear 1.4s 0.2s ease-out forwards;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.28) 0%, transparent 70%);
+    top: 12%; left: 18%;
+    animation:
+      orb-drift-1 22s ease-in-out infinite,
+      orb-appear 2.8s 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .orb-2 {
-    width: 320px; height: 320px;
-    background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
-    bottom: 10%; right: 15%;
-    animation: orb-drift-2 11s ease-in-out infinite, orb-appear 1.6s 0.4s ease-out forwards;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.20) 0%, transparent 70%);
+    bottom: 8%; right: 12%;
+    animation:
+      orb-drift-2 26s ease-in-out infinite,
+      orb-appear 3.0s 0.6s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .orb-3 {
-    width: 280px; height: 280px;
-    background: radial-gradient(circle, rgba(250, 45, 85, 0.25) 0%, transparent 70%);
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(250, 45, 85, 0.16) 0%, transparent 70%);
     top: 50%; left: 50%;
-    animation: orb-drift-3 13s ease-in-out infinite, orb-appear 1.8s 0.6s ease-out forwards;
+    animation:
+      orb-drift-3 30s ease-in-out infinite,
+      orb-appear 3.2s 0.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   @keyframes orb-appear {
-    from { opacity: 0; transform: scale(0.6) translate3d(0, 0, 0); }
-    to   { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
   }
 
   @keyframes orb-drift-1 {
     0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    33%      { transform: translate3d(35px, -25px, 0) scale(1.08); }
-    66%      { transform: translate3d(-20px, 20px, 0) scale(0.94); }
+    50%      { transform: translate3d(20px, -18px, 0) scale(1.04); }
   }
 
   @keyframes orb-drift-2 {
     0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    33%      { transform: translate3d(-30px, 25px, 0) scale(1.06); }
-    66%      { transform: translate3d(25px, -15px, 0) scale(0.92); }
+    50%      { transform: translate3d(-18px, 15px, 0) scale(1.03); }
   }
 
   @keyframes orb-drift-3 {
     0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-    50%      { transform: translate3d(20px, -30px, 0) scale(1.12); }
+    50%      { transform: translate3d(12px, -20px, 0) scale(1.06); }
   }
 
-  /* ── Particle Field ── */
+  /* ── Particle Field (fewer, dimmer, slower) ── */
   .particles {
     position: absolute;
     inset: 0;
@@ -119,7 +129,9 @@
     position: absolute;
     border-radius: 50%;
     opacity: 0;
-    animation: particle-float 7s ease-in-out infinite, particle-appear 1.2s ease-out forwards;
+    animation:
+      particle-float 14s ease-in-out infinite,
+      particle-appear 2.4s ease-out forwards;
   }
 
   @keyframes particle-appear {
@@ -128,10 +140,8 @@
   }
 
   @keyframes particle-float {
-    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.3; }
-    25%      { transform: translate3d(12px, -20px, 0); opacity: 0.75; }
-    50%      { transform: translate3d(-8px, -40px, 0); opacity: 0.45; }
-    75%      { transform: translate3d(16px, -28px, 0); opacity: 0.7; }
+    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.15; }
+    50%      { transform: translate3d(6px, -22px, 0); opacity: 0.35; }
   }
 
   /* ── Logo & Emblem ── */
@@ -141,23 +151,25 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
 
   .logo-glow {
     position: absolute;
-    width: 160px; height: 160px;
+    width: 180px; height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.5) 0%, rgba(250, 45, 85, 0.2) 45%, transparent 70%);
+    background: radial-gradient(circle,
+      rgba(139, 92, 246, 0.32) 0%,
+      rgba(250, 45, 85, 0.10) 45%,
+      transparent 70%);
     opacity: 0;
-    animation: glow-pulse 3s 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    filter: blur(28px);
+    animation: glow-pulse 4.5s 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    filter: blur(32px);
   }
 
   @keyframes glow-pulse {
-    0%   { opacity: 0; transform: scale(0.3); }
-    50%  { opacity: 0.9; transform: scale(1.4); }
-    100% { opacity: 0.55; transform: scale(1.05); }
+    0%   { opacity: 0; transform: scale(0.7); }
+    100% { opacity: 0.55; transform: scale(1); }
   }
 
   .logo-svg {
@@ -165,21 +177,22 @@
     width: 96px;
     height: 92px;
     opacity: 0;
-    transform: scale(0.7) translate3d(0, 0, 0);
-    animation: logo-enter 1.1s 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    filter: drop-shadow(0 0 28px rgba(139, 92, 246, 0.6)) drop-shadow(0 0 50px rgba(250, 45, 85, 0.3));
+    transform: translate3d(0, 0, 0);
+    animation: logo-enter 2.2s 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    filter:
+      drop-shadow(0 0 20px rgba(139, 92, 246, 0.40))
+      drop-shadow(0 0 40px rgba(250, 45, 85, 0.18));
   }
 
   @keyframes logo-enter {
-    0%   { opacity: 0; transform: scale(0.65) translate3d(0, 14px, 0); }
-    60%  { opacity: 1; transform: scale(1.06) translate3d(0, -3px, 0); }
+    0%   { opacity: 0; transform: scale(0.94) translate3d(0, 8px, 0); }
     100% { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
   }
 
   .bolt-outline {
     stroke-dasharray: 220;
     stroke-dashoffset: 220;
-    animation: draw-bolt 1.4s 0.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+    animation: draw-bolt 2.4s 0.9s cubic-bezier(0.5, 0, 0.25, 1) forwards;
   }
 
   @keyframes draw-bolt {
@@ -188,26 +201,12 @@
 
   .bolt-fill {
     opacity: 0;
-    animation: fill-reveal 0.8s 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fill-reveal 1.8s 2.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   @keyframes fill-reveal {
     from { opacity: 0; }
     to   { opacity: 1; }
-  }
-
-  .flash-ring {
-    position: absolute;
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    border: 2px solid rgba(139, 92, 246, 0.7);
-    opacity: 0;
-    animation: flash-expand 1.1s 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes flash-expand {
-    0%   { opacity: 0.9; transform: scale(0.4); border-width: 3px; }
-    100% { opacity: 0; transform: scale(2.8); border-width: 0.5px; }
   }
 
   /* ── Title: "SINGULARITY" ── */
@@ -216,66 +215,68 @@
     z-index: 2;
     display: flex;
     gap: 3px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
 
   .title-letter {
-    font-size: 32px;
-    font-weight: 900;
-    letter-spacing: 0.16em;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
     color: #ffffff;
     opacity: 0;
-    transform: translate3d(0, 20px, 0);
-    animation: letter-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    filter: blur(6px);
+    transform: translate3d(0, 8px, 0);
+    animation: letter-up 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   }
 
   @keyframes letter-up {
     to {
       opacity: 1;
+      filter: blur(0);
       transform: translate3d(0, 0, 0);
     }
   }
 
-  /* Staggered letter delays */
-  .title-letter:nth-child(1)  { animation-delay: 1.70s; }
-  .title-letter:nth-child(2)  { animation-delay: 1.75s; }
-  .title-letter:nth-child(3)  { animation-delay: 1.80s; }
-  .title-letter:nth-child(4)  { animation-delay: 1.85s; }
-  .title-letter:nth-child(5)  { animation-delay: 1.90s; }
-  .title-letter:nth-child(6)  { animation-delay: 1.95s; }
-  .title-letter:nth-child(7)  { animation-delay: 2.00s; }
-  .title-letter:nth-child(8)  { animation-delay: 2.05s; }
-  .title-letter:nth-child(9)  { animation-delay: 2.10s; }
-  .title-letter:nth-child(10) { animation-delay: 2.15s; }
-  .title-letter:nth-child(11) { animation-delay: 2.20s; }
+  /* Longer, gentler stagger */
+  .title-letter:nth-child(1)  { animation-delay: 2.60s; }
+  .title-letter:nth-child(2)  { animation-delay: 2.68s; }
+  .title-letter:nth-child(3)  { animation-delay: 2.76s; }
+  .title-letter:nth-child(4)  { animation-delay: 2.84s; }
+  .title-letter:nth-child(5)  { animation-delay: 2.92s; }
+  .title-letter:nth-child(6)  { animation-delay: 3.00s; }
+  .title-letter:nth-child(7)  { animation-delay: 3.08s; }
+  .title-letter:nth-child(8)  { animation-delay: 3.16s; }
+  .title-letter:nth-child(9)  { animation-delay: 3.24s; }
+  .title-letter:nth-child(10) { animation-delay: 3.32s; }
+  .title-letter:nth-child(11) { animation-delay: 3.40s; }
 
-  /* ── Subtitle: "NEXT-GEN AUDIO ENGINE • 2.0" ── */
+  /* ── Subtitle ── */
   .subtitle {
     position: relative;
     z-index: 2;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.36em;
-    color: rgba(255, 255, 255, 0.55);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.42em;
+    color: rgba(255, 255, 255, 0.42);
     text-transform: uppercase;
     opacity: 0;
-    transform: translate3d(0, 10px, 0);
-    animation: subtitle-in 0.7s 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    margin-bottom: 34px;
+    transform: translate3d(0, 6px, 0);
+    animation: subtitle-in 1.6s 3.9s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    margin-bottom: 42px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .subtitle-badge {
-    background: linear-gradient(135deg, #fa2d55, #8b5cf6);
-    color: #ffffff;
-    font-size: 9px;
-    font-weight: 800;
+    background: linear-gradient(135deg, rgba(250, 45, 85, 0.85), rgba(139, 92, 246, 0.85));
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 8.5px;
+    font-weight: 700;
     padding: 2px 6px;
     border-radius: 4px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
   }
 
   @keyframes subtitle-in {
@@ -286,33 +287,34 @@
   .status-text {
     position: relative;
     z-index: 2;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    color: rgba(255, 255, 255, 0.32);
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     height: 14px;
     opacity: 0;
-    animation: status-appear 0.5s 2.6s ease-out forwards;
+    animation: status-appear 1.2s 4.2s ease-out forwards;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    transition: opacity 0.6s ease;
   }
 
   @keyframes status-appear {
     to { opacity: 1; }
   }
 
-  /* ── Progress Bar ── */
+  /* ── Progress Bar (single soft highlight, no rainbow) ── */
   .loader-track {
     position: relative;
     z-index: 2;
-    width: 240px;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.08);
+    width: 220px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 4px;
     overflow: hidden;
     opacity: 0;
-    animation: loader-appear 0.5s 2.6s ease-out forwards;
+    animation: loader-appear 1.2s 4.2s ease-out forwards;
   }
 
   @keyframes loader-appear {
@@ -322,44 +324,49 @@
   .loader-fill {
     position: absolute;
     top: 0; left: 0;
-    width: 45%;
+    width: 40%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, #fa2d55, #8b5cf6, #06b6d4, transparent);
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 20%,
+      rgba(139, 92, 246, 0.85) 50%,
+      rgba(255, 255, 255, 0.08) 80%,
+      transparent 100%);
     border-radius: 4px;
-    animation: loader-slide 1.5s 2.7s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: loader-slide 2.6s 4.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
 
   @keyframes loader-slide {
-    0%   { transform: translateX(-130%); }
-    100% { transform: translateX(340%); }
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(360%); }
   }
 
   /* ── Version Tag ── */
   .version {
     position: absolute;
-    bottom: 22px;
+    bottom: 24px;
     z-index: 2;
-    font-size: 10px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.2);
-    letter-spacing: 0.12em;
+    font-size: 9.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.16);
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     opacity: 0;
-    animation: fade-in 0.6s 2.9s ease-out forwards;
+    animation: fade-in 1.4s 4.6s ease-out forwards;
   }
 
   @keyframes fade-in {
     to { opacity: 1; }
   }
 
-  /* ── Exit Animation ── */
+  /* ── Exit Animation (slower, softer) ── */
   .splash.exit {
-    animation: splash-exit 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
+    animation: splash-exit 1.0s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   @keyframes splash-exit {
     0%   { opacity: 1; transform: scale(1); filter: blur(0px); }
-    100% { opacity: 0; transform: scale(1.05); filter: blur(6px); }
+    100% { opacity: 0; transform: scale(1.02); filter: blur(8px); }
   }
 
   /* ── Grain Texture Overlay ── */
@@ -368,7 +375,7 @@
     inset: 0;
     z-index: 10;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.025;
     mix-blend-mode: overlay;
     border-radius: 28px;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
@@ -381,38 +388,7 @@
     z-index: 5;
     pointer-events: none;
     border-radius: 28px;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
-  }
-
-  /* ── Horizontal Light Streak ── */
-  .light-streak {
-    position: absolute;
-    top: 45%;
-    left: -100%;
-    width: 200%;
-    height: 1.5px;
-    z-index: 3;
-    background: linear-gradient(90deg,
-      transparent 0%,
-      transparent 30%,
-      rgba(250, 45, 85, 0.3) 42%,
-      rgba(139, 92, 246, 0.7) 48%,
-      rgba(255, 255, 255, 0.95) 50%,
-      rgba(6, 182, 212, 0.7) 52%,
-      rgba(6, 182, 212, 0.3) 58%,
-      transparent 70%,
-      transparent 100%
-    );
-    opacity: 0;
-    animation: streak-flash 1.4s 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    filter: blur(0.5px);
-  }
-
-  @keyframes streak-flash {
-    0%   { opacity: 0; transform: translateX(-30%) translateY(-50%) scaleY(1); }
-    20%  { opacity: 1; transform: translateX(-10%) translateY(-50%) scaleY(3.5); }
-    50%  { opacity: 0.7; transform: translateX(10%) translateY(-50%) scaleY(1.2); }
-    100% { opacity: 0; transform: translateX(30%) translateY(-50%) scaleY(0.4); }
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
   }
 </style>
 </head>
@@ -428,19 +404,13 @@
     <!-- Floating Starfield Particles -->
     <div class="particles" id="particles"></div>
 
-    <!-- Radiant Light Streak -->
-    <div class="light-streak"></div>
-
     <!-- Master Emblem -->
     <div class="logo-container">
       <div class="logo-glow"></div>
-      <div class="flash-ring"></div>
       <svg class="logo-svg" viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Stroke-draw outline -->
         <path class="bolt-outline"
           d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
-          stroke="url(#grad-stroke)" stroke-width="1.2" fill="none" />
-        <!-- Fill reveal -->
+          stroke="url(#grad-stroke)" stroke-width="1" fill="none" />
         <path class="bolt-fill"
           d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
           fill="url(#grad-fill)" />
@@ -481,7 +451,7 @@
     </div>
 
     <!-- Live Status Indicator -->
-    <div class="status-text" id="statusText">INITIALIZING ENGINE...</div>
+    <div class="status-text" id="statusText">Initializing engine</div>
 
     <!-- Loading Bar -->
     <div class="loader-track">
@@ -489,7 +459,7 @@
     </div>
 
     <!-- Version -->
-    <div class="version">Singularity Architecture • v2.0.1</div>
+    <div class="version">Singularity Architecture · v2.0.2</div>
 
     <!-- Vignette & Grain -->
     <div class="vignette"></div>
@@ -497,58 +467,73 @@
   </div>
 
   <script>
-    // Generate organic drifting particles
+    // Fewer, softer particles
     (function() {
       const container = document.getElementById('particles');
-      const count = 40;
+      const count = 18;
       for (let i = 0; i < count; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
         p.style.left = (Math.random() * 100) + '%';
         p.style.top = (Math.random() * 100) + '%';
-        const size = (1.5 + Math.random() * 2.5);
+        const size = (1 + Math.random() * 1.8);
         p.style.width = size + 'px';
         p.style.height = size + 'px';
-        p.style.animationDelay = (Math.random() * 4) + 's, ' + (0.2 + Math.random() * 1.5) + 's';
-        p.style.animationDuration = (5 + Math.random() * 6) + 's, 1s';
+        p.style.animationDelay =
+          (Math.random() * 8) + 's, ' +
+          (0.5 + Math.random() * 2.5) + 's';
+        p.style.animationDuration =
+          (12 + Math.random() * 8) + 's, 2.4s';
         const rand = Math.random();
         if (rand > 0.66) {
-          p.style.background = 'rgba(250, 45, 85, 0.6)';
+          p.style.background = 'rgba(250, 45, 85, 0.35)';
         } else if (rand > 0.33) {
-          p.style.background = 'rgba(139, 92, 246, 0.6)';
+          p.style.background = 'rgba(139, 92, 246, 0.40)';
         } else {
-          p.style.background = 'rgba(6, 182, 212, 0.5)';
+          p.style.background = 'rgba(6, 182, 212, 0.30)';
         }
         container.appendChild(p);
       }
     })();
 
-    // Dynamic boot phases for visual polish
+    // Slower, calmer status phases with soft crossfade
     const phases = [
-      'MOUNTING LOCAL AUDIO STACK...',
-      'CALIBRATING 10-BAND DSP EQUALIZER...',
-      'SYNCHRONIZING AUDIO DISPATCH BUS...',
-      'STARTING SINGULARITY 2.0...'
+      'Initializing engine',
+      'Mounting local audio stack',
+      'Calibrating DSP equalizer',
+      'Synchronizing audio bus',
+      'Preparing interface'
     ];
     let phaseIdx = 0;
     const statusEl = document.getElementById('statusText');
+
+    function swapStatus(text) {
+      if (!statusEl) return;
+      statusEl.style.opacity = '0';
+      setTimeout(() => {
+        statusEl.textContent = text;
+        statusEl.style.opacity = '';
+      }, 400);
+    }
+
     const statusInterval = setInterval(() => {
       phaseIdx = (phaseIdx + 1) % phases.length;
-      if (statusEl) statusEl.textContent = phases[phaseIdx];
-    }, 1100);
+      swapStatus(phases[phaseIdx]);
+    }, 2200);
 
-    // Listen for the close signal from Electron main process
+    // IPC bridge to main process
     const { ipcRenderer } = require('electron');
 
     ipcRenderer.on('splash:close', () => {
       clearInterval(statusInterval);
-      if (statusEl) statusEl.textContent = 'READY';
-      const splash = document.getElementById('splash');
-      splash.classList.add('exit');
-      // Wait for exit animation to complete before signaling back
+      swapStatus('Ready');
       setTimeout(() => {
-        ipcRenderer.send('splash:closed');
-      }, 600);
+        const splash = document.getElementById('splash');
+        splash.classList.add('exit');
+        setTimeout(() => {
+          ipcRenderer.send('splash:closed');
+        }, 1000);
+      }, 300);
     });
   </script>
 </body>
