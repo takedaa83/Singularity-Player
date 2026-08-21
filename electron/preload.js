@@ -27,4 +27,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Desktop Features
   toggleMiniPlayer: () => ipcRenderer.send('miniplayer:toggle'),
   openDirectoryPicker: () => ipcRenderer.invoke('dialog:open-directory'),
+
+  // Native In-App Auto-Updater
+  downloadAndInstallUpdate: (downloadUrl) => ipcRenderer.invoke('updater:download-and-install', downloadUrl),
+  onUpdateProgress: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('updater:progress', handler);
+    return () => ipcRenderer.removeListener('updater:progress', handler);
+  },
+  restartAndInstall: () => ipcRenderer.send('updater:restart-and-install'),
 });

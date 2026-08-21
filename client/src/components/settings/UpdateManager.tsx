@@ -33,7 +33,10 @@ export const UpdateManager: React.FC = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [applyStep, setApplyStep] = useState<string>('');
+  const [downloadPercent, setDownloadPercent] = useState<number | null>(null);
   const [showChangelog, setShowChangelog] = useState(false);
+
+  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
 
   useEffect(() => {
     const unsub = updaterService.subscribe((s) => {
@@ -69,8 +72,42 @@ export const UpdateManager: React.FC = () => {
   const handleApplyUpdate = async () => {
     if (isApplying) return;
     setIsApplying(true);
-    setApplyStep('Fetching latest updates from repository...');
 
+    // Native Desktop App updating
+    if (isElectron && (window as any).electronAPI?.downloadAndInstallUpdate) {
+      setApplyStep('Downloading update from GitHub release...');
+      setDownloadPercent(0);
+
+      const unsubProgress = (window as any).electronAPI.onUpdateProgress((p: any) => {
+        setDownloadPercent(p.percent);
+        setApplyStep(`Downloading update... ${p.percent}%`);
+      });
+
+      try {
+        const downloadUrl =
+          status?.releaseDownloadUrl ||
+          'https://github.com/takedaa83/Singularity-Player/releases/latest/download/Singularity.Player.Setup.2.0.2.exe';
+
+        await (window as any).electronAPI.downloadAndInstallUpdate(downloadUrl);
+        setApplyStep('Download complete! Closing app and applying update...');
+        showToast('Restarting Singularity Player...', 'info');
+
+        setTimeout(() => {
+          (window as any).electronAPI.restartAndInstall();
+        }, 1200);
+      } catch (err: any) {
+        showToast(err.message || 'Failed to download desktop update', 'error');
+        setIsApplying(false);
+        setApplyStep('');
+        setDownloadPercent(null);
+      } finally {
+        unsubProgress?.();
+      }
+      return;
+    }
+
+    // Web / Git pull mode
+    setApplyStep('Fetching latest updates from repository...');
     try {
       setTimeout(() => setApplyStep('Compiling optimized standalone bundle...'), 2000);
       const res = await updaterService.applyUpdate();
@@ -85,8 +122,6 @@ export const UpdateManager: React.FC = () => {
       setApplyStep('');
     }
   };
-
-  const isElectron = typeof window !== 'undefined' && !!(window as any).electronAPI?.isElectron;
 
   return (
     <Box
@@ -205,7 +240,7 @@ export const UpdateManager: React.FC = () => {
             Installed Version
           </Typography>
           <Typography sx={{ color: '#fff', fontSize: '0.92rem', fontWeight: 700, mt: 0.3 }}>
-            v{status?.currentVersion || '2.0.0'}
+            v{status?.currentVersion || '2.0.2'}
             {status?.currentCommit && (
               <Typography component="span" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '0.78rem', ml: 0.8, fontFamily: 'monospace' }}>
                 ({status.currentCommit})
@@ -219,7 +254,7 @@ export const UpdateManager: React.FC = () => {
             Latest Remote
           </Typography>
           <Typography sx={{ color: status?.updateAvailable ? '#ff6b8b' : '#34d399', fontSize: '0.92rem', fontWeight: 700, mt: 0.3 }}>
-            v{status?.latestVersion || '2.0.0'}
+            v{status?.latestVersion || '2.0.2'}
             {status?.latestCommit && (
               <Typography component="span" sx={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '0.78rem', ml: 0.8, fontFamily: 'monospace' }}>
                 ({status.latestCommit})
@@ -272,20 +307,30 @@ export const UpdateManager: React.FC = () => {
       {/* Progress Bar when applying update */}
       {isApplying && (
         <Box sx={{ mb: 2.5, p: 2, borderRadius: '10px', background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-            <CircularProgress size={16} sx={{ color: '#a855f7' }} />
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#e9d5ff' }}>
-              {applyStep}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CircularProgress size={16} sx={{ color: '#a855f7' }} />
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#e9d5ff' }}>
+                {applyStep}
+              </Typography>
+            </Box>
+            {downloadPercent !== null && (
+              <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#ff6b8b' }}>
+                {downloadPercent}%
+              </Typography>
+            )}
           </Box>
-          <Box sx={{ width: '100%', height: 4, background: 'rgba(255, 255, 255, 0.1)', borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ width: '100%', height: 6, background: 'rgba(255, 255, 255, 0.1)', borderRadius: 3, overflow: 'hidden' }}>
             <Box
               sx={{
-                width: '60%',
+                width: downloadPercent !== null ? `${downloadPercent}%` : '60%',
                 height: '100%',
                 background: 'linear-gradient(90deg, #fa2d55, #8b5cf6, #06b6d4)',
-                borderRadius: 2,
-                animation: 'loader-slide 1.5s infinite linear',
+                borderRadius: 3,
+                transition: 'width 0.2s ease',
+                ...(downloadPercent === null && {
+                  animation: 'loader-slide 1.5s infinite linear',
+                }),
               }}
             />
           </Box>
@@ -317,7 +362,7 @@ export const UpdateManager: React.FC = () => {
           {isChecking ? 'Checking...' : 'Check for Updates'}
         </Button>
 
-        {status?.updateAvailable && status.isGitRepo && !isElectron && (
+        {status?.updateAvailable && (
           <Button
             variant="contained"
             onClick={handleApplyUpdate}
@@ -338,33 +383,9 @@ export const UpdateManager: React.FC = () => {
               },
             }}
           >
-            {isApplying ? 'Updating App...' : 'Update to Latest Version'}
-          </Button>
-        )}
-
-        {status?.updateAvailable && isElectron && (
-          <Button
-            variant="contained"
-            component="a"
-            href={status.releaseDownloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            startIcon={<Download size={16} />}
-            sx={{
-              background: 'linear-gradient(135deg, #fa2d55, #8b5cf6)',
-              color: '#fff',
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: '10px',
-              px: 2.6,
-              py: 0.8,
-              boxShadow: '0 4px 16px rgba(250, 45, 85, 0.4)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #ff4065, #9d68ff)',
-              },
-            }}
-          >
-            Download New Release (.exe)
+            {isApplying
+              ? (isElectron ? 'Updating & Restarting...' : 'Updating App...')
+              : (isElectron ? 'Update & Restart App' : 'Update to Latest Version')}
           </Button>
         )}
 

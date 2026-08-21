@@ -1,9 +1,16 @@
-const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, dialog, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, globalShortcut, ipcMain, dialog, nativeImage, powerSaveBlocker } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
-const { fork } = require('child_process');
+const https = require('https');
+const { fork, spawn } = require('child_process');
 const { DiscordRpcClient } = require('./discordRpc');
+
+// Optimize background CPU, GPU & memory consumption
+app.commandLine.appendSwitch('disable-renderer-backgrounding', 'false');
+app.commandLine.appendSwitch('disable-background-timer-throttling', 'false');
+app.commandLine.appendSwitch('enable-features', 'AudioServiceOutOfProcess');
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=512');
 
 // Ensure Single Instance Lock
 const gotTheLock = app.requestSingleInstanceLock();
@@ -17,6 +24,18 @@ let miniPlayerWindow = null;
 let tray = null;
 let serverProcess = null;
 let discordRpc = null;
+let powerSaveId = null;
+
+function updatePowerSaveState(isPlaying) {
+  if (isPlaying && powerSaveId === null) {
+    powerSaveId = powerSaveBlocker.start('prevent-app-suspension');
+  } else if (!isPlaying && powerSaveId !== null) {
+    if (powerSaveBlocker.isStarted(powerSaveId)) {
+      powerSaveBlocker.stop(powerSaveId);
+    }
+    powerSaveId = null;
+  }
+}
 let currentTrackState = {
   title: '',
   artist: '',
@@ -488,10 +507,13 @@ ipcMain.on('player:state-update', (_, state) => {
     }
   }
 
-  // 2. Update System Tray
+  // 2. Update Power Save Blocker
+  updatePowerSaveState(!!state.isPlaying);
+
+  // 3. Update System Tray
   updateTrayMenu();
 
-  // 3. Update Discord Rich Presence
+  // 4. Update Discord Rich Presence
   if (discordRpc) {
     if (state.title) {
       discordRpc.setActivity(currentTrackState);
@@ -500,8 +522,86 @@ ipcMain.on('player:state-update', (_, state) => {
     }
   }
 
-  // 4. Update OBS Streamer Export
+  // 5. Update OBS Streamer Export
   exportObsNowPlaying(currentTrackState);
+});
+
+// ----------------------------------------------------
+// Native In-App Updater (Desktop)
+// ----------------------------------------------------
+
+function downloadFileWithRedirects(url, destPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(destPath);
+    function makeRequest(currentUrl) {
+      https.get(currentUrl, { headers: { 'User-Agent': 'Singularity-Player-Desktop' } }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          return makeRequest(res.headers.location);
+        }
+        if (res.statusCode !== 200) {
+          return reject(new Error(`Download failed with HTTP ${res.statusCode}`));
+        }
+
+        const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+        let downloadedBytes = 0;
+
+        res.on('data', (chunk) => {
+          downloadedBytes += chunk.length;
+          if (totalBytes > 0 && onProgress) {
+            const percent = Math.min(100, Math.round((downloadedBytes / totalBytes) * 100));
+            onProgress({ percent, downloadedBytes, totalBytes });
+          }
+        });
+
+        res.pipe(file);
+        file.on('finish', () => {
+          file.close(() => resolve(destPath));
+        });
+      }).on('error', (err) => {
+        fs.unlink(destPath, () => {});
+        reject(err);
+      });
+    }
+
+    makeRequest(url);
+  });
+}
+
+ipcMain.handle('updater:download-and-install', async (_, downloadUrl) => {
+  try {
+    const updatesDir = path.join(app.getPath('userData'), 'updates');
+    if (!fs.existsSync(updatesDir)) {
+      fs.mkdirSync(updatesDir, { recursive: true });
+    }
+    const destPath = path.join(updatesDir, 'SingularityPlayerSetup.exe');
+
+    console.log('[Native Updater] Downloading latest release from:', downloadUrl);
+    await downloadFileWithRedirects(downloadUrl, destPath, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('updater:progress', progress);
+      }
+    });
+
+    console.log('[Native Updater] Download complete:', destPath);
+    return { success: true, installerPath: destPath };
+  } catch (err) {
+    console.error('[Native Updater] Download failed:', err);
+    throw err;
+  }
+});
+
+ipcMain.on('updater:restart-and-install', () => {
+  const updatesDir = path.join(app.getPath('userData'), 'updates');
+  const installerPath = path.join(updatesDir, 'SingularityPlayerSetup.exe');
+  if (fs.existsSync(installerPath)) {
+    console.log('[Native Updater] Launching installer and shutting down app:', installerPath);
+    try {
+      spawn(installerPath, ['/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref();
+    } catch (e) {
+      spawn(installerPath, [], { detached: true, stdio: 'ignore' }).unref();
+    }
+    app.quit();
+  }
 });
 
 // ----------------------------------------------------

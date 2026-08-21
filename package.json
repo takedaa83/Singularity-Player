@@ -1,6 +1,10 @@
 {
   "name": "singularity-player-monorepo",
   "version": "2.0.2",
+  "description": "Singularity Player - Enterprise-Grade Audiophile Music Streaming, Desktop & Intelligence Platform",
+  "author": "takedaa83",
+  "homepage": "https://github.com/takedaa83/Singularity-Player",
+  "copyright": "Copyright © 2026 takedaa83",
   "private": true,
   "engines": {
     "node": ">=18.0.0"
