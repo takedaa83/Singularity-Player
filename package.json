@@ -56,13 +56,6 @@
       "server/dist/**/*",
       "server/data/**/*"
     ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "takedaa83",
-        "repo": "Singularity-Player"
-      }
-    ],
     "win": {
       "icon": "build/icon.ico",
       "target": [
