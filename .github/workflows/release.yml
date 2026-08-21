@@ -32,7 +32,7 @@ jobs:
         run: node scripts/generateIcons.js
 
       - name: Build and Package Windows Executables
-        run: npm run dist:win -- -c.publish=never
+        run: npm run dist:win
 
       - name: Create GitHub Release and Upload Binaries
         uses: softprops/action-gh-release@v2
