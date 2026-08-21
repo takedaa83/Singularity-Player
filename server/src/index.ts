@@ -22,6 +22,7 @@ import downloadsRouter from './routes/downloads';
 import syncRouter from './routes/sync';
 import spotifyRouter from './routes/spotify';
 import localScannerRouter from './routes/localScanner';
+import updaterRouter from './routes/updater';
 import { preWarmClient, ensureYtDlpBinary } from './services/youtubeService';
 import { checkCookieHealth } from './services/customInnertube';
 import { ytdlpPool } from './services/processPool';
@@ -125,6 +126,7 @@ app.use('/api/downloads', downloadsLimiter, downloadsRouter);
 app.use('/api/sync', generalLimiter, syncRouter);
 app.use('/api/spotify', generalLimiter, spotifyRouter);
 app.use('/api/library', generalLimiter, localScannerRouter);
+app.use('/api/updater', generalLimiter, updaterRouter);
 
 // Image Proxy Endpoint to bypass CORS blocks for canvas-based color extraction
 app.get('/api/proxy-image', (req, res) => {

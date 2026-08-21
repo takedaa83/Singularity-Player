@@ -46,6 +46,7 @@ import { api, getApiBaseUrl, setApiBaseUrl } from '../../utils/api';
 import { initDB } from '../../lib/db';
 import { singularityEngine, EngineTelemetry } from '../../services/singularityEngine';
 import { SystemConsole } from './SystemConsole';
+import { UpdateManager } from './UpdateManager';
 
 // ─── Accent Color Palette ────────────────────────────────────────────
 
@@ -555,6 +556,11 @@ export const SettingsPage: React.FC = () => {
         subtitle="Customize your experience"
         iconColor={tokens.colors.accent.violet}
       />
+
+      {/* ── Software Updates & Version Control ────────────────────── */}
+      <Box sx={{ mb: 3 }}>
+        <UpdateManager />
+      </Box>
 
       {/* ── Appearance ──────────────────────────────────────────── */}
       <SettingSection

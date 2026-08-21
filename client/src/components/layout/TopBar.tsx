@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { IconButton, Tooltip, Badge, Box } from '@mui/material';
-import { Sun, Moon, UploadCloud, Menu, Download, Sparkles, Minus, Square, Copy, X, PictureInPicture2 } from 'lucide-react';
+import { Sun, Moon, UploadCloud, Menu, Download, Sparkles, Minus, Square, Copy, X, PictureInPicture2, ArrowUpCircle } from 'lucide-react';
 import { SearchInput } from '../search/SearchInput';
 import { useDownloadStore } from '../../stores/downloadStore';
 import { useSettingsStore } from '../../stores/settingsStore';
+import { updaterService, UpdateStatus } from '../../services/updaterService';
 import { tokens } from '../../theme/muiTheme';
 
 interface TopBarProps {
@@ -27,6 +28,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const isElectron = typeof window !== 'undefined' && !!window.electronAPI?.isElectron;
   const [isMaximized, setIsMaximized] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
+
+  useEffect(() => {
+    // Check for updates in background on launch
+    updaterService.checkForUpdates(false);
+    const unsub = updaterService.subscribe(setUpdateStatus);
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (isElectron && window.electronAPI) {
@@ -132,6 +141,21 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <Download className="w-4 h-4" />
               </Badge>
             </IconButton>
+          </Tooltip>
+        )}
+
+        {/* Update Available Indicator */}
+        {updateStatus?.updateAvailable && (
+          <Tooltip title={`Update Available (${updateStatus.latestVersion || updateStatus.latestCommit}) - Click to view in Settings`}>
+            <button
+              onClick={() => {
+                window.location.hash = '#settings';
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#fa2d55]/20 to-[#8b5cf6]/20 text-[#ff8099] hover:text-white border border-[#fa2d55]/40 transition-all active:scale-95 shadow-[0_0_12px_rgba(250,45,85,0.25)] animate-pulse"
+            >
+              <ArrowUpCircle className="w-3.5 h-3.5 text-[#fa2d55]" />
+              <span className="hidden sm:inline">Update</span>
+            </button>
           </Tooltip>
         )}
 
