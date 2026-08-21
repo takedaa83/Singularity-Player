@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v2.0.0--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
+  <img src="https://img.shields.io/badge/Release-v2.0.1--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
   <img src="https://img.shields.io/badge/Desktop-Native%20Windows%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Native" />
   <img src="https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord RPC" />
   <img src="https://img.shields.io/badge/DSP-Master--Engine%20v3.0-10b981?style=for-the-badge&logo=speedtest&logoColor=white" alt="DSP Architecture" />
@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
-<h1 align="center">🌌 Singularity Player 2.0</h1>
+<h1 align="center">🌌 Singularity Player 2.0.1</h1>
 
 <p align="center">
   <strong>The Enterprise-Grade, Audiophile Music Streaming, Desktop & Intelligence Platform</strong><br/>

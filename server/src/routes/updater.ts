@@ -9,7 +9,7 @@ const router = Router();
 
 const REPO_OWNER = 'takedaa83';
 const REPO_NAME = 'Singularity-Player';
-const CURRENT_VERSION = '2.0.0';
+const CURRENT_VERSION = '2.0.1';
 
 interface UpdateCache {
   timestamp: number;
