@@ -12,6 +12,7 @@ if (!gotTheLock) {
 }
 
 let mainWindow = null;
+let splashWindow = null;
 let miniPlayerWindow = null;
 let tray = null;
 let serverProcess = null;
@@ -83,6 +84,76 @@ function startInternalServer() {
 }
 
 /**
+ * Creates the animated Splash Screen window shown during startup.
+ */
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 480,
+    height: 380,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    center: true,
+    backgroundColor: '#00000000',
+    hasShadow: true,
+    webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+    },
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+
+  splashWindow.on('closed', () => {
+    splashWindow = null;
+  });
+}
+
+/**
+ * Gracefully closes the splash screen and reveals the main window.
+ */
+function closeSplashAndShowMain() {
+  if (!splashWindow || splashWindow.isDestroyed()) {
+    // No splash to close — just show the main window directly
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    return;
+  }
+
+  // Tell splash renderer to play exit animation
+  splashWindow.webContents.send('splash:close');
+
+  // Listen for the splash renderer to signal that its exit animation is done
+  ipcMain.once('splash:closed', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      splashWindow.destroy();
+      splashWindow = null;
+    }
+  });
+
+  // Safety timeout — if the renderer never responds, force close after 2s
+  setTimeout(() => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+      splashWindow.destroy();
+      splashWindow = null;
+    }
+  }, 2000);
+}
+
+/**
  * Creates the primary Frameless BrowserWindow.
  */
 function createMainWindow() {
@@ -97,7 +168,7 @@ function createMainWindow() {
     titleBarStyle: 'hidden',
     backgroundColor: '#0a0a0c',
     icon: fs.existsSync(iconPath) ? iconPath : undefined,
-    show: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -109,6 +180,7 @@ function createMainWindow() {
 
   mainWindow.loadURL(SERVER_URL).catch((err) => {
     console.warn('[Electron Main] loadURL failed, falling back to local file:', err);
+    if (!mainWindow || mainWindow.isDestroyed()) return;
     const candidates = [
       path.join(process.resourcesPath, 'app.asar.unpacked', 'client', 'dist', 'index.html'),
       path.join(__dirname, '..', 'client', 'dist', 'index.html'),
@@ -129,9 +201,14 @@ function createMainWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
-    setupThumbarButtons();
+    // Give the splash animation a minimum display time so it doesn't flash
+    const MINIMUM_SPLASH_MS = 2800;
+    const elapsed = Date.now() - splashStartTime;
+    const remaining = Math.max(0, MINIMUM_SPLASH_MS - elapsed);
+    setTimeout(() => {
+      closeSplashAndShowMain();
+      setupThumbarButtons();
+    }, remaining);
   });
 
   // Notify renderer on maximize / unmaximize
@@ -428,8 +505,14 @@ app.on('second-instance', () => {
   }
 });
 
+let splashStartTime = Date.now();
+
 app.whenReady().then(async () => {
-  // Start server if needed
+  // Show splash screen immediately for a polished startup experience
+  splashStartTime = Date.now();
+  createSplashWindow();
+
+  // Start server if needed (splash is visible during this wait)
   if (!isDev) {
     await startInternalServer();
   }

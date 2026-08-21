@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Singularity Player</title>
+<style>
+  /* ── Reset & Canvas ── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #07070a;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(134, 59, 255, 0.15);
+    -webkit-app-region: drag;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* ── Container ── */
+  .splash {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* ── Ambient Background ── */
+  .ambient {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .ambient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0;
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .orb-1 {
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(134, 59, 255, 0.35) 0%, transparent 70%);
+    top: 20%; left: 25%;
+    animation: orb-drift-1 8s ease-in-out infinite, orb-appear 1.2s 0.2s ease-out forwards;
+  }
+
+  .orb-2 {
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(71, 191, 255, 0.25) 0%, transparent 70%);
+    bottom: 15%; right: 20%;
+    animation: orb-drift-2 10s ease-in-out infinite, orb-appear 1.4s 0.4s ease-out forwards;
+  }
+
+  .orb-3 {
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(250, 45, 85, 0.18) 0%, transparent 70%);
+    top: 55%; left: 55%;
+    animation: orb-drift-3 12s ease-in-out infinite, orb-appear 1.6s 0.6s ease-out forwards;
+  }
+
+  @keyframes orb-appear {
+    from { opacity: 0; transform: scale(0.6) translate3d(0, 0, 0); }
+    to   { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+  }
+
+  @keyframes orb-drift-1 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33%      { transform: translate3d(30px, -20px, 0) scale(1.08); }
+    66%      { transform: translate3d(-15px, 15px, 0) scale(0.95); }
+  }
+
+  @keyframes orb-drift-2 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33%      { transform: translate3d(-25px, 20px, 0) scale(1.05); }
+    66%      { transform: translate3d(20px, -10px, 0) scale(0.92); }
+  }
+
+  @keyframes orb-drift-3 {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(15px, -25px, 0) scale(1.1); }
+  }
+
+  /* ── Particle Field (CSS-only floating dots) ── */
+  .particles {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    opacity: 0;
+    animation: particle-float 6s ease-in-out infinite, particle-appear 1s ease-out forwards;
+  }
+
+  @keyframes particle-appear {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes particle-float {
+    0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.3; }
+    25%      { transform: translate3d(8px, -15px, 0); opacity: 0.7; }
+    50%      { transform: translate3d(-5px, -30px, 0); opacity: 0.4; }
+    75%      { transform: translate3d(12px, -20px, 0); opacity: 0.6; }
+  }
+
+  /* ── Logo Container ── */
+  .logo-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+
+  /* Logo glow ring */
+  .logo-glow {
+    position: absolute;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(134, 59, 255, 0.4) 0%, transparent 60%);
+    opacity: 0;
+    animation: glow-pulse 2.5s 0.8s ease-out forwards;
+    filter: blur(25px);
+  }
+
+  @keyframes glow-pulse {
+    0%   { opacity: 0; transform: scale(0.4); }
+    50%  { opacity: 0.8; transform: scale(1.3); }
+    100% { opacity: 0.4; transform: scale(1); }
+  }
+
+  /* ── Lightning SVG ── */
+  .logo-svg {
+    position: relative;
+    width: 72px;
+    height: 70px;
+    opacity: 0;
+    transform: scale(0.7) translate3d(0, 0, 0);
+    animation: logo-enter 0.9s 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    filter: drop-shadow(0 0 20px rgba(134, 59, 255, 0.5));
+  }
+
+  @keyframes logo-enter {
+    0%   { opacity: 0; transform: scale(0.7) translate3d(0, 10px, 0); }
+    60%  { opacity: 1; transform: scale(1.05) translate3d(0, -2px, 0); }
+    100% { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+  }
+
+  /* Stroke-draw animation on the bolt outline */
+  .bolt-outline {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: draw-bolt 1.2s 0.6s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  }
+
+  @keyframes draw-bolt {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Fill reveal after stroke finishes */
+  .bolt-fill {
+    opacity: 0;
+    animation: fill-reveal 0.6s 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fill-reveal {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Flash effect when bolt completes ── */
+  .flash-ring {
+    position: absolute;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(134, 59, 255, 0.6);
+    opacity: 0;
+    animation: flash-expand 0.8s 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes flash-expand {
+    0%   { opacity: 0.8; transform: scale(0.5); border-width: 2px; }
+    100% { opacity: 0; transform: scale(2.5); border-width: 0.5px; }
+  }
+
+  /* ── Title: "SINGULARITY" ── */
+  .title {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  .title-letter {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+    animation: letter-up 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes letter-up {
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  /* Staggered delays for each letter (11 letters: S-I-N-G-U-L-A-R-I-T-Y) */
+  .title-letter:nth-child(1)  { animation-delay: 1.65s; }
+  .title-letter:nth-child(2)  { animation-delay: 1.70s; }
+  .title-letter:nth-child(3)  { animation-delay: 1.75s; }
+  .title-letter:nth-child(4)  { animation-delay: 1.80s; }
+  .title-letter:nth-child(5)  { animation-delay: 1.85s; }
+  .title-letter:nth-child(6)  { animation-delay: 1.90s; }
+  .title-letter:nth-child(7)  { animation-delay: 1.95s; }
+  .title-letter:nth-child(8)  { animation-delay: 2.00s; }
+  .title-letter:nth-child(9)  { animation-delay: 2.05s; }
+  .title-letter:nth-child(10) { animation-delay: 2.10s; }
+  .title-letter:nth-child(11) { animation-delay: 2.15s; }
+
+  /* ── Subtitle: "PLAYER" ── */
+  .subtitle {
+    position: relative;
+    z-index: 2;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.35em;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+    animation: subtitle-in 0.6s 2.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    margin-bottom: 48px;
+  }
+
+  @keyframes subtitle-in {
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+
+  /* ── Loading Bar ── */
+  .loader-track {
+    position: relative;
+    z-index: 2;
+    width: 180px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    animation: loader-appear 0.4s 2.5s ease-out forwards;
+  }
+
+  @keyframes loader-appear {
+    to { opacity: 1; }
+  }
+
+  .loader-fill {
+    position: absolute;
+    top: 0; left: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(134, 59, 255, 0.8), rgba(71, 191, 255, 0.6), transparent);
+    border-radius: 2px;
+    animation: loader-slide 1.4s 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+
+  @keyframes loader-slide {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(350%); }
+  }
+
+  /* ── Version Tag ── */
+  .version {
+    position: absolute;
+    bottom: 24px;
+    z-index: 2;
+    font-size: 10px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.15);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    animation: fade-in 0.5s 2.8s ease-out forwards;
+  }
+
+  @keyframes fade-in {
+    to { opacity: 1; }
+  }
+
+  /* ── Exit Animation ── */
+  .splash.exit {
+    animation: splash-exit 0.55s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  @keyframes splash-exit {
+    0%   { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.04); }
+  }
+
+  /* ── Grain Texture Overlay ── */
+  .grain-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  }
+
+  /* ── Vignette ── */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.5) 100%);
+  }
+
+  /* ── Horizontal Light Streak ── */
+  .light-streak {
+    position: absolute;
+    top: 50%;
+    left: -100%;
+    width: 200%;
+    height: 1px;
+    z-index: 3;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(134, 59, 255, 0.15) 42%,
+      rgba(134, 59, 255, 0.5) 48%,
+      rgba(255, 255, 255, 0.8) 50%,
+      rgba(71, 191, 255, 0.5) 52%,
+      rgba(71, 191, 255, 0.15) 58%,
+      transparent 70%,
+      transparent 100%
+    );
+    opacity: 0;
+    animation: streak-flash 1.2s 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    filter: blur(0.5px);
+  }
+
+  @keyframes streak-flash {
+    0%   { opacity: 0; transform: translateX(-30%) translateY(-50%) scaleY(1); }
+    15%  { opacity: 1; transform: translateX(-10%) translateY(-50%) scaleY(3); }
+    50%  { opacity: 0.6; transform: translateX(10%) translateY(-50%) scaleY(1); }
+    100% { opacity: 0; transform: translateX(30%) translateY(-50%) scaleY(0.5); }
+  }
+</style>
+</head>
+<body>
+  <div class="splash" id="splash">
+    <!-- Ambient Background -->
+    <div class="ambient">
+      <div class="ambient-orb orb-1"></div>
+      <div class="ambient-orb orb-2"></div>
+      <div class="ambient-orb orb-3"></div>
+    </div>
+
+    <!-- CSS Particle Field -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Horizontal Light Streak -->
+    <div class="light-streak"></div>
+
+    <!-- Logo -->
+    <div class="logo-container">
+      <div class="logo-glow"></div>
+      <div class="flash-ring"></div>
+      <svg class="logo-svg" viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Stroke-draw outline -->
+        <path class="bolt-outline"
+          d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
+          stroke="url(#grad-stroke)" stroke-width="1" fill="none" />
+        <!-- Fill reveal -->
+        <path class="bolt-fill"
+          d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
+          fill="url(#grad-fill)" />
+        <defs>
+          <linearGradient id="grad-stroke" x1="0" y1="0" x2="48" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#a855f7" />
+            <stop offset="100%" stop-color="#47bfff" />
+          </linearGradient>
+          <linearGradient id="grad-fill" x1="0" y1="0" x2="48" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#863bff" />
+            <stop offset="50%" stop-color="#9333ea" />
+            <stop offset="100%" stop-color="#7e14ff" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Title -->
+    <div class="title">
+      <span class="title-letter">S</span>
+      <span class="title-letter">I</span>
+      <span class="title-letter">N</span>
+      <span class="title-letter">G</span>
+      <span class="title-letter">U</span>
+      <span class="title-letter">L</span>
+      <span class="title-letter">A</span>
+      <span class="title-letter">R</span>
+      <span class="title-letter">I</span>
+      <span class="title-letter">T</span>
+      <span class="title-letter">Y</span>
+    </div>
+
+    <!-- Subtitle -->
+    <div class="subtitle">P L A Y E R</div>
+
+    <!-- Loading Bar -->
+    <div class="loader-track">
+      <div class="loader-fill"></div>
+    </div>
+
+    <!-- Version -->
+    <div class="version">v1.5.0</div>
+
+    <!-- Vignette & Grain -->
+    <div class="vignette"></div>
+    <div class="grain-overlay"></div>
+  </div>
+
+  <script>
+    // Generate subtle floating particles
+    (function() {
+      const container = document.getElementById('particles');
+      const count = 30;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = (Math.random() * 100) + '%';
+        p.style.top = (Math.random() * 100) + '%';
+        p.style.width = (1 + Math.random() * 2) + 'px';
+        p.style.height = p.style.width;
+        p.style.animationDelay = (Math.random() * 4) + 's, ' + (0.3 + Math.random() * 1.5) + 's';
+        p.style.animationDuration = (4 + Math.random() * 6) + 's, 1s';
+        if (Math.random() > 0.7) {
+          p.style.background = 'rgba(134, 59, 255, 0.5)';
+        } else if (Math.random() > 0.5) {
+          p.style.background = 'rgba(71, 191, 255, 0.4)';
+        }
+        container.appendChild(p);
+      }
+    })();
+
+    // Listen for the close signal from Electron main process
+    const { ipcRenderer } = require('electron');
+
+    ipcRenderer.on('splash:close', () => {
+      const splash = document.getElementById('splash');
+      splash.classList.add('exit');
+      // Wait for exit animation to complete before signaling back
+      setTimeout(() => {
+        ipcRenderer.send('splash:closed');
+      }, 500);
+    });
+  </script>
+</body>
+</html>
