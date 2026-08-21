@@ -74,6 +74,7 @@
     "cross-env": "^10.1.0",
     "electron": "^43.4.1",
     "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
     "wait-on": "^9.1.0"
   },
   "optionalDependencies": {
