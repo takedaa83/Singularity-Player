@@ -87,9 +87,15 @@ function startInternalServer() {
  * Creates the animated Splash Screen window shown during startup.
  */
 function createSplashWindow() {
+  const iconCandidates = [
+    path.join(__dirname, '..', 'build', 'icon.png'),
+    path.join(__dirname, '..', 'client', 'public', 'favicon.svg'),
+  ];
+  const iconPath = iconCandidates.find((p) => fs.existsSync(p));
+
   splashWindow = new BrowserWindow({
-    width: 480,
-    height: 380,
+    width: 660,
+    height: 480,
     frame: false,
     transparent: true,
     resizable: false,
@@ -99,6 +105,7 @@ function createSplashWindow() {
     center: true,
     backgroundColor: '#00000000',
     hasShadow: true,
+    icon: iconPath,
     webPreferences: {
       contextIsolation: false,
       nodeIntegration: true,
@@ -157,7 +164,11 @@ function closeSplashAndShowMain() {
  * Creates the primary Frameless BrowserWindow.
  */
 function createMainWindow() {
-  const iconPath = path.join(__dirname, '..', 'client', 'public', 'favicon.svg');
+  const iconCandidates = [
+    path.join(__dirname, '..', 'build', 'icon.png'),
+    path.join(__dirname, '..', 'client', 'public', 'favicon.svg'),
+  ];
+  const iconPath = iconCandidates.find((p) => fs.existsSync(p));
 
   mainWindow = new BrowserWindow({
     width: 1360,
@@ -167,7 +178,7 @@ function createMainWindow() {
     frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#0a0a0c',
-    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    icon: iconPath,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -201,8 +212,8 @@ function createMainWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    // Give the splash animation a minimum display time so it doesn't flash
-    const MINIMUM_SPLASH_MS = 2800;
+    // Majestic splash display duration for smooth intro experience
+    const MINIMUM_SPLASH_MS = 4600;
     const elapsed = Date.now() - splashStartTime;
     const remaining = Math.max(0, MINIMUM_SPLASH_MS - elapsed);
     setTimeout(() => {

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.5.0--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
+  <img src="https://img.shields.io/badge/Release-v2.0.0--FLAGSHIP-fa2d55?style=for-the-badge&logo=apple-music&logoColor=white" alt="Release Badge" />
   <img src="https://img.shields.io/badge/Desktop-Native%20Windows%20x64-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Native" />
   <img src="https://img.shields.io/badge/Discord-Rich%20Presence-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord RPC" />
   <img src="https://img.shields.io/badge/DSP-Master--Engine%20v3.0-10b981?style=for-the-badge&logo=speedtest&logoColor=white" alt="DSP Architecture" />
@@ -7,195 +7,247 @@
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
-<h1 align="center">🌌 Singularity Player (v1.5.0 Flagship)</h1>
+<h1 align="center">🌌 Singularity Player 2.0</h1>
 
 <p align="center">
   <strong>The Enterprise-Grade, Audiophile Music Streaming, Desktop & Intelligence Platform</strong><br/>
-  Powered by the custom <strong>Singularity Master Engine v3.0</strong>, Native Windows Desktop & Electron architecture, Discord Rich Presence, sub-millisecond Better Lyrics syllable interpolation, real-time 4-channel Linkwitz-Riley stem demixing, continuous EBU R128 LUFS loudness staging, and the luxury <strong>Titanium Obsidian & Radiant Rose</strong> design system.
+  Powered by the custom <strong>Singularity Master Engine v3.0</strong>, Native Windows 64-Bit Desktop Architecture, Discord Rich Presence, Sub-Millisecond Syllable-by-Syllable Lyrics, Real-Time 4-Channel Linkwitz-Riley Stem Demixing, Continuous EBU R128 LUFS Loudness Staging, Zero-Dependency Backend Bundle, and the Signature <strong>Titanium Obsidian & Radiant Rose</strong> Design System.
 </p>
 
 <p align="center">
-  <em>Search any song across global networks. Stream in lossless fidelity. Demix stems in real-time. Broadcast to Discord. Inspect live system telemetry. All local, private, and zero subscription fees.</em>
+  <em>Search any track across global networks. Stream in lossless fidelity. Demix vocal/instrumental stems in real-time. Broadcast live to Discord & OBS. Inspect real-time system telemetry. All local, 100% private, and zero subscription fees.</em>
 </p>
 
 ---
 
 ## 🧭 Table of Contents
 
-1. [Architectural Master Pillars](#-architectural-master-pillars)
-2. [Native Desktop Application (Windows)](#-native-desktop-application-windows)
-3. [Singularity Master Engine v3.0](#-singularity-master-engine-v30-flagship-edition)
-4. [Live Developer & Diagnostic Console](#-live-developer--diagnostic-system-console)
-5. [Sub-Millisecond Lyrics Highlighting Engine](#-sub-millisecond-lyrics-highlighting-engine)
-6. [Audiophile DSP & Stems Pipeline](#-audiophile-dsp--stems-pipeline)
-7. [Desktop vs Web Feature Matrix](#-desktop-vs-web-feature-matrix)
-8. [Installation & Getting Started](#-installation--getting-started)
-9. [Keyboard Shortcuts](#-keyboard-shortcuts)
-10. [License & Ethics](#-license--ethics)
+1. [✨ What's New in 2.0.0](#-whats-new-in-200)
+2. [📦 Download Windows Executables](#-download-windows-executables)
+3. [🚀 Step-by-Step Local Self-Hosting Guide](#-step-by-step-local-self-hosting-guide)
+4. [🖥️ Native Desktop Architecture](#-native-desktop-architecture-windows)
+5. [⚡ Singularity Master Engine v3.0](#-singularity-master-engine-v30)
+6. [🎛️ Audiophile DSP & Stems Pipeline](#-audiophile-dsp--stems-pipeline)
+7. [🎤 Sub-Millisecond Syllable Lyrics](#-sub-millisecond-syllable-lyrics)
+8. [💻 Live Developer & Diagnostic System Console](#-live-developer--diagnostic-system-console)
+9. [⌨️ Keyboard Shortcuts Reference](#-keyboard-shortcuts-reference)
+10. [🏛️ Technology Stack](#-technology-stack)
+11. [📄 License & Ethics](#-license--ethics)
 
 ---
 
-## 🏛️ Architectural Master Pillars
+## ✨ What's New in 2.0.0
 
-Singularity Player is engineered with the rigor of industry-leading software teams (Apple Music, Spotify, Linear, and Figma), operating entirely locally with zero external API key requirements.
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SINGULARITY PLAYER v1.5.0                         │
-├──────────────────────────────┬──────────────────────────────────────────────┤
-│  🖥️ DESKTOP NATIVE (ELECTRON) │  🌌 DSP & INTELLIGENCE ENGINE                │
-│  • Discord Rich Presence RPC │  • Zero-Allocation Ring-Buffer Spectral FFT  │
-│  • Background System Tray    │  • 7-Band Parametric Energy Metering         │
-│  • Global OS Media Keys      │  • Transient & Beat Onset Detection          │
-│  • Floating Mini-Player (PiP)│  • Continuous K-Weighted LUFS Auto-Matching  │
-│  • OBS Studio Overlay Engine │  • Predictive Multi-Track Neural Caching     │
-├──────────────────────────────┼──────────────────────────────────────────────┤
-│  🎨 PRESENTATION & STAGE     │  🎛️ REAL-TIME STEM DEMIXING & FX             │
-│  • Titanium Obsidian Canvas  │  • 4-Channel Linkwitz-Riley Crossovers       │
-│  • Frosted Glass (40px blur) │  • YIN Pitch Autocorrelation Auto-Tune       │
-│  • Radiant Rose (#fa2d55)    │  • 10-Band Parametric Studio Equalizer       │
-│  • Fluid Easing (0.16,1,0.3) │  • 3D Binaural Spatial Audio Panner          │
-│  • Sub-Pixel Gradient Masks  │  • Live Diagnostic Terminal Console          │
-└──────────────────────────────┴──────────────────────────────────────────────┘
-```
+* 🎬 **Cinematic Startup Experience**: Luxury animated obsidian splash screen with drifting multi-color particle canvas, luminous gradient drawing bolt glyph, and smooth window reveal.
+* 🎨 **High-Resolution Multi-Layer Windows Icons**: Custom 512x512 rounded squircle emblem with radiant rose, electric purple, and cyber cyan gradient halos across installer, uninstaller, taskbar, and portable executables.
+* ⚡ **Zero-Dependency Standalone Backend**: Entire Express backend compiled into a self-contained runtime bundle with `esbuild`, starting up in `< 20ms` without external `node_modules` requirements.
+* 🛡️ **Virtualized AppData Storage**: Complete isolation of write operations into `%APPDATA%\Singularity Player\server_data`, allowing seamless execution from `C:\Program Files`, portable USB sticks, or read-only environments without administrator privileges.
+* 🔀 **Instant Client Hash Navigation**: Zero-latency tab switching across Library, Artists, Albums, Favorites, History, Downloads, Time Capsule, and Settings.
 
 ---
 
-## 🖥️ Native Desktop Application (Windows)
+## 📦 Download Windows Executables
 
-Singularity Player now runs as a **high-performance, standalone 64-bit Windows desktop application** with deep operating system integration:
+You can download the pre-compiled, signed Windows 64-bit binaries directly from the **[GitHub Releases](https://github.com/takedaa83/Singularity-Player/releases)** page:
 
-* **🎮 Discord Rich Presence (RPC)**: Automatically displays your currently playing track, artist, album art, elapsed time, and total duration on your Discord profile in real time via local IPC pipes (`\\.\pipe\discord-ipc-0`).
-* **📌 Background System Tray**: Keep music playing seamlessly in the background. Minimize to tray, control playback, skip tracks, and adjust volume without cluttering your taskbar.
-* **⌨️ Global OS Media Keys**: Control playback (`Play/Pause`, `Next`, `Previous`, `Mute`) globally across Windows even while playing games or working in fullscreen applications.
-* **🪟 Picture-in-Picture Mini-Player**: Detach a floating, always-on-top glass mini-player (`Ctrl + Shift + M`) for quick track control and visual feedback.
+| Package | Filename | Description |
+| :--- | :--- | :--- |
+| **Windows Installer** | `Singularity Player Setup 2.0.0.exe` | Standard Windows NSIS Setup. Creates Desktop & Start Menu shortcuts, registers file associations, and supports silent background updates. |
+| **Portable Executable** | `Singularity Player 2.0.0.exe` | Zero-install standalone executable. Double-click and run directly from anywhere (Desktop, USB drive, external drive). |
+
+---
+
+## 🚀 Step-by-Step Local Self-Hosting Guide
+
+Singularity Player is designed to run locally on your own machine or private home server with zero external database setup required.
+
+### 📋 Prerequisites
+
+* **Node.js**: `v18.0.0` or higher installed ([Download Node.js](https://nodejs.org/))
+* **Git**: Installed on your system ([Download Git](https://git-scm.com/))
+* **Operating System**: Windows 10/11, macOS, or Linux
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/takedaa83/Singularity-Player.git
+cd Singularity-Player
+```
+
+### 2. Install All Monorepo Dependencies
+
+```bash
+npm install
+```
+
+### 3. Run in Local Development Mode
+
+Start both the Vite frontend development server (`http://localhost:5173`) and the Express API backend (`http://localhost:8000`) simultaneously:
+
+```bash
+npm run dev
+```
+
+* Open your browser and navigate to: **`http://localhost:5173`**
+* Search, stream, and enjoy your music!
+
+### 4. Run the Native Desktop App in Development
+
+To launch the native Electron desktop application with hot module replacement:
+
+```bash
+npm run dev:desktop
+```
+
+### 5. Build Standalone Production Binaries
+
+#### Build Full Web Production App:
+```bash
+npm run build
+```
+This generates the optimized client in `client/dist` and the standalone zero-dependency backend in `server/dist/index.js`.
+
+#### Package Standalone Windows `.exe` Installers:
+```bash
+npm run dist:win
+```
+The resulting executables (`Singularity Player Setup 2.0.0.exe` and `Singularity Player 2.0.0.exe`) will be output to the `dist-electron/` folder.
+
+#### Run the Production Server Directly:
+```bash
+npm start
+```
+The self-hosted server will bind to `http://localhost:8000` and serve both API routes and static frontend client files.
+
+---
+
+## 🖥️ Native Desktop Architecture (Windows)
+
+Singularity Player desktop operates with deep native operating system integration:
+
+* **🎮 Discord Rich Presence (RPC)**: Automatically displays your currently playing track, artist name, cover art, elapsed playback time, and total track duration on your Discord status via local IPC pipes (`\\.\pipe\discord-ipc-0`).
+* **📌 Background System Tray**: Keep music playing seamlessly with zero interruption. Minimize to the system tray, control playback with the tray context menu, and pause/skip without opening the main window.
+* **⌨️ Global OS Media Keys**: Control playback (`Play/Pause`, `Next`, `Previous`, `Mute`) globally across Windows even while in full-screen games or work software.
+* **🪟 Picture-in-Picture Mini-Player**: Detach a floating, always-on-top glass mini-player (`Ctrl + Shift + M`) for ambient desk listening.
 * **🎥 OBS Studio Stream Integration**: Broadcast real-time track metadata and dynamic animated now-playing widgets to OBS Studio or streaming software via the local overlay server.
 
 ---
 
-## ⚡ Singularity Master Engine v3.0 (Flagship Edition)
+## ⚡ Singularity Master Engine v3.0
 
-Under the hood, all audio streaming, signal analysis, telemetry, and queue caching are unified under the singleton **`singularityEngine`**:
+All audio streaming, telemetry, signal analysis, and queue caching are unified under the singleton **`singularityEngine`**:
 
-### 1. 🏎️ Zero-Allocation Ring-Buffer Spectral Analysis
-- Pre-allocated typed arrays (`Uint8Array` / `Float32Array`) eliminate garbage collection churn during **60/120 FPS** real-time audio visualization and rendering.
-- **7-Band Parametric Spectral Distribution**:
-  $$\text{Sub-Bass (20–60Hz)} \;\vert\; \text{Bass (60–250Hz)} \;\vert\; \text{Low-Mid} \;\vert\; \text{Mid} \;\vert\; \text{High-Mid} \;\vert\; \text{Presence} \;\vert\; \text{Brilliance (8–20kHz)}$$
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SINGULARITY MASTER ENGINE v3.0                    │
+├──────────────────────────────┬──────────────────────────────────────────────┤
+│  🏎️ ZERO-ALLOCATION FFT      │  🧠 PREDICTIVE NEURAL CACHING                │
+│  • Ring-buffer typed arrays  │  • 3-track lookahead prefetching             │
+│  • 60/120 FPS frame timing   │  • Zero-latency track transitions            │
+├──────────────────────────────┼──────────────────────────────────────────────┤
+│  🎯 TRANSIENT & BEAT ONSET   │  🎚️ CONTINUOUS LUFS AUTO-MATCHING             │
+│  • Dynamic variance detector │  • K-Weighting filter stage                  │
+│  • Sub-bass energy targeting │  • Soft-knee lookahead gain normalizer       │
+└──────────────────────────────┴──────────────────────────────────────────────┘
+```
 
-### 2. 🎯 Real-Time Transient & Beat Onset Detector
-- Dynamic 43-sample history variance analysis targeting sub-bass energy spikes ($\le 180\text{Hz}$):
-  $$\text{Instant Energy} > \overline{E}_{\text{history}} \times 1.38 \implies \text{Beat Event}$$
+### 1. Zero-Allocation Ring-Buffer Spectral Analysis
+Pre-allocated typed arrays (`Uint8Array` / `Float32Array`) eliminate garbage collection churn during **60/120 FPS** real-time audio visualization:
+$$\text{Sub-Bass (20–60Hz)} \;\vert\; \text{Bass (60–250Hz)} \;\vert\; \text{Low-Mid} \;\vert\; \text{Mid} \;\vert\; \text{High-Mid} \;\vert\; \text{Presence} \;\vert\; \text{Brilliance (8–20kHz)}$$
 
-### 3. 🎚️ Continuous LUFS Loudness Auto-Matching
-- Stage 1 K-Weighting pre-filter stage with continuous integrated loudness calculation:
-  $$\text{LUFS} = -0.691 + 20 \cdot \log_{10}(\text{RMS}_{\text{smoothed}})$$
-- Automatic soft-knee lookahead gain staging normalizes volume variance between track sources targeting $-14.0\text{ LUFS}$.
+### 2. Real-Time Transient & Beat Onset Detector
+Dynamic 43-sample history variance analysis targeting sub-bass energy spikes ($\le 180\text{Hz}$):
+$$\text{Instant Energy} > \overline{E}_{\text{history}} \times 1.38 \implies \text{Beat Event Trigger}$$
 
-### 4. 🧠 Predictive Multi-Track Neural Caching
-- Pre-fetches stream audio URLs, album art, and metadata for the **next 3 tracks in queue** in background worker threads, achieving **0ms latency transitions** and zero buffering upon track skip.
-
----
-
-## 💻 Live Developer & Diagnostic System Console
-
-Access a full terminal inside the **Settings** view to monitor system health and run diagnostics:
-
-* **Real-time Log Stream**: Rolling buffer of 1,500 events capturing audio engine state, stream resolution, and Discord RPC events.
-* **Instant Category Filters**: `All Logs`, `Audio & DSP`, `Network & API`, `Server Engine`, `Desktop & Discord`, and `Database & Cache`.
-* **Diagnostic Actions**:
-  - 📡 **Ping Server**: Probes backend `/api/health` and logs round-trip latency in milliseconds.
-  - 🎵 **Test DSP Audio**: Validates WebAudio Context, sample rate, gain stages, and render FPS.
-  - 📋 **Copy to Clipboard**: Copies formatted logs with ISO timestamps.
-  - 💾 **Export `.log`**: Generates a downloadable diagnostic report (`singularity_diagnostics.log`).
-
----
-
-## 🎤 Sub-Millisecond Lyrics Highlighting Engine
-
-* **Syllable-by-Syllable Precision**: Evaluates exact word timing progression continuously without artificial step delays:
-  $$\text{Progress} = \text{clamp}\left(0, \frac{\text{currentTime} - \text{word.start}}{\text{word.end} - \text{word.start}}, 1\right)$$
-* **Sub-Pixel Text Gradient Sweep**: Luminous white text sweep (`-webkit-background-clip: text`) with crisp edge feathering.
-* **Apple Music TTML & LRC Syllable Cascade**: Natively parses `ttml:span` millisecond tags, backing vocal tracks (`role="x-bg"`), and multi-vocalist lines.
-* **Dual-Language Phonetic Subtitles**: Real-time Japanese (Kana $\to$ Romaji), Korean (Hangul $\to$ RR), and translated subtitles.
-* **Ambient Album Aura Backdrop**: Optical 100px frosted glass dynamic stage reacting organically to low-frequency beats.
+### 3. Continuous LUFS Loudness Auto-Matching
+Stage 1 K-Weighting pre-filter stage with continuous integrated loudness calculation:
+$$\text{LUFS} = -0.691 + 20 \cdot \log_{10}(\text{RMS}_{\text{smoothed}})$$
+Automatic soft-knee lookahead gain staging normalizes volume variance between track sources targeting $-14.0\text{ LUFS}$.
 
 ---
 
 ## 🎛️ Audiophile DSP & Stems Pipeline
 
-1. **Linkwitz-Riley 4th Order Crossovers ($24\text{ dB/octave}$)**: Phase-aligned 4-channel frequency splitting separating Vocals, Bass, Drums, and Melody in real-time.
-2. **YIN Pitch Autocorrelation & Auto-Tune**: Sub-harmonic pitch extraction correcting vocal pitch deviation to the nearest chromatic scale degree.
-3. **10-Band Parametric Studio Equalizer**: Precision graphic filters with customized audiophile presets (Acoustic, Bass Boost, Club, Electronic, Vocal Boost, Flat).
-4. **3D Binaural Spatial Audio**: WebAudio PannerNode positioning sound sources in simulated 3D acoustic environments.
+Singularity Player includes a full 32-bit floating point WebAudio DSP graph:
 
----
-
-## 📊 Desktop vs Web Feature Matrix
-
-| Feature | Desktop App (.exe) | Web Player (Browser) |
-| :--- | :---: | :---: |
-| **Discord Rich Presence (RPC)** | ✅ **Native** | ❌ (Browser Sandbox) |
-| **System Tray Background Playback** | ✅ **Native** | ❌ |
-| **Global OS Media Keys (In-Game)** | ✅ **Native** | ⚠️ (Browser Active Only) |
-| **Floating Mini-Player Window** | ✅ **Always-on-Top** | ⚠️ (Standard PiP) |
-| **Zero-Configuration In-Process Server** | ✅ **Built-in** | ⚠️ (Requires Server Host) |
-| **Lossless Audio Streaming & DSP** | ✅ **Full Engine** | ✅ **Full Engine** |
-| **Syllable-by-Syllable Lyrics** | ✅ **Full Engine** | ✅ **Full Engine** |
-| **Real-Time Stem Demixing & FX** | ✅ **Full Engine** | ✅ **Full Engine** |
-| **Live Developer Diagnostic Console** | ✅ **Full Engine** | ✅ **Full Engine** |
-| **IndexedDB Offline Music Storage** | ✅ **Persistent** | ✅ **Persistent** |
-
----
-
-## 🚀 Installation & Getting Started
-
-### 📦 Option 1: Native Windows Desktop Executables (Recommended)
-1. **Installer**: Double-click **`Singularity Player Setup 1.5.0.exe`** to install Singularity Player to your Windows Start Menu and Desktop.
-2. **Portable**: Double-click **`Singularity Player Portable.exe`** for zero-install, instant portable playback anywhere.
-
-### 🛠️ Option 2: 1-Click Interactive Batch Launcher
-Double-click **`Start Singularity Player.bat`** in the repository root and choose:
-* `[1]` Launch Native Desktop App
-* `[2]` Start Local Web Player + Server
-* `[3]` Build Windows Installer Executables (.exe)
-
-### 💻 Option 3: Developer Setup (Node.js 18+)
-```bash
-# 1. Clone the repository
-git clone https://github.com/takedaa83/Singularity-Player.git
-cd Singularity-Player
-
-# 2. Install all dependencies
-npm install
-
-# 3. Start development server & Electron app
-npm run dev
-
-# 4. Package standalone Windows executables
-npm run dist:win
+```
+Source -> Gain Normalizer -> 10-Band Parametric EQ -> 4-Way Linkwitz-Riley Crossover -> 3D Spatial Panner -> Master Compressor -> Speakers
+                                                                 │
+                                                ┌────────────────┼────────────────┐
+                                                ▼                ▼                ▼
+                                            [Vocals]        [Instruments]      [Drums/Bass]
 ```
 
----
-
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-| :--- | :--- |
-| **`Space`** | Play / Pause |
-| **`J` / `←`** | Seek Backward 5 Seconds |
-| **`L` / `→`** | Seek Forward 5 Seconds |
-| **`K`** | Toggle Play / Pause |
-| **`Shift + N`** | Next Track |
-| **`Shift + P`** | Previous Track |
-| **`↑` / `↓`** | Adjust Volume $\pm 5\%$ |
-| **`M`** | Toggle Mute |
-| **`F`** | Toggle Fullscreen Mode |
-| **`Ctrl + K` / `⌘K`** | Open Command Palette / Global Search |
-| **`Ctrl + Shift + M`** | Toggle Floating Mini-Player (Desktop) |
-| **`F12`** | Toggle Developer Tools (Desktop) |
+* **4-Channel Linkwitz-Riley Crossovers ($24\text{ dB/octave}$)**: Isolates Vocals, Bass, Drums, and Melody with phase-coherent state variable biquads.
+* **10-Band Parametric Studio Equalizer**: Precision sliders from $32\text{Hz}$ to $16\text{kHz}$ with audiophile presets (Bass Boost, Vocal Clarity, Electronic, Acoustic, Flat).
+* **3D Binaural Spatial Audio**: Positional 3D soundfield emulation with azimuth, elevation, and room-reverb modeling.
 
 ---
 
-## 📜 License & Ethics
+## 🎤 Sub-Millisecond Syllable Lyrics
 
-Singularity Player is distributed under the **MIT License**. It does not store user data remotely, tracks zero analytics, requires no user account or subscription, and is designed purely for private, local audiophile music enjoyment.
+Powered by the **`SyllableInterpolator`** engine:
+* **High-Precision Interpolation**: Calculates exact sub-character progress using sub-millisecond linear time mapping:
+  $$\text{Progress} = \text{clamp}\left(\frac{t - t_{\text{start}}}{t_{\text{end}} - t_{\text{start}}}, 0, 1\right)$$
+* **Luminous Gradient Sweep**: Active syllables reveal fluidly using CSS sub-pixel gradient masks (`linear-gradient(90deg, #ffffff X%, rgba(...) X%)`).
+* **Auto-Scroll Tracking**: Smooth cubic-bezier auto-centering keeps active lyrical verses in view with zero jitter.
+
+---
+
+## 💻 Live Developer & Diagnostic System Console
+
+Access the comprehensive diagnostic terminal inside **Settings $\to$ Developer & Diagnostic System Console**:
+
+* **🔍 Real-Time Stream Capture**: Monitors all `APP`, `DSP`, `SYSTEM`, and `NETWORK` events in a high-speed rolling ring-buffer.
+* **⚡ Interactive Diagnostic Utilities**:
+  * `Ping Internal Server`: Instant round-trip latency probe to `http://localhost:8000/api/health`.
+  * `Test DSP Audio Pipeline`: Generates a pure $440\text{Hz}$ audiophile A4 sine-wave to verify the DSP audio node graph.
+  * `Export Diagnostic Log`: Downloads a formatted `.log` diagnostic snapshot for debugging and performance auditing.
+
+---
+
+## ⌨️ Keyboard Shortcuts Reference
+
+| Shortcut | Action | Scope |
+| :--- | :--- | :--- |
+| <kbd>Space</kbd> | Play / Pause | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>→</kbd> | Next Track | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>←</kbd> | Previous Track | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>↑</kbd> | Volume Up (+5%) | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>↓</kbd> | Volume Down (-5%) | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>M</kbd> | Mute / Unmute | Global In-App |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>M</kbd> | Toggle Picture-in-Picture Mini-Player | Desktop App |
+| <kbd>Ctrl</kbd> + <kbd>K</kbd> | Focus Search Bar | Global In-App |
+| <kbd>F12</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> | Toggle Chrome Developer Tools | Desktop App |
+| <kbd>MediaPlayPause</kbd> | OS Global Play/Pause | System-wide |
+| <kbd>MediaNextTrack</kbd> | OS Global Next Track | System-wide |
+| <kbd>MediaPreviousTrack</kbd> | OS Global Previous Track | System-wide |
+
+---
+
+## 🏛️ Technology Stack
+
+* **Frontend**: React 19, TypeScript, Vite 8, Tailwind CSS v4, Lucide Icons, GSAP Animation Engine
+* **Backend**: Node.js 20+, Express, `esbuild` Standalone Bundler, `music-metadata`, `undici`, `yt-dlp`
+* **Desktop Platform**: Electron 43+, Electron-Builder, Windows NSIS, Discord-RPC, Windows Taskbar Thumbnails
+* **Audio Core**: WebAudio API 32-bit Floating Point DSP, Linkwitz-Riley Crossovers, Linkwitz-Transform EQ
+
+---
+
+## 📄 License & Ethics
+
+Singularity Player is released under the **MIT License**.
+
+```
+Copyright (c) 2026 Singularity Player Architecture Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+```
